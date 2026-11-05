@@ -1,0 +1,8 @@
+node_modules/
+dist/
+mobile-h5/dist/
+.env
+.env.*
+!.env.example
+*.local
+.DS_Store

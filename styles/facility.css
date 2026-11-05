@@ -1,0 +1,53 @@
+/* Shared facility page geometry follows the Cloud spacing and surface tokens. */
+.facility-page,
+.facility-tabs {
+  min-width: 0;
+  padding: var(--space-5, 1.25rem);
+  background: var(--surface, #fff);
+}
+.facility-page > .ant-page-header {
+  padding: 0 0 var(--space-4, 1rem);
+}
+.facility-page > .ant-alert {
+  margin-bottom: var(--space-4, 1rem);
+}
+.facility-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3, .75rem);
+  margin-bottom: var(--space-4, 1rem);
+}
+.facility-toolbar__project { width: 15rem; }
+.facility-toolbar__search { width: 14rem; }
+.facility-toolbar__level { width: 11rem; }
+.facility-toolbar__period { width: 11rem; }
+.facility-toolbar__date { width: 15rem; }
+.facility-tabs > .ant-tabs-nav { margin-bottom: var(--space-4, 1rem); }
+.facility-tabs > .ant-tabs-content-holder > .ant-tabs-content > .ant-tabs-tabpane > .facility-page {
+  padding: 0;
+}
+/* Nested plan management shares the reports' left and right content edges. */
+.facility-page > .facility-page { padding: var(--space-5, 1.25rem) 0 0; }
+.facility-page .ant-table-placeholder .ant-empty { margin-block: var(--space-3, .75rem); }
+.facility-page .ant-table-placeholder .ant-empty-image { height: 3rem; margin-bottom: .5rem; }
+.facility-page .ant-table-empty .ant-table-placeholder > td { padding-block: var(--space-3, .75rem); }
+.facility-page > .ant-divider { margin-block: var(--space-5, 1.25rem); }
+.facility-metrics {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--space-4, 1rem);
+}
+.facility-metrics .ant-card { height: 100%; grid-column: span 3; }
+/* Seven overview metrics fill both rows: four cards followed by three wider cards. */
+.facility-metrics .ant-card:nth-last-child(-n + 3) { grid-column: span 4; }
+@media (max-width: 48rem) {
+  .facility-page, .facility-tabs { padding: var(--space-4, 1rem); }
+  .facility-toolbar__project, .facility-toolbar__search,
+  .facility-toolbar__level, .facility-toolbar__period,
+  .facility-toolbar__date { width: 100%; }
+  .facility-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .facility-metrics .ant-card,
+  .facility-metrics .ant-card:nth-last-child(-n + 3) { grid-column: auto; }
+  .facility-metrics .ant-card:last-child { grid-column: 1 / -1; }
+}

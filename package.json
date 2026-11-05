@@ -1,0 +1,10 @@
+{
+  "name": "facility-energy-ui",
+  "version": "2.20.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter jetlinks-web-core dev -- --module-name facility-energy-ui,property-base-ui,authentication-manager-ui",
+    "build": "pnpm --filter jetlinks-web-core build -- --module-name facility-energy-ui",
+    "build:with-base": "pnpm --filter jetlinks-web-core build -- --module-name facility-energy-ui,property-base-ui"
+  }
+}

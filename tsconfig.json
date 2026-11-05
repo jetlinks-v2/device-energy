@@ -1,0 +1,30 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "moduleResolution": "Bundler",
+    "baseUrl": "../..",
+    "paths": {
+      "@jetlinks-web-core/*": [
+        "jetlinks-web-core/src/*"
+      ],
+      "@/*": [
+        "jetlinks-web-core/src/*"
+      ],
+      "@theme-config": [
+        "configs/theme/index.ts",
+        "jetlinks-web-core/configs/theme/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "./**/*.ts",
+    "./**/*.vue",
+    "../../jetlinks-web-core/src/auto-imports.d.ts",
+    "../../jetlinks-web-core/src/env.d.ts"
+  ],
+  "exclude": [
+    "mobile-h5",
+    "dist",
+    "node_modules"
+  ]
+}
