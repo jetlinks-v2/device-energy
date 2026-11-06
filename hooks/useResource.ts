@@ -1,9 +1,11 @@
 import { feText } from '../shared/i18n'
 import { clone } from '../shared/types'
 import { ref, reactive, watch, onMounted } from 'vue'
+import { message } from 'ant-design-vue'
 import { facility } from '../api'
 import type { Entity, FormValues, FormValue, Option, Resource, Device } from '../shared/types'
 import { messageOf } from '../shared/types'
+import { planGenerationReason } from '../shared/planActions'
 /** 请求、选项联动和提交集中于hook，过期列表响应不会覆盖新筛选。 */
 export function useResource(resource: () => Resource, kind?: string) {
   const rows = ref<Entity[]>([]),
@@ -13,6 +15,7 @@ export function useResource(resource: () => Resource, kind?: string) {
     projectId = ref<string>(),
     busy = ref(false),
     saving = ref(false),
+    failedOnly = ref(false),
     error = ref(''),
     opened = ref(false),
     detail = ref<Entity>(),
@@ -29,6 +32,8 @@ export function useResource(resource: () => Resource, kind?: string) {
     error.value = ''
     try {
       const terms = []
+      if (resource().collection && failedOnly.value)
+        terms.push({ column: 'collectionError', termType: 'notnull', value: true })
       if (kind) terms.push({ column: 'kind', value: kind })
       if (search.value)
         terms.push({
@@ -80,6 +85,10 @@ export function useResource(resource: () => Resource, kind?: string) {
   const edit = (row?: Entity) => {
     Object.keys(form).forEach((key) => delete form[key])
     Object.assign(form, clone(row || resource().defaults || {}))
+    if (!row && resource().path === 'plans') {
+      form.startTime = Date.now()
+      form.endTime = Date.now() + 365 * 86400000
+    }
     if (kind) form.kind = kind
     if (!row && projectId.value) form.projectId = projectId.value
     previewRows.value = []
@@ -157,6 +166,9 @@ export function useResource(resource: () => Resource, kind?: string) {
     error.value = ''
     try {
       for (const field of resource().fields) if (field.required && !form[field.key]) throw Error(feText('pleaseEnter') + field.label)
+      if (resource().path === 'rules' && ['usage', 'balance', 'instant', 'stale', 'reading-anomaly', 'state'].includes(String(form.ruleType)) && !form.propertyId) {
+        throw Error(feText('pleaseEnter') + resource().fields.find(field => field.key === 'propertyId')?.label)
+      }
       await facility.save(resource().path, { ...form })
       opened.value = false
       await refresh()
@@ -181,11 +193,28 @@ export function useResource(resource: () => Resource, kind?: string) {
     }
   }
   const command = async (row: Entity, action: string) => {
+    if (saving.value) return
     saving.value = true
     error.value = ''
     try {
-      if (action === 'generate' || action === 'temporary')
-        await facility.post('tasks/generate/' + row.id + '?temporary=' + (action === 'temporary'))
+      // Preserve the selected device alert as the fault's source; the server validates its ownership.
+      if (action === 'fault' && resource().path === 'alerts') {
+        const description = window.prompt(feText('enterFaultDescription'))?.trim()
+        if (!description) return
+        await facility.save('faults', {
+          name: feText('energyAlertFault'),
+          deviceId: row.deviceId,
+          description,
+          sourceType: 'alert',
+          sourceId: row.id
+        })
+        message.success(feText('faultRegistered'))
+      } else if (action === 'generate' || action === 'temporary') {
+        const reason = planGenerationReason(row, action === 'temporary')
+        if (reason) throw Error(reason)
+        const tasks = await facility.post<Entity[]>('tasks/generate/' + row.id + '?temporary=' + (action === 'temporary'))
+        message.success(feText('tasksGenerated') + ': ' + tasks.length)
+      }
       else if (['alerts', 'alerts/plans'].includes(resource().path))
         await facility.post('alerts/' + row.id + '/handle', {
           version: row.version,
@@ -207,7 +236,10 @@ export function useResource(resource: () => Resource, kind?: string) {
         })
       await refresh()
     } catch (e) {
-      error.value = messageOf(e)
+      const failure = messageOf(e)
+      // Scheduling may advance the plan after the list was loaded. Reload without hiding the failure.
+      if (action === 'generate' || action === 'temporary') await refresh()
+      error.value = failure
     } finally {
       saving.value = false
     }
@@ -220,7 +252,7 @@ export function useResource(resource: () => Resource, kind?: string) {
       error.value = messageOf(e)
     }
   }
-  watch([() => resource().path, page, projectId], () => void refresh())
+  watch([() => resource().path, page, projectId, failedOnly], () => void refresh())
   onMounted(() => {
     void refresh()
     void loadOptions()
@@ -233,6 +265,7 @@ export function useResource(resource: () => Resource, kind?: string) {
     projectId,
     busy,
     saving,
+    failedOnly,
     error,
     opened,
     detail,

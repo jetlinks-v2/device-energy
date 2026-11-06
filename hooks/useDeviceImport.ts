@@ -4,7 +4,8 @@ import { facility } from '../api'
 import { deviceFields } from '../shared/resources'
 import { messageOf, type Device } from '../shared/types'
 import { downloadCsv, parseCsv } from '../utils/csv'
-const columns = deviceFields.filter((field) => !['switch', 'select'].includes(field.type || ''))
+// Attachments require the protected upload flow and are not part of extension imports.
+const columns = deviceFields.filter((field) => !['switch', 'select', 'files'].includes(field.type || ''))
 /** Import matches immutable Cloud IDs and submitted versions; never creates devices. */
 export function useDeviceImport(getProject: () => string | undefined, changed: () => void) {
   const busy = ref(false),

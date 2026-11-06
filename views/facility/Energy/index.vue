@@ -3,12 +3,15 @@ import { feText } from '../../../shared/i18n'
 import ResourcePage from '../../../components/ResourcePage.vue'
 </script>
 <template>
-  <a-tabs class="facility-tabs">
+  <a-tabs class="facility-tabs" destroy-inactive-tab-pane>
     <a-tab-pane
       key="energy/mappings"
       :tab="feText('metersAndDeviceModels')"
     >
       <ResourcePage resource="energy/mappings" />
+    </a-tab-pane>
+    <a-tab-pane key="collection" :tab="feText('collectionStatus')">
+      <ResourcePage resource="collection" />
     </a-tab-pane>
     <a-tab-pane
       key="readings"

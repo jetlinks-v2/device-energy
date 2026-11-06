@@ -502,7 +502,31 @@
       "incompleteDataOrInconsistentUnits": "Incomplete data or inconsistent units",
       "planTargetReachedOrExceeded": "Plan target reached or exceeded",
       "unsupportedVerificationAlgorithm": "Unsupported verification algorithm. Sign in through Cloud.",
-      "verificationExpiredPleaseTryAgain": "Verification expired. Please try again."
+      "verificationExpiredPleaseTryAgain": "Verification expired. Please try again.",
+      "registerFault": "Register fault",
+      "enterFaultDescription": "Enter the fault description",
+      "energyAlertFault": "Energy alert fault",
+      "faultRegistered": "Fault registered. Follow up in Fault Management.",
+      "faultSource": "Fault source",
+      "sourceRecord": "Source record",
+      "manualRegistration": "Manual registration",
+      "inspectionMaintenanceTask": "Inspection / maintenance task",
+      "energyAlert": "Energy alert",
+      "collectionStatus": "Data collection status",
+      "historyCollectedUntil": "History collected through",
+      "historyBacklogMinutes": "Collection backlog (minutes)",
+      "lastCollectionAttempt": "Last collection completed",
+      "lastCollectionSuccess": "Last successful collection",
+      "collectionFailureReason": "Last collection failure",
+      "failedCollectionsOnly": "Failed collections only",
+      "matchingMeters": "Matching meters",
+      "planDisabled": "Enable this plan before generating tasks.",
+      "planDatesRequired": "Edit this plan to complete its schedule.",
+      "planNotStarted": "This plan has not started.",
+      "planFinished": "The plan has ended. Adjust its dates.",
+      "planNotDue": "The next cycle is not due. Use an ad hoc task to execute now.",
+      "tasksGenerated": "Tasks generated",
+      "nextGenerationTime": "Next generation time"
     }
   }
 }

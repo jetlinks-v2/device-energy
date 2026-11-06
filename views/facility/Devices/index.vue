@@ -4,7 +4,7 @@ import ResourcePage from '../../../components/ResourcePage.vue'
 import DeviceImportTools from '../../../components/DeviceImportTools.vue'
 </script>
 <template>
-  <a-tabs class="facility-tabs">
+  <a-tabs class="facility-tabs" destroy-inactive-tab-pane>
     <a-tab-pane
       key="devices"
       :tab="feText('deviceRegister')"

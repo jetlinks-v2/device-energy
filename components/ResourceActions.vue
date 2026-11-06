@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { feText } from '../shared/i18n'
 import { computed } from 'vue'
+import { useNow } from '@vueuse/core'
+import { planGenerationReason } from '../shared/planActions'
 import type { Entity } from '../shared/types'
 import { resources } from '../shared/resources'
+import { resourcePermission } from '../shared/permissions'
 const props = defineProps<{ resource: string; record: Entity; saving: boolean }>()
 const config = computed(() => resources[props.resource])
+const now = useNow({ interval: 1000 })
+const generateReason = computed(() => planGenerationReason(props.record, false, now.value.getTime()))
+const temporaryReason = computed(() => planGenerationReason(props.record, true, now.value.getTime()))
 const emit = defineEmits<{ open: []; qr: []; command: [action: string]; remove: [] }>()
 const faultActionNames: Record<string, string> = {
   start: feText('startProcessing'),
@@ -15,13 +21,13 @@ const faultActionNames: Record<string, string> = {
 </script>
 <template>
   <a-space wrap>
-    <a-button
+    <j-permission-button :hasPermission="config.readonly || resource === 'faults' ? true : resourcePermission(resource, String(record.kind || ''))"
       v-if="!config.readonly || resource === 'devices' || resource === 'tasks'"
       type="link"
       @click="emit('open')"
     >
-      {{ config.readonly ? feText('details') : feText('edit') }}
-    </a-button>
+      {{ config.readonly || resource === 'faults' ? feText('details') : feText('edit') }}
+    </j-permission-button>
     <a-button
       v-if="resource === 'groups'"
       type="link"
@@ -30,73 +36,89 @@ const faultActionNames: Record<string, string> = {
       {{ feText('roomQrCode') }}
     </a-button>
     <template v-if="resource === 'plans'">
-      <a-button
+      <a-tooltip :title="generateReason">
+      <span>
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''), 'generate')"
         type="link"
-        :disabled="saving"
+        :disabled="saving || !!generateReason"
         @click="emit('command', 'generate')"
       >
         {{ feText('generateTasks') }}
-      </a-button>
-      <a-button
+      </j-permission-button>
+      </span>
+      </a-tooltip>
+      <a-tooltip :title="temporaryReason">
+      <span>
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''), 'generate')"
         type="link"
-        :disabled="saving"
+        :disabled="saving || !!temporaryReason"
         @click="emit('command', 'temporary')"
       >
         {{ feText('adHocTask') }}
-      </a-button>
+      </j-permission-button>
+      </span>
+      </a-tooltip>
     </template>
-    <a-button
+    <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
       v-if="resource === 'energy/mappings'"
       type="link"
       @click="emit('command', 'collect')"
     >
       {{ feText('collectNow') }}
-    </a-button>
+    </j-permission-button>
+    <j-permission-button :hasPermission="'facility/Faults:save'"
+      v-if="resource === 'alerts' && record.deviceId"
+      type="link"
+      :disabled="saving"
+      @click="emit('command', 'fault')"
+    >
+      {{ feText('registerFault') }}
+    </j-permission-button>
     <template
       v-if="['alerts', 'planAlerts'].includes(resource) && !['closed', 'recovered'].includes(String(record.state))"
     >
-      <a-button
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
         type="link"
         @click="emit('command', 'processing')"
       >
         {{ feText('process') }}
-      </a-button>
-      <a-button
+      </j-permission-button>
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
         type="link"
         @click="emit('command', 'closed')"
       >
         {{ feText('close') }}
-      </a-button>
+      </j-permission-button>
     </template>
-    <a-button
+    <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
       v-if="['notifications', 'planNotifications'].includes(resource) && record.state === 'failed'"
       type="link"
       @click="emit('command', 'retry')"
     >
       {{ feText('retry') }}
-    </a-button>
+    </j-permission-button>
     <template
       v-if="
         (resource === 'readings' && record.status === 'pending') ||
         (resource === 'replacements' && record.state === 'pending')
       "
     >
-      <a-button
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
         type="link"
         @click="emit('command', 'approve')"
       >
         {{ feText('approve') }}
-      </a-button>
-      <a-button
+      </j-permission-button>
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
         type="link"
         danger
         @click="emit('command', 'reject')"
       >
         {{ feText('reject') }}
-      </a-button>
+      </j-permission-button>
     </template>
     <template v-if="resource === 'faults'">
-      <a-button
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
         v-for="action in record.state === 'open'
           ? ['start']
           : record.state === 'processing'
@@ -109,19 +131,19 @@ const faultActionNames: Record<string, string> = {
         @click="emit('command', action)"
       >
         {{ faultActionNames[action] }}
-      </a-button>
+      </j-permission-button>
     </template>
     <a-popconfirm
       v-if="['standards', 'groups', 'plans', 'rules'].includes(resource)"
       :title="feText('disableAndDeleteThisConfigurationHistoricalRecordsWillBeRetained')"
       @confirm="emit('remove')"
     >
-      <a-button
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
         danger
         type="link"
       >
         {{ feText('delete') }}
-      </a-button>
+      </j-permission-button>
     </a-popconfirm>
   </a-space>
 </template>

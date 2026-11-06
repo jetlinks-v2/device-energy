@@ -3,7 +3,7 @@ import { feText } from '../../../shared/i18n'
 import ResourcePage from '../../../components/ResourcePage.vue'
 </script>
 <template>
-  <a-tabs class="facility-tabs">
+  <a-tabs class="facility-tabs" destroy-inactive-tab-pane>
     <a-tab-pane
       key="tasks"
       :tab="feText('task')"

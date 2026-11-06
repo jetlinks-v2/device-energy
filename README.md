@@ -1,6 +1,6 @@
 # 设施设备能源管理前端
 
-PC 模块由 SaaS 运行端加载，模块名 `facility-energy-ui`。设备、巡检、维保、故障、能源、预警、客户与报表访问 `/property/facility-energy/**`；组织、用户、空间、客户和字典页面统一复用 `property-base-ui`，访问共享 `/property/**`。
+PC 模块由 SaaS 运行端加载，模块名 `facility-energy-ui`。导航与当前报事报修一致：从 Cloud 项目应用卡片进入，`configuration.customDomain` 留空，沿用宿主一级侧栏及内容区下级导航，不要求 `navigationMode: tree`。设备、巡检、维保、故障、能源、预警、客户与报表访问 `/property/facility-energy/**`；组织、用户、空间、客户和字典页面统一复用 `property-base-ui`，访问共享 `/property/**`。
 
 在运行端仓库根目录构建：
 
@@ -27,7 +27,7 @@ npm run build
 
 宿主同时检出并加载 `modules/property-base-ui`（`2.20`）。本模块不再提供组织、用户、空间、客户、字典的菜单、页面、接口封装或语言副本。公共菜单由公共模块唯一提供给宿主初始化，各应用按职责引用并授权公共 `charging/*` 菜单；不在业务 `baseMenu.json` 中复制公共定义。后端仍由独立基础服务维护统一数据。
 
-在宿主执行 `pnpm --filter facility-energy-ui dev` 联合调试公共和认证模块；`build` 输出单业务远程包，`build:with-base` 输出宿主 `dist/`。正式 SaaS 集成构建还须包含运行端、认证与实际使用的其他模块；宿主 `pnpm build:property-apps` 覆盖报修、品质、设施与公共模块。
+在宿主执行 `pnpm --filter facility-energy-ui dev` 联合调试公共和认证模块；`build` 与 `build:with-base` 均包含公共基础页面及认证模块，输出宿主 `dist/`，避免菜单存在但组件缺失。部署至独立静态目录时，通过宿主构建所选模式的 `.env.<mode>` 配置 `VITE_PUBLIC_PATH`，并验证生成入口中的资源前缀。正式 SaaS 集成构建还须包含运行端、认证与实际使用的其他模块；宿主 `pnpm build:property-apps` 覆盖报修、品质、设施与公共模块。
 
 已有环境的旧菜单不会因源码删除自动消失，按后端 `deploy/property-base/README.md` 增量迁移模板、套餐、订阅与角色，保留原资产范围，验收后停用旧基础副本。不重置业务菜单，也不全量初始化其他系统。
 

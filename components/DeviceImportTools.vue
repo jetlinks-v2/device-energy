@@ -23,7 +23,7 @@ const upload = (event: Event) => {
   >
     {{ feText('exportExtendedProfileTemplate') }}
   </a-button>
-  <label class="import-button" :aria-disabled="vm.busy">
+  <j-permission-button hasPermission="facility/Devices:save"><label class="import-button" :aria-disabled="vm.busy">
     <span>{{ feText('importExtendedProfiles') }}</span>
     <input
       type="file"
@@ -31,7 +31,7 @@ const upload = (event: Event) => {
       :disabled="vm.busy"
       @change="upload"
     />
-  </label>
+  </label></j-permission-button>
   <span
     v-if="vm.error"
     role="alert"

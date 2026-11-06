@@ -2,7 +2,8 @@
 import { feText } from '../shared/i18n'
 import { computed, reactive, ref } from 'vue'
 import { resources } from '../shared/resources'
-import { display, time, type Entity, type Device } from '../shared/types'
+import { resourcePermission } from '../shared/permissions'
+import { collectionLag, display, time, type Entity, type Device } from '../shared/types'
 import { useResource } from '../hooks/useResource'
 import ResourceActions from './ResourceActions.vue'
 import GroupQr from './GroupQr.vue'
@@ -23,6 +24,7 @@ const columns = computed(() => [
 const open = (row: Entity) => {
   if (props.resource === 'devices') device.value = row as Device
   else if (props.resource === 'tasks') taskId.value = row.id
+  else if (props.resource === 'faults') vm.detail = row
   else vm.edit(row)
 }
 const closeDevice = () => {
@@ -42,7 +44,7 @@ const changes = (v: { current?: number }) => {
   <section class="facility-page">
     <a-page-header :title="config.title" />
     <a-alert
-      v-if="vm.error"
+      v-if="vm.error && !vm.opened"
       type="error"
       :message="vm.error"
       show-icon
@@ -69,27 +71,31 @@ const changes = (v: { current?: number }) => {
       >
         {{ feText('refresh') }}
       </a-button>
-      <a-button
+      <j-permission-button :hasPermission="resourcePermission(resource, kind)"
         v-if="resource === 'devices'"
         type="primary"
         :loading="vm.busy"
         @click="vm.sync"
       >
         {{ feText('syncCloudDevices') }}
-      </a-button>
-      <a-button
+      </j-permission-button>
+      <j-permission-button :hasPermission="resourcePermission(resource, kind)"
         v-else-if="!config.readonly"
         type="primary"
         @click="vm.edit()"
       >
         {{ feText('add') }}
-      </a-button>
+      </j-permission-button>
       <slot
         name="tools"
         :rows="vm.rows"
         :project-id="vm.projectId"
         :refresh="vm.refresh"
       />
+      <template v-if="config.collection">
+        <a-checkbox v-model:checked="vm.failedOnly">{{ feText('failedCollectionsOnly') }}</a-checkbox>
+        <a-tag>{{ feText('matchingMeters') }}: {{ vm.total }}</a-tag>
+      </template>
     </div>
     <a-table
       row-key="id"
@@ -114,17 +120,32 @@ const changes = (v: { current?: number }) => {
         </template>
         <template
           v-else-if="
-            ['createTime', 'deadline', 'effectiveTime', 'observedTime', 'lastSuccessTime', 'nextRunTime'].includes(
+            ['startTime', 'endTime', 'createTime', 'deadline', 'effectiveTime', 'observedTime', 'lastSuccessTime', 'nextRunTime', 'lastCollectedTime', 'lastCollectionTime', 'lastCollectionSuccessTime'].includes(
               String(column.key)
             )
           "
         >
           {{ time(record[String(column.key)]) }}
         </template>
+        <template v-else-if="column.key === 'collectionLag'">
+          {{ collectionLag(record as Entity) }}
+        </template>
         <template v-else>{{ display(record[String(column.key)]) }}</template>
       </template>
       <template #emptyText><a-empty :description="feText('noRecords')" /></template>
     </a-table>
+    <a-modal
+      :open="!!vm.detail"
+      :title="feText('details')"
+      :footer="null"
+      @cancel="vm.detail = undefined"
+    >
+      <a-descriptions v-if="vm.detail" :column="1" bordered>
+        <a-descriptions-item v-for="column in config.columns" :key="column.key" :label="column.title">
+          {{ display(vm.detail[column.key]) }}
+        </a-descriptions-item>
+      </a-descriptions>
+    </a-modal>
     <a-modal
       v-model:open="vm.opened"
       :title="config.title"
@@ -132,6 +153,7 @@ const changes = (v: { current?: number }) => {
       :confirm-loading="vm.saving"
       @ok="vm.save"
     >
+      <a-alert v-if="vm.error" type="error" :message="vm.error" show-icon class="facility-form-error" />
       <MappingSamples
         v-if="resource === 'energy/mappings'"
         :state="vm"

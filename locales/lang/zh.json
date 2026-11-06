@@ -502,7 +502,31 @@
       "incompleteDataOrInconsistentUnits": "数据不完整或单位不一致",
       "planTargetReachedOrExceeded": "达到或超过计划",
       "unsupportedVerificationAlgorithm": "当前验证码算法不受支持，请通过 Cloud 登录",
-      "verificationExpiredPleaseTryAgain": "验证已过期，请重试"
+      "verificationExpiredPleaseTryAgain": "验证已过期，请重试",
+      "registerFault": "登记故障",
+      "enterFaultDescription": "请输入故障描述",
+      "energyAlertFault": "能源预警故障",
+      "faultRegistered": "故障已登记，请在故障管理中跟进",
+      "faultSource": "故障来源",
+      "sourceRecord": "来源记录",
+      "manualRegistration": "人工登记",
+      "inspectionMaintenanceTask": "巡检／维保任务",
+      "energyAlert": "能源预警",
+      "collectionStatus": "数据采集状态",
+      "historyCollectedUntil": "历史补采至",
+      "historyBacklogMinutes": "待补采时长（分钟）",
+      "lastCollectionAttempt": "最近采集完成时间",
+      "lastCollectionSuccess": "最近采集成功时间",
+      "collectionFailureReason": "最近采集失败原因",
+      "failedCollectionsOnly": "仅显示采集失败",
+      "matchingMeters": "符合条件的仪表数",
+      "planDisabled": "计划已停用，请先启用计划",
+      "planDatesRequired": "计划时间不完整，请编辑计划",
+      "planNotStarted": "计划尚未开始，请检查开始时间",
+      "planFinished": "计划有效期已结束，请调整计划时间",
+      "planNotDue": "本周期尚未到期，如需立即执行请使用临时任务",
+      "tasksGenerated": "已生成任务",
+      "nextGenerationTime": "下次生成时间"
     }
   }
 }

@@ -85,7 +85,7 @@ export const resources: Record<string, Resource> = {
         ['inspection', feText('inspection')],
         ['maintenance', feText('maintenance')]
       ]),
-      f('standardId', feText('workStandard'), 'select', 'standards'),
+      { ...f('standardId', feText('workStandard'), 'select', 'standards'), required: true },
       f('deviceIds', feText('device'), 'multi', 'devices'),
       f('groupIds', feText('equipmentRoomsGroups'), 'multi', 'groups'),
       select('mode', feText('workOrderMode'), [
@@ -95,10 +95,10 @@ export const resources: Record<string, Resource> = {
       f('assigneeId', feText('assigneeLeaveBlankForTaskPool'), 'select', 'employees'),
       f('followUserId', feText('internalFollowUpAssignee'), 'select', 'employees'),
       f('externalOrganizationId', feText('externalContractorOrganization'), 'select', 'organizations'),
-      f('reviewerId', feText('reviewer'), 'select', 'employees'),
-      f('startTime', feText('startTime'), 'datetime'),
-      f('endTime', feText('endTime'), 'datetime'),
-      f('intervalValue', feText('interval'), 'number'),
+      { ...f('reviewerId', feText('reviewer'), 'select', 'employees'), required: true },
+      { ...f('startTime', feText('startTime'), 'datetime'), required: true },
+      { ...f('endTime', feText('endTime'), 'datetime'), required: true },
+      { ...f('intervalValue', feText('interval'), 'number'), required: true },
       select('intervalUnit', feText('intervalUnit'), [
         ['hour', feText('hour')],
         ['day', feText('day')],
@@ -106,13 +106,15 @@ export const resources: Record<string, Resource> = {
         ['month', feText('month')],
         ['year', feText('year')]
       ]),
-      f('deadlineHours', feText('completionDeadlineHours'), 'number'),
+      { ...f('deadlineHours', feText('completionDeadlineHours'), 'number'), required: true },
       enabled
     ],
     columns: columns([
       ['name', feText('plan')],
       ['kind', feText('type')],
       ['mode', feText('workOrderMode')],
+      ['nextRunTime', feText('nextGenerationTime')],
+      ['endTime', feText('endTime')],
       ['enabled', feText('enabled')]
     ]),
     defaults: {
@@ -154,6 +156,8 @@ export const resources: Record<string, Resource> = {
     columns: columns([
       ['name', feText('fault')],
       ['deviceName', feText('device')],
+      ['sourceType', feText('faultSource')],
+      ['sourceId', feText('sourceRecord')],
       ['state', feText('status')],
       ['description', feText('description')]
     ]),
@@ -186,6 +190,22 @@ export const resources: Record<string, Resource> = {
       ['enabled', feText('enabled')]
     ]),
     defaults: { meterLevel: 'master', metrics: [], staleAfterSeconds: 3600, enabled: true }
+  },
+  collection: {
+    path: 'energy/mappings',
+    title: feText('collectionStatus'),
+    readonly: true,
+    collection: true,
+    fields: [],
+    columns: columns([
+      ['name', feText('meter')],
+      ['enabled', feText('enabled')],
+      ['lastCollectedTime', feText('historyCollectedUntil')],
+      ['collectionLag', feText('historyBacklogMinutes')],
+      ['lastCollectionTime', feText('lastCollectionAttempt')],
+      ['lastCollectionSuccessTime', feText('lastCollectionSuccess')],
+      ['collectionError', feText('collectionFailureReason')]
+    ])
   },
   rules: {
     path: 'rules',

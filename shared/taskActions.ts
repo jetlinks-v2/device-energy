@@ -11,6 +11,8 @@ export function taskActions(task: Task, userId: string): string[] {
 export const canExecute = (task: Task, userId: string) =>
   (task.assigneeId === userId && ['claimed', 'executing', 'rectify'].includes(task.state)) ||
   (task.followUserId === userId && task.state === 'external-submitted')
+export const canTransfer = (task: Task) => ['open', 'claimed', 'executing', 'rectify'].includes(task.state)
+export const canWithdraw = (task: Task) => !['completed', 'cancelled'].includes(task.state)
 export const actionNames: Record<string, string> = {
   claim: feText('claim'),
   start: feText('startExecution'),

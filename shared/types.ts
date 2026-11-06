@@ -162,12 +162,28 @@ export interface Resource {
   columns: { key: string; title: string }[]
   defaults?: FormValues
   readonly?: boolean
+  collection?: boolean
 }
 export const time = (value: unknown) =>
   typeof value === 'number'
     ? new Date(value).toLocaleString(feLocale() === 'en' ? 'en-GB' : 'zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })
     : '—'
-export const messageOf = (e: unknown) => (e instanceof Error ? e.message : feText('operationFailedPleaseTryAgain'))
+/** Cursor lag is collection backlog, not a claim that devices have stopped reporting. */
+export const collectionLag = (row: Entity, now = Date.now()): number | string =>
+  row.enabled && typeof row.lastCollectedTime === 'number'
+    ? Math.max(0, Math.ceil((now - row.lastCollectedTime) / 60000))
+    : '—'
+export const messageOf = (e: unknown): string => {
+  // Axios rejects HTTP errors before unwrap; retain the server's translated business reason.
+  if (e && typeof e === 'object' && 'response' in e) {
+    const response = e.response
+    if (response && typeof response === 'object' && 'data' in response) {
+      const data = response.data
+      if (data && typeof data === 'object' && 'message' in data && typeof data.message === 'string') return data.message
+    }
+  }
+  return e instanceof Error ? e.message : feText('operationFailedPleaseTryAgain')
+}
 export const energyNames: Record<string, string> = { water: feText('water'), electricity: feText('electricity'), gas: feText('gas') }
 export const states: Record<string, string> = {
   active: feText('normal'),
@@ -219,7 +235,10 @@ export const states: Record<string, string> = {
   maintenance: feText('maintenance'),
   sms: feText('sms'),
   h5: feText('ownerMessage'),
-  inside: feText('staffInbox')
+  inside: feText('staffInbox'),
+  manual: feText('manualRegistration'),
+  task: feText('inspectionMaintenanceTask'),
+  alert: feText('energyAlert')
 }
 export const display = (v: unknown): string =>
   v == null

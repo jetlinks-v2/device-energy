@@ -52,7 +52,7 @@ const points = computed(() => vm.series.map((v) => ({ time: v.observedTime, valu
               :placeholder="feText('selectOperatingProject')"
               style="width: 240px"
             />
-            <a-button @click="vm.confirmProject">{{ feText('confirmProject') }}</a-button>
+            <j-permission-button :hasPermission="'facility/Devices:save'" @click="vm.confirmProject">{{ feText('confirmProject') }}</j-permission-button>
           </a-space>
           <RecordForm
             :fields="vm.fields"
@@ -61,13 +61,13 @@ const points = computed(() => vm.series.map((v) => ({ time: v.observedTime, valu
             style="margin-top: 20px"
             @change="vm.change"
           />
-          <a-button
+          <j-permission-button :hasPermission="'facility/Devices:save'"
             type="primary"
             :loading="vm.busy"
             @click="vm.save"
           >
             {{ feText('saveExtendedProfile') }}
-          </a-button>
+          </j-permission-button>
           <a-divider>{{ feText('deviceQrCode') }}</a-divider>
           <a-qrcode :value="vm.qr" />
           <p>{{ feText('staffCanScanToViewTheProfileAndRelatedTasks') }}</p>
@@ -138,7 +138,7 @@ const points = computed(() => vm.series.map((v) => ({ time: v.observedTime, valu
                 v-model:value="vm.manual.reason"
                 :placeholder="feText('reasonForManualReading')"
               />
-              <a-button @click="vm.supplement">{{ feText('submitForReview') }}</a-button>
+              <j-permission-button :hasPermission="'facility/Energy:save'" @click="vm.supplement">{{ feText('submitForReview') }}</j-permission-button>
             </a-space>
           </template>
         </a-tab-pane>
@@ -202,17 +202,17 @@ const points = computed(() => vm.series.map((v) => ({ time: v.observedTime, valu
               </a-button>
             </p>
             <a-space>
-              <a-button
+              <j-permission-button :hasPermission="'facility/Devices:save'"
                 type="primary"
                 @click="vm.bind"
               >
                 {{ feText('confirmBindingChange') }}
-              </a-button>
+              </j-permission-button>
               <a-popconfirm
                 :title="feText('endTheCurrentCustomerBinding')"
                 @confirm="vm.endBinding"
               >
-                <a-button danger>{{ feText('endBinding') }}</a-button>
+                <j-permission-button :hasPermission="'facility/Devices:save'" danger>{{ feText('endBinding') }}</j-permission-button>
               </a-popconfirm>
             </a-space>
           </a-form>

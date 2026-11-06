@@ -89,13 +89,14 @@ const photograph = (id: string, e: Event) => {
     </a-card>
     <a-space>
       <a-button @click="emit('draft')">{{ feText('saveDraft') }}</a-button>
-      <a-button
+      <j-permission-button
+        :hasPermission="'facility/' + (task.kind === 'maintenance' ? 'Maintenance' : 'Inspection') + ':execute'"
         type="primary"
         :loading="busy"
         @click="emit('submit')"
       >
         {{ feText('submitResults') }}
-      </a-button>
+      </j-permission-button>
     </a-space>
   </a-form>
 </template>

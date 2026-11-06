@@ -3,7 +3,7 @@ import { feText } from '../shared/i18n'
 import { reactive } from 'vue'
 import { useTask } from '../hooks/useTask'
 import { display, time } from '../shared/types'
-import { actionNames } from '../shared/taskActions'
+import { actionNames, canTransfer, canWithdraw } from '../shared/taskActions'
 import AttachmentsEditor from './AttachmentsEditor.vue'
 import ExecutionForm from './ExecutionForm.vue'
 const props = defineProps<{ id: string }>(),
@@ -39,7 +39,7 @@ const props = defineProps<{ id: string }>(),
           style="margin: 16px 0"
           wrap
         >
-          <a-button
+          <j-permission-button :hasPermission="'facility/' + (vm.task.kind === 'maintenance' ? 'Maintenance' : 'Inspection') + ':' + (['approve', 'reject'].includes(action) ? 'review' : 'execute')"
             v-for="action in vm.actions"
             :key="action"
             type="primary"
@@ -47,7 +47,7 @@ const props = defineProps<{ id: string }>(),
             @click="vm.action(action)"
           >
             {{ actionNames[action] }}
-          </a-button>
+          </j-permission-button>
           <a-input
             v-model:value="vm.comment"
             :placeholder="feText('reviewRectificationNotes')"
@@ -92,25 +92,28 @@ const props = defineProps<{ id: string }>(),
             {{ result.remark }}
           </p>
         </template>
-        <a-divider>{{ feText('taskAssignment') }}</a-divider>
-        <a-space wrap>
+        <a-divider v-if="canTransfer(vm.task) || canWithdraw(vm.task)">{{ feText('taskAssignment') }}</a-divider>
+        <a-space v-if="canTransfer(vm.task) || canWithdraw(vm.task)" wrap>
           <a-select
+            v-if="canTransfer(vm.task)"
             v-model:value="vm.transferUser"
             :options="vm.employees"
             :placeholder="feText('selectANewAssignee')"
             style="width: 200px"
           />
-          <a-button
-            :disabled="!vm.transferUser"
+          <j-permission-button :hasPermission="'facility/' + (vm.task.kind === 'maintenance' ? 'Maintenance' : 'Inspection') + ':dispatch'"
+            v-if="canTransfer(vm.task)"
+            :disabled="vm.busy || !vm.transferUser"
             @click="vm.action('transfer')"
           >
             {{ feText('reassign') }}
-          </a-button>
+          </j-permission-button>
           <a-popconfirm
+            v-if="canWithdraw(vm.task)"
             :title="feText('withdrawThisTaskOfflineSubmissionsWillBeMarkedAsConflicts')"
             @confirm="vm.action('cancel')"
           >
-            <a-button danger>{{ feText('withdrawTask') }}</a-button>
+            <j-permission-button :hasPermission="'facility/' + (vm.task.kind === 'maintenance' ? 'Maintenance' : 'Inspection') + ':dispatch'" :disabled="vm.busy" danger>{{ feText('withdrawTask') }}</j-permission-button>
           </a-popconfirm>
         </a-space>
       </template>
