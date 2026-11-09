@@ -48,7 +48,11 @@
         "en_US": "Overview",
         "zh_CN": "综合工作台"
       }
-    }
+    },
+    "showPage": [
+      "facility-report",
+      "facility-device"
+    ]
   },
   {
     "id": "facility-Devices",
@@ -125,7 +129,12 @@
         "en_US": "Device assets",
         "zh_CN": "设备资产"
       }
-    }
+    },
+    "showPage": [
+      "facility-device",
+      "facility-group",
+      "device-instance"
+    ]
   },
   {
     "id": "facility-Inspection",
@@ -280,7 +289,14 @@
         "en_US": "Inspections",
         "zh_CN": "巡检管理"
       }
-    }
+    },
+    "showPage": [
+      "facility-task",
+      "facility-standard",
+      "facility-plan",
+      "facility-group",
+      "facility-device"
+    ]
   },
   {
     "id": "facility-Maintenance",
@@ -435,7 +451,14 @@
         "en_US": "Maintenance",
         "zh_CN": "维保管理"
       }
-    }
+    },
+    "showPage": [
+      "facility-task",
+      "facility-standard",
+      "facility-plan",
+      "facility-group",
+      "facility-device"
+    ]
   },
   {
     "id": "facility-Faults",
@@ -498,7 +521,11 @@
         "en_US": "Faults",
         "zh_CN": "故障管理"
       }
-    }
+    },
+    "showPage": [
+      "facility-fault",
+      "facility-device"
+    ]
   },
   {
     "id": "facility-Energy",
@@ -568,7 +595,12 @@
         "en_US": "Energy management",
         "zh_CN": "能源管理"
       }
-    }
+    },
+    "showPage": [
+      "facility-mapping",
+      "facility-device",
+      "device-instance"
+    ]
   },
   {
     "id": "facility-Alerts",
@@ -660,7 +692,13 @@
         "en_US": "Alert center",
         "zh_CN": "预警中心"
       }
-    }
+    },
+    "showPage": [
+      "facility-alert",
+      "facility-rule",
+      "facility-device",
+      "facility-group"
+    ]
   },
   {
     "id": "facility-Notifications",
@@ -723,7 +761,11 @@
         "en_US": "Customers and notifications",
         "zh_CN": "客户与通知"
       }
-    }
+    },
+    "showPage": [
+      "facility-alert",
+      "facility-device"
+    ]
   },
   {
     "id": "facility-Reports",
@@ -789,7 +831,11 @@
         "en_US": "Reports",
         "zh_CN": "统计报表"
       }
-    }
+    },
+    "showPage": [
+      "facility-report",
+      "facility-device"
+    ]
   },
   {
     "id": "facility-system-Sync",
@@ -830,7 +876,10 @@
         "en_US": "Device sync status",
         "zh_CN": "设备同步状态"
       }
-    }
+    },
+    "showPage": [
+      "facility-device"
+    ]
   },
   {
     "id": "facility-system-Operations",
@@ -871,7 +920,10 @@
         "en_US": "Activity log",
         "zh_CN": "应用操作日志"
       }
-    }
+    },
+    "showPage": [
+      "facility-operation"
+    ]
   },
   {
     "id": "facility-Employee",
@@ -956,7 +1008,12 @@
         "en_US": "Staff mobile",
         "zh_CN": "员工移动端"
       }
-    }
+    },
+    "showPage": [
+      "facility-task",
+      "facility-device",
+      "facility-group"
+    ]
   },
   {
     "id": "facility-Owner",
@@ -995,6 +1052,9 @@
         "en_US": "Owner mobile",
         "zh_CN": "业主移动端"
       }
-    }
+    },
+    "showPage": [
+      "facility-owner"
+    ]
   }
 ]
