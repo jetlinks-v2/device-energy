@@ -2,6 +2,7 @@ import { feText } from '../../../shared/i18n'
 import { reactive } from 'vue'
 import type { Context } from '../../../shared/types'
 import { randomId } from '../utils/randomId'
+import { clearTaskScanAccess } from './taskScanAccess'
 import type { Authorization, RuntimeConfig, Session } from '../types'
 
 export const state = reactive<{
@@ -11,9 +12,11 @@ export const state = reactive<{
   projectId?: string
   context?: Context
   ready: boolean
+  offlineMode: boolean
+  offlineBusy: boolean
 }>({
   config: { applicationId: '', tenantDomain: '', title: feText('facilityAndEnergyManagement'), allowedHostOrigins: [], apiBase: '/api' },
-  ready: false
+  ready: false, offlineMode: false, offlineBusy: false
 })
 const KEY = 'facility-h5:session'
 export async function initializeConfig() {
@@ -35,17 +38,21 @@ export async function initializeConfig() {
   }
 }
 export function setSession(session: Session) {
+  clearTaskScanAccess()
   state.authorization = undefined
   state.projectId = undefined
+  state.offlineMode = false
   state.context = undefined
   state.session = session
   sessionStorage.setItem(KEY, JSON.stringify(session))
 }
 export function clearSession() {
+  clearTaskScanAccess()
   sessionStorage.removeItem('facility:verified:' + state.session?.tenantDomain + ':' + state.session?.applicationId)
   state.session = undefined
   state.authorization = undefined
   state.projectId = undefined
+  state.offlineMode = false
   state.context = undefined
   sessionStorage.removeItem(KEY)
 }

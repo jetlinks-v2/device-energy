@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { feText } from '../../../shared/i18n'
 import { onMounted, reactive } from 'vue'
+import { ToolOutlined } from '@ant-design/icons-vue'
 import { useSession } from '../hooks/useSession'
 const vm = reactive(useSession())
 onMounted(() => void vm.reloadCaptcha())
@@ -8,12 +9,11 @@ onMounted(() => void vm.reloadCaptcha())
 <template>
   <section class="login-page">
     <div class="login-brand">
+      <ToolOutlined />
       {{ feText('facilityAndEnergyManagement') }}
-      <span>{{ feText('staffAndOwnerServices') }}</span>
     </div>
     <div class="panel">
       <h1>{{ feText('signInWithYourAccount') }}</h1>
-      <p class="muted">{{ feText('useTheSaasAccountForYourProject') }}</p>
       <a-alert
         v-if="vm.error"
         :message="vm.error"
@@ -90,6 +90,5 @@ onMounted(() => void vm.reloadCaptcha())
         </a-button>
       </a-form>
     </div>
-    <p class="login-footnote">{{ feText('oneAccountProjectAccessConnectedServices') }}</p>
   </section>
 </template>

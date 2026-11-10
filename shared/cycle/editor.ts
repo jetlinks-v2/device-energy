@@ -10,6 +10,8 @@ export interface PeriodDraft {
   times: number | null
   interval: number | null
   intervalUnit: TimeUnit
+  warning: number | null
+  warningUnit: TimeUnit
 }
 export interface WeekRuleDraft { days: number[]; periods: PeriodDraft[] }
 export interface DateRuleDraft { date: string; periods: PeriodDraft[]; legacyRest?: boolean }
@@ -17,7 +19,7 @@ export interface RuleDraft { weekRules: WeekRuleDraft[]; dateRules: DateRuleDraf
 export interface RuleIssue { key: string; values?: Record<string, string | number> }
 export const unitMinutes = (unit: TimeUnit) => ({ '1': 1, '2': 60, '3': 1440 })[unit]
 export function defaultPeriod(): PeriodDraft {
-  return { start: '00:00', end: '00:00', frequency: 1, frequencyUnit: '2', times: 1, interval: 1, intervalUnit: '2' }
+  return { start: '00:00', end: '00:00', frequency: 1, frequencyUnit: '2', times: 1, interval: 1, intervalUnit: '2', warning: null, warningUnit: '1' }
 }
 export const defaultRule = (): CycleRule => ({
   weekly: Object.fromEntries(Array.from({ length: 7 }, (_, i) => [String(i + 1), [{
@@ -38,6 +40,8 @@ function periodDraft(window: RuleWindow, globalCooldown: number): PeriodDraft {
   return {
     start: minuteText(window.startMinute), end: minuteText(window.endMinute),
     frequency: window.intervalMinutes / unitMinutes(frequencyUnit), frequencyUnit,
+    warning: window.warningMinutes == null ? null : ruleQuantity(window.warningMinutes, window.warningUnit).value,
+    warningUnit: ruleQuantity(window.warningMinutes ?? 0, window.warningUnit).unit,
     times: window.requiredCount, interval: cooldown / unitMinutes(intervalUnit), intervalUnit,
   }
 }
@@ -62,7 +66,7 @@ function toWindow(p: PeriodDraft): RuleWindow {
     startMinute: minuteOf(p.start), endMinute: minuteOf(p.end),
     intervalMinutes: Number(p.frequency) * unitMinutes(p.frequencyUnit), requiredCount: Number(p.times),
     cooldownMinutes: Number(p.interval) * unitMinutes(p.intervalUnit), frequencyUnit: p.frequencyUnit,
-    cooldownUnit: p.intervalUnit,
+    cooldownUnit: p.intervalUnit, warningMinutes: p.warning == null ? undefined : Number(p.warning) * unitMinutes(p.warningUnit), warningUnit: p.warning == null ? undefined : p.warningUnit,
   }
 }
 export function serializeRule(draft: RuleDraft): CycleRule {
@@ -80,6 +84,10 @@ function periodIssue(p: PeriodDraft): RuleIssue | undefined {
     || !(validPositive(p.interval))) return issue('number')
   const count = periodCount(p)
   if (count < 1 || count > 10000 || (count > 1 && Number(p.interval) * unitMinutes(p.intervalUnit) > Number(p.frequency) * unitMinutes(p.frequencyUnit) / Number(p.times))) return issue('capacity')
+  const duration = Number(p.frequency) * unitMinutes(p.frequencyUnit) / Number(p.times)
+  const warning = Number(p.warning) * unitMinutes(p.warningUnit)
+  if (p.warning == null || !Number.isFinite(warning) || warning <= 0) return issue('warningRequired')
+  if (warning < duration / 2 || warning >= duration) return issue('warningRange', { min: duration / 2, max: duration })
 }
 const endOf = (w: RuleWindow) => w.endMinute <= w.startMinute ? w.endMinute + 1440 : w.endMinute
 function dayOverlaps(today: RuleWindow[], previous: RuleWindow[]) {

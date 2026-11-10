@@ -3,9 +3,9 @@ import type { Task } from './types'
 /** 操作可见性仅辅助交互，执行时由服务端再校验身份、版本和状态。 */
 export function taskActions(task: Task, userId: string, claimable = false): string[] {
   const actions: string[] = []
-  if (task.state === 'open' && claimable) actions.push('claim')
+  if (task.state === 'open' && claimable && !task.parentTaskId) actions.push('claim')
   if (task.assigneeId === userId && ['claimed', 'rectify'].includes(task.state)) actions.push('start')
-  if (task.reviewerId === userId && ['review', 'external-submitted'].includes(task.state)) actions.push('approve', 'reject')
+  if (!task.parentTaskId && task.reviewerId === userId && ['review', 'external-submitted'].includes(task.state)) actions.push('approve', 'reject')
   return actions
 }
 export const canExecute = (task: Task, userId: string) =>

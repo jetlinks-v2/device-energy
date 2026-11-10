@@ -1,0 +1,16 @@
+<script setup lang="ts">
+import { reactive } from 'vue'
+import { CloseOutlined, ReloadOutlined } from '@ant-design/icons-vue'
+import { useFilePreview } from '../hooks/useFilePreview'
+import { m } from '../services/mobileText'
+const props = defineProps<{ id: string; removable?: boolean }>()
+defineEmits<{ remove: [] }>()
+const vm = reactive(useFilePreview(() => props.id))
+</script>
+<template>
+  <div class="photo-preview">
+    <a-image v-if="vm.url" :src="vm.url" :width="72" :height="72" :alt="m('现场照片', 'Site photo')" />
+    <button v-else-if="vm.error" class="photo-retry" :title="vm.error" :aria-label="m('重新加载图片', 'Reload image')" @click="vm.load"><ReloadOutlined /></button><a-spin v-else />
+    <button v-if="removable" class="photo-remove" :aria-label="m('移除照片', 'Remove photo')" @click="$emit('remove')"><CloseOutlined /></button>
+  </div>
+</template>

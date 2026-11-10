@@ -21,7 +21,7 @@ test('巡检与维保操作使用各自菜单按钮，未识别资源不开放�
   assert.deepEqual(resourcePermission('plans', 'inspection'), ['facility/Inspection/Plans:save'])
   assert.deepEqual(resourcePermission('plans', 'maintenance'), ['facility/Maintenance/Plans:save'])
   assert.deepEqual(resourcePermission('plans', 'maintenance', 'delete'), ['facility/Maintenance/Plans:delete'])
-  assert.deepEqual(resourcePermission('groups', undefined, 'qr'), ['facility/Inspection/Groups:qr', 'facility/Maintenance/Groups:qr'])
+  assert.equal(resourcePermission('groups', undefined, 'qr'), 'facility/Devices:groups-qr')
   assert.deepEqual(resourcePermission('tasks', undefined, 'execute'), ['facility/Inspection/Tasks:execute', 'facility/Maintenance/Tasks:execute'])
   assert.equal(resourcePermission('unknown'), false)
 })
@@ -48,6 +48,21 @@ test('配置操作引用的每一个权限码均能在实际菜单按钮中找�
       for (const code of Array.isArray(codes) ? codes : [codes]) assert.ok(permissions.has(code), code)
     }
   }
+})
+
+test('仅授权设备资产时，共享设备组使用本页独立按钮，档案维护不再捆绑删除设备组', () => {
+  const menus = JSON.parse(readFileSync(resolve(root, 'baseMenu.json'), 'utf8'))[0].children
+  const device = menus.find(menu => menu.code === 'facility/Devices')
+  for (const [action, required] of [['configure', 'save'], ['delete', 'delete'], ['qr', 'query']]) {
+    const code = resourcePermission('groups', undefined, action)
+    assert.equal(typeof code, 'string')
+    assert.ok(code.startsWith(device.code + ':'))
+    const button = device.buttons.find(b => device.code + ':' + b.id === code)
+    assert.ok(button.permissions.some(p => p.permission === 'facility-group' && p.actions.includes(required)))
+  }
+  assert.equal(device.buttons.find(b => b.id === 'save').permissions.some(p => p.permission === 'facility-group'), false)
+  assert.deepEqual(resourcePermission('groups', 'inspection', 'delete'), ['facility/Inspection/Groups:delete'])
+  assert.deepEqual(resourcePermission('groups', 'maintenance', 'delete'), ['facility/Maintenance/Groups:delete'])
 })
 
 test('任务详情与执行表单的按钮从真实任务菜单取权，不再引用父分组', () => {

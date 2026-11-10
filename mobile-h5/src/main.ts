@@ -9,8 +9,15 @@ import { initializeConfig, state, clearSession, attachHostBridge } from './servi
 import { verifySession } from './hooks/useSession'
 const router = createRouter({
   history: createWebHashHistory(),
+  scrollBehavior: (_to, _from, saved) => saved || { left: 0, top: 0 },
   routes: [
     { path: '/', component: () => import('./views/HomePage.vue') },
+    { path: '/tasks', component: () => import('./views/TaskListPage.vue') },
+    { path: '/scan', component: () => import('./views/ScanPage.vue') },
+    { path: '/sync', component: () => import('./views/SyncPage.vue') },
+    { path: '/profile', component: () => import('./views/ProfilePage.vue') },
+    { path: '/messages', component: () => import('./views/MessagesPage.vue') },
+    { path: '/owner', redirect: '/messages' },
     { path: '/login', component: () => import('./views/LoginPage.vue') },
     { path: '/tasks/:id', component: () => import('./views/TaskPage.vue') },
     { path: '/groups/:id', component: () => import('./views/GroupPage.vue') },

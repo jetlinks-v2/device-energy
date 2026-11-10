@@ -9,6 +9,7 @@
         <span v-else-if="window.startMinute === window.endMinute">（{{ t('FacilityEnergy.ruleSummary.allDay') }}）</span>
         {{ t('FacilityEnergy.ruleEditor.every') }} {{ ruleQuantity(window.intervalMinutes, window.frequencyUnit).value }} {{ t(`FacilityEnergy.ruleEditor.unit${ruleQuantity(window.intervalMinutes, window.frequencyUnit).unit}`) }}{{ t('FacilityEnergy.ruleEditor.patrol') }} {{ window.requiredCount }} {{ t('FacilityEnergy.times') }}，
         {{ t('FacilityEnergy.ruleEditor.interval') }} {{ ruleQuantity(window.cooldownMinutes ?? 0, window.cooldownUnit).value }} {{ t(`FacilityEnergy.ruleEditor.unit${ruleQuantity(window.cooldownMinutes ?? 0, window.cooldownUnit).unit}`) }}
+        <span v-if="window.warningMinutes != null">，{{ t('FacilityEnergy.ruleEditor.warningAfter', { minutes: window.warningMinutes }) }}</span>
       </span>
     </div>
   </div>

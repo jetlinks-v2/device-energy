@@ -97,6 +97,12 @@
             "actions": [
               "query"
             ]
+          },
+          {
+            "permission": "file",
+            "actions": [
+              "query"
+            ]
           }
         ],
         "buttons": [
@@ -111,10 +117,52 @@
                 ]
               },
               {
+                "permission": "file",
+                "actions": [
+                  "query",
+                  "save"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true
+          },
+          {
+            "id": "groups-save",
+            "name": "新增／编辑设备组",
+            "permissions": [
+              {
                 "permission": "facility-group",
                 "actions": [
-                  "save",
+                  "save"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true
+          },
+          {
+            "id": "groups-delete",
+            "name": "删除设备组",
+            "permissions": [
+              {
+                "permission": "facility-group",
+                "actions": [
                   "delete"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true
+          },
+          {
+            "id": "groups-qr",
+            "name": "查看设备组二维码",
+            "permissions": [
+              {
+                "permission": "facility-group",
+                "actions": [
+                  "query"
                 ]
               }
             ],
@@ -200,6 +248,12 @@
                 "actions": [
                   "query"
                 ]
+              },
+              {
+                "permission": "file",
+                "actions": [
+                  "query"
+                ]
               }
             ],
             "buttons": [
@@ -210,6 +264,13 @@
                   {
                     "permission": "facility-task",
                     "actions": [
+                      "save"
+                    ]
+                  },
+                  {
+                    "permission": "file",
+                    "actions": [
+                      "query",
                       "save"
                     ]
                   }
@@ -824,6 +885,12 @@
                 "actions": [
                   "query"
                 ]
+              },
+              {
+                "permission": "file",
+                "actions": [
+                  "query"
+                ]
               }
             ],
             "buttons": [
@@ -834,6 +901,13 @@
                   {
                     "permission": "facility-task",
                     "actions": [
+                      "save"
+                    ]
+                  },
+                  {
+                    "permission": "file",
+                    "actions": [
+                      "query",
                       "save"
                     ]
                   }
@@ -1925,6 +1999,12 @@
             "actions": [
               "query"
             ]
+          },
+          {
+            "permission": "file",
+            "actions": [
+              "query"
+            ]
           }
         ],
         "buttons": [
@@ -1935,6 +2015,13 @@
               {
                 "permission": "facility-task",
                 "actions": [
+                  "save"
+                ]
+              },
+              {
+                "permission": "file",
+                "actions": [
+                  "query",
                   "save"
                 ]
               }
@@ -1951,6 +2038,48 @@
                 "actions": [
                   "query",
                   "save"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true
+          },
+          {
+            "id": "dispatch",
+            "name": "派单与转单",
+            "permissions": [
+              {
+                "permission": "facility-task",
+                "actions": [
+                  "dispatch"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true
+          },
+          {
+            "id": "review",
+            "name": "任务审批",
+            "permissions": [
+              {
+                "permission": "facility-task",
+                "actions": [
+                  "review"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true
+          },
+          {
+            "id": "close",
+            "name": "关闭任务",
+            "permissions": [
+              {
+                "permission": "facility-task",
+                "actions": [
+                  "close"
                 ]
               }
             ],

@@ -6,7 +6,7 @@ import type { Task, CheckResult, TaskProcess } from '../shared/types'
 import { messageOf } from '../shared/types'
 import { canExecute, taskActions } from '../shared/taskActions'
 export function useTask(id: string, changed?: () => void) {
-  const task = ref<Task>(),
+  const task = ref<Task>(), devices = ref<Task[]>([]),
     results = ref<CheckResult[]>([]),
     userId = ref(''),
     busy = ref(false),
@@ -35,6 +35,7 @@ export function useTask(id: string, changed?: () => void) {
     try {
       const [row, context] = await Promise.all([facility.task(id), facility.context()])
       task.value = row
+      devices.value = row.deviceCount ? await facility.taskDevices(id) : []
       userId.value = context.userId
       if (row.state === 'open') claimable.value = await facility.canClaimTask(id)
       void loadHistory()
@@ -108,10 +109,11 @@ export function useTask(id: string, changed?: () => void) {
     error.value = feText('draftSavedOnThisPageUseTheStaffMobileAppForOffline')
   }
   const actions = computed(() => (task.value ? taskActions(task.value, userId.value, claimable.value) : [])),
-    executable = computed(() => !!task.value && canExecute(task.value, userId.value))
+    executable = computed(() => !!task.value && !task.value.deviceCount && canExecute(task.value, userId.value))
   onMounted(() => void refresh())
   return {
     task,
+    devices,
     results,
     userId,
     busy,

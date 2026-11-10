@@ -5,6 +5,8 @@ type TextKey = keyof typeof zh.FacilityEnergy.text
 
 /** The Cloud language selector persists this value before reloading the application. */
 export function feLocale(): 'zh' | 'en' {
+  const pageLocale = typeof document === 'undefined' ? undefined : document.documentElement.dataset.locale
+  if (pageLocale === 'zh' || pageLocale === 'en') return pageLocale
   if (typeof localStorage === 'undefined') return 'zh'
   const stored = localStorage.getItem('Accept-Language') || 'zh'
   return stored.replaceAll('"', '').startsWith('en') ? 'en' : 'zh'

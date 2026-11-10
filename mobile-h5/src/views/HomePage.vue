@@ -1,180 +1,36 @@
 <script setup lang="ts">
-import { feText } from '../../../shared/i18n'
-import { reactive } from 'vue'
-import QrScanner from '../components/QrScanner.vue'
-import { useHome } from '../hooks/useHome'
-import { display, time } from '../../../shared/types'
-const vm = reactive(useHome())
+import { reactive, computed } from 'vue'
+import { ScanOutlined, InboxOutlined, ToolOutlined, SafetyCertificateOutlined, SwapOutlined, RightOutlined, CloudSyncOutlined, AuditOutlined } from '@ant-design/icons-vue'
+import { state, can } from '../services/session'
+import { useWorkspace } from '../hooks/useWorkspace'
+import { m } from '../services/mobileText'
+import TaskRow from '../components/TaskRow.vue'
+import OfflineModeControl from '../components/OfflineModeControl.vue'
+const vm = reactive(useWorkspace())
+const entries = computed(() => [
+  { name: m('工单池', 'Task pool'), icon: InboxOutlined, to: '/tasks?mode=pool', color: 'sky', visible: can('query') },
+  { name: m('巡检任务', 'Inspection'), icon: SafetyCertificateOutlined, to: '/tasks?kind=inspection', color: 'blue', visible: can('query') },
+  { name: m('维保任务', 'Maintenance'), icon: ToolOutlined, to: '/tasks?kind=maintenance', color: 'teal', visible: can('query') },
+  { name: m('任务转派', 'Dispatch'), icon: SwapOutlined, to: '/tasks?mode=dispatch&status=active', color: 'orange', visible: can('dispatch') },
+  { name: m('我的审批', 'Reviews'), icon: AuditOutlined, to: '/tasks?mode=review', color: 'blue', visible: can('review') }
+].filter(e => e.visible))
 </script>
 <template>
-  <div class="page">
-    <a-alert
-      v-if="!vm.online"
-      :message="feText('workingOfflineSubmitThroughTheSyncCenterWhenConnected')"
-      type="warning"
-    />
-    <a-alert
-      v-if="vm.error"
-      :message="vm.error"
-      type="error"
-      show-icon
-    />
-    <a-tabs>
-      <a-tab-pane
-        v-if="vm.can('facility-task')"
-        key="tasks"
-        :tab="feText('myTasks')"
-      >
-        <a-space class="toolbar">
-          <a-switch
-            v-model:checked="vm.pool"
-            :checked-children="feText('taskPool')"
-            :un-checked-children="feText('myTasks')"
-            @change="vm.refresh"
-          />
-          <a-button
-            :loading="vm.busy"
-            @click="vm.refresh"
-          >
-            {{ feText('refresh') }}
-          </a-button>
-        </a-space>
-        <a-card
-          v-for="task in vm.tasks"
-          :key="task.id"
-          class="task-card"
-          @click="$router.push('/tasks/' + task.id)"
-        >
-          <a-tag>{{ display(task.kind) }}</a-tag>
-          <a-tag>{{ display(task.state) }}</a-tag>
-          <h3>{{ task.name }}</h3>
-          <p>{{ task.deviceName }}</p>
-          <p class="muted">{{ feText('due') }} {{ time(task.deadline) }}</p>
-        </a-card>
-        <a-empty
-          v-if="!vm.tasks.length && !vm.busy"
-          :description="feText('noTasksAvailable')"
-        />
-      </a-tab-pane>
-      <a-tab-pane
-        v-if="vm.can('facility-task')"
-        key="scan"
-        :tab="feText('scanToView')"
-      >
-        <QrScanner
-          @code="
-            (code) => {
-              vm.code = code
-              vm.scan()
-            }
-          "
-        />
-        <p>{{ feText('orPasteTheQrCodeContents') }}</p>
-        <a-textarea
-          v-model:value="vm.code"
-          :placeholder="feText('deviceQrCodeContents')"
-        />
-        <a-button
-          type="primary"
-          style="margin-top: 16px"
-          @click="vm.scan"
-        >
-          {{ feText('viewDevice') }}
-        </a-button>
-      </a-tab-pane>
-      <a-tab-pane
-        v-if="vm.can('facility-task')"
-        key="sync"
-        :tab="feText('syncCenter')"
-      >
-        <a-button
-          :loading="vm.busy"
-          :disabled="!vm.online"
-          @click="vm.replay"
-        >
-          {{ feText('syncPendingSubmissions') }}
-        </a-button>
-        <a-card
-          v-for="row in vm.pending"
-          :key="row.id"
-          class="task-card"
-        >
-          <a-tag :color="row.state === 'conflict' ? 'red' : row.state === 'submitted' ? 'green' : 'orange'">
-            {{ row.state === 'conflict' ? feText('taskConflict') : row.state === 'submitted' ? feText('submitted') : feText('pendingSync') }}
-          </a-tag>
-          <p>{{ time(row.createdAt) }}</p>
-          <p>{{ row.error }}</p>
-          <a-collapse v-if="row.state === 'conflict'">
-            <a-collapse-panel
-              key="local"
-              :header="feText('viewRetainedLocalContent')"
-            >
-              <p
-                v-for="result in row.command.results"
-                :key="result.itemId"
-              >
-                {{ result.itemId }}：{{ result.value }} {{ result.remark }}
-              </p>
-            </a-collapse-panel>
-          </a-collapse>
-          <a-popconfirm
-            v-if="row.state === 'submitted'"
-            :title="feText('clearThisSubmissionRecord')"
-            @confirm="vm.remove(row.id)"
-          >
-            <a-button type="link">{{ feText('clearRecord') }}</a-button>
-          </a-popconfirm>
-        </a-card>
-        <a-empty
-          v-if="!vm.pending.length"
-          :description="feText('noRecordsPendingSync')"
-        />
-      </a-tab-pane>
-      <a-tab-pane
-        v-if="vm.can('facility-owner')"
-        key="meters"
-        :tab="feText('myMeters')"
-      >
-        <a-button
-          :loading="vm.busy"
-          @click="vm.refresh"
-        >
-          {{ feText('refreshReadings') }}
-        </a-button>
-        <a-card
-          v-for="meter in vm.meters"
-          :key="meter.bindingId"
-          class="task-card"
-          @click="$router.push('/meters/' + meter.bindingId)"
-        >
-          <a-tag>{{ meter.current ? feText('currentMeter') : feText('pastBinding') }}</a-tag>
-          <h3>{{ meter.name }}</h3>
-          <p>{{ time(meter.startTime) }} {{ feText('to') }} {{ meter.endTime ? time(meter.endTime) : feText('present') }}</p>
-        </a-card>
-        <a-empty
-          v-if="!vm.meters.length && !vm.busy"
-          :description="feText('noMetersBoundPleaseContactPropertyManagement')"
-        />
-      </a-tab-pane>
-      <a-tab-pane
-        v-if="vm.can('facility-owner')"
-        key="messages"
-        :tab="feText('alertMessages')"
-      >
-        <a-card
-          v-for="message in vm.messages"
-          :key="message.id"
-          class="task-card"
-        >
-          <h3>{{ message.title }}</h3>
-          <p>{{ message.message }}</p>
-          <p class="muted">{{ time(message.createTime) }}</p>
-        </a-card>
-        <a-empty
-          v-if="!vm.messages.length"
-          :description="feText('noMessages')"
-        />
-      </a-tab-pane>
-    </a-tabs>
-  </div>
+  <main class="page home-page">
+    <div class="welcome"><strong>{{ state.context?.userName || state.authorization?.user.name }}</strong><router-link to="/scan" class="scan-button" :aria-label="m('扫码查看设备', 'Scan a device')"><ScanOutlined /></router-link></div>
+    <a-alert v-if="vm.error" type="error" show-icon :message="vm.error"><template #action><a-button type="link" @click="vm.refresh">{{ m('重试', 'Retry') }}</a-button></template></a-alert>
+    <a-alert v-if="!vm.online" type="warning" :message="state.offlineMode ? '离线模式已开启，检查结果保存在本机' : '当前无网络，请先联网开启离线模式'" />
+    <template v-if="can('query')">
+      <div class="work-summary">
+        <router-link to="/tasks?status=active"><strong>{{ vm.counts[0] ?? '—' }}</strong><span>{{ m('我的待办', 'To do') }}</span></router-link>
+        <router-link to="/tasks?status=overdue"><strong class="warning-number">{{ vm.counts[1] ?? '—' }}</strong><span>{{ m('已超期', 'Overdue') }}</span></router-link>
+        <router-link v-if="can('review')" to="/tasks?mode=review"><strong>{{ vm.counts[2] ?? '—' }}</strong><span>{{ m('待我审批', 'To review') }}</span></router-link>
+      </div>
+      <nav class="quick-entries" :aria-label="m('常用功能', 'Quick access')"><router-link v-for="entry in entries" :key="entry.to" :to="entry.to"><span class="entry-icon" :class="entry.color"><component :is="entry.icon" /></span><span>{{ entry.name }}</span></router-link><OfflineModeControl v-if="can('save')" entry /></nav>
+      <router-link v-if="vm.pending" class="sync-banner" to="/sync"><CloudSyncOutlined /><span>{{ vm.pending }}{{ m(' 条记录等待同步', ' records to sync') }}</span><RightOutlined /></router-link>
+      <div class="section-heading"><h2>{{ vm.online ? m('待处理任务', 'Tasks to do') : m('本机任务', 'Cached tasks') }}</h2><router-link to="/tasks">{{ m('全部', 'All') }}<RightOutlined /></router-link></div>
+      <div class="task-list"><TaskRow v-for="task in vm.tasks" :key="task.id" :task="task" /></div>
+      <a-spin v-if="vm.busy" class="loading" /><a-empty v-else-if="!vm.tasks.length && !vm.error" :description="m('暂无待处理任务', 'No tasks to do')" />
+    </template>
+  </main>
 </template>

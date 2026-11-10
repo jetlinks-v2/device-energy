@@ -36,7 +36,14 @@ const statusColor = computed(() => ({ open: 'blue', claimed: 'cyan', executing: 
         <SectionCard icon="ProfileOutlined" :title="feText('taskInformation')">
           <KvGrid :items="info" :cols="2" />
         </SectionCard>
-        <SectionCard icon="CheckSquareOutlined" :title="feText('checkRequirementsAndResults')">
+        <SectionCard v-if="vm.task.deviceCount" icon="AppstoreOutlined" :title="feText('taskDeviceList') + ' · ' + feText('submitted') + ' ' + (vm.task.submittedDeviceCount || 0) + ' / ' + vm.task.deviceCount">
+          <a-collapse>
+            <a-collapse-panel v-for="device in vm.devices" :key="device.id" :header="device.deviceName + ' · ' + (device.state === 'review' ? feText('submitted') : display(device.state))">
+              <TaskChecks :items="device.standardSnapshot || []" :results="device.results || []" />
+            </a-collapse-panel>
+          </a-collapse>
+        </SectionCard>
+        <SectionCard v-else icon="CheckSquareOutlined" :title="feText('checkRequirementsAndResults')">
           <a-alert v-if="vm.task.reviewComment && vm.task.state === 'rectify'" type="warning" show-icon
             :message="vm.task.reviewComment" style="margin-bottom: 12px; white-space: pre-wrap" />
           <AttachmentsEditor v-if="vm.task.instructionAttachments?.length" :ids="vm.task.instructionAttachments" readonly />

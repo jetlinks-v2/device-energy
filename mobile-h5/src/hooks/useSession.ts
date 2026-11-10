@@ -8,28 +8,37 @@ import { request, errorText } from '../api/http'
 import { loginWithCaptcha } from '../services/captcha'
 import { authorize } from '../api/facility'
 import { clearSession, setSession, state } from '../services/session'
+import { offlineMode } from '../services/offline'
 
 export async function verifySession() {
   if (!state.session) throw Error(feText('signInFirst'))
   const key = 'facility:verified:' + state.session.tenantDomain + ':' + state.session.applicationId
   const fingerprint = await tokenFingerprint(state.session.token)
-  if (!navigator.onLine) {
+  const restoreOffline = async (requireMode = false) => {
     let cached: VerifiedSession | null = null
-    try {
-      cached = JSON.parse(sessionStorage.getItem(key) || 'null')
-    } catch {
-      /* Invalid local cache requires an online verification. */
-    }
-    if (!validOfflineSession(cached, fingerprint, Date.now(), state.session.applicationId))
+    try { cached = JSON.parse(sessionStorage.getItem(key) || 'null') }
+    catch { /* 损坏的身份缓存必须联网重新验证。 */ }
+    if (!validOfflineSession(cached, fingerprint, Date.now(), state.session!.applicationId))
       throw Error(feText('offlineCredentialsExpiredOrTheAccountChangedConnectAndSignIn'))
+    const mode = !!(await offlineMode(cached.context))?.enabled
+    if (requireMode && !mode) throw Error('网络不可用，请恢复网络后登录')
     state.authorization = cached.authorization
     state.context = cached.context
-    return
+    state.offlineMode = mode
   }
-  const [authorization, context] = await Promise.all([
-    authorize(),
-    request<Context>('/property/facility-energy/session')
-  ])
+  if (!navigator.onLine) { await restoreOffline(); return }
+  let authorization, context
+  try {
+    ;[authorization, context] = await Promise.all([
+      authorize(), request<Context>('/property/facility-energy/session')
+    ])
+  } catch (e) {
+    // 网络标志可能滞后；仅连接失败允许恢复已开启的离线模式，401/403等服务端拒绝不可降级。
+    if (e instanceof TypeError || (e instanceof DOMException && ['TimeoutError', 'AbortError', 'NetworkError'].includes(e.name))) {
+      await restoreOffline(true); return
+    }
+    throw e
+  }
   if (context.userId !== authorization.user.id || context.applicationId !== state.session.applicationId)
     throw Error(feText('theCurrentAccountDoesNotMatchTheApplicationSession'))
   if (
@@ -40,6 +49,7 @@ export async function verifySession() {
     throw Error(feText('thisAccountCannotAccessFacilityAndEnergyManagement'))
   state.authorization = authorization
   state.context = context
+  state.offlineMode = !!(await offlineMode(context))?.enabled
   sessionStorage.setItem(
     key,
     JSON.stringify({ fingerprint, at: Date.now(), authorization, context } satisfies VerifiedSession)

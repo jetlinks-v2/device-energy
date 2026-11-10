@@ -1,5 +1,7 @@
 /** 使用宿主菜单按钮权限；服务端继续校验操作及资产权限。 */
 export function resourcePermission(resource: string, kind?: string, action = 'configure'): string | string[] | boolean {
+  // 设备资产中的共享设备组不依赖巡检、维保菜单授权。
+  if (resource === 'groups' && !kind) return 'facility/Devices:groups-' + (action === 'configure' ? 'save' : action)
   if (['standards', 'cycles', 'plans', 'groups', 'tasks'].includes(resource)) {
     const menus = kind === 'maintenance' ? ['Maintenance'] : kind === 'inspection' ? ['Inspection'] : ['Inspection', 'Maintenance']
     const page = resource[0].toUpperCase() + resource.slice(1)

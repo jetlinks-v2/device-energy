@@ -5,7 +5,7 @@ import type { Authorization, FileInfo } from '../../../shared/types'
 export const authorize = () => request<Authorization>('/authorize/me')
 export const facility = facilityClient({
   get: <T>(url: string) => request<T>(url),
-  post: <T>(url: string, body?: unknown) => request<T>(url, body),
+  post: <T>(url: string, body?: unknown) => request<T>(url, body, 'POST'),
   remove: <T>(url: string) => request<T>(url, undefined, 'DELETE'),
   upload: (file: File, projectId: string) => {
     const body = new FormData()

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -69,4 +69,46 @@ test('宿主菜单入口保持运行端标记，页面归属交由宿主解析',
   const actual = walk(runtimeModule.exports.default())
   assert.deepEqual(actual.map(node => node.id), all.map(node => node.id))
   assert.ok(actual.every(node => node.runtime === true && !node.options?.appName))
+})
+
+const grants = (menu, selected = []) => {
+  const permissions = [...(menu.permissions || []), ...menu.buttons.filter(b => selected.includes(b.id)).flatMap(b => b.permissions || [])]
+  return (resource, action) => permissions.some(p => p.permission === resource && p.actions.includes(action))
+}
+
+test('员工移动端单独授权即可覆盖实际使用的全部任务动作，审批和关闭不捆绑执行权限', () => {
+  const employee = all.find(menu => menu.code === 'facility/Employee')
+  const scan = dir => readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? scan(new URL(entry.name + '/', dir)) : /\.(ts|vue)$/.test(entry.name) ? [readFileSync(new URL(entry.name, dir), 'utf8')] : [])
+  const actions = new Set(scan(new URL('../mobile-h5/src/', import.meta.url)).flatMap(source => [...source.matchAll(/\bcan\('([^']+)'\)/g)].map(match => match[1])))
+  const full = grants(employee, employee.buttons.map(b => b.id))
+  for (const action of actions) assert.ok(full('facility-task', action), 'H5 缺少任务动作：' + action)
+  for (const action of ['review', 'dispatch', 'close']) {
+    const has = grants(employee, [action])
+    assert.ok(has('facility-task', 'query')); assert.ok(has('facility-task', action))
+    assert.equal(has('facility-task', 'save'), false)
+    assert.equal(has('file', 'save'), false)
+  }
+})
+
+test('PC与H5查看任务可读照片，单独授权执行即可拍照，审阅角色不获得上传权限', () => {
+  for (const code of ['facility/Inspection/Tasks', 'facility/Maintenance/Tasks', 'facility/Employee']) {
+    const menu = all.find(item => item.code === code)
+    assert.ok(grants(menu)('file', 'query'), code)
+    assert.equal(grants(menu)('file', 'save'), false)
+    const execute = grants(menu, ['execute'])
+    assert.ok(execute('facility-task', 'save'), code)
+    assert.ok(execute('file', 'save'), code)
+    assert.equal(execute('facility-task', 'review'), false)
+    assert.equal(execute('facility-task', 'close'), false)
+  }
+  assert.ok(grants(all.find(menu => menu.code === 'facility/Devices'), ['save'])('file', 'save'))
+})
+
+test('菜单编码及按钮ID唯一，所有父级归属正确', () => {
+  assert.equal(new Set(all.map(menu => menu.id)).size, all.length)
+  assert.equal(new Set(all.map(menu => menu.code)).size, all.length)
+  for (const menu of all) {
+    assert.equal(new Set((menu.buttons || []).map(button => button.id)).size, (menu.buttons || []).length, menu.code)
+    for (const child of menu.children || []) assert.equal(child.parentId, menu.id)
+  }
 })

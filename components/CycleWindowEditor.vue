@@ -21,6 +21,9 @@
         <span class="gap-label">{{ t('FacilityEnergy.ruleEditor.interval') }}</span>
         <a-input-number :value="period.interval ?? undefined" :min="1" :max="100" :precision="0" :controls="false" :aria-label="t('FacilityEnergy.cooldown')" @update:value="patch(index, { interval: numberValue($event) })" />
         <a-select :value="period.intervalUnit" :options="units" :aria-label="t('FacilityEnergy.ruleEditor.intervalUnit')" @update:value="patch(index, { intervalUnit: $event as TimeUnit })" />
+        <span class="gap-label">{{ t('FacilityEnergy.ruleEditor.warning') }}</span>
+        <a-input-number :value="period.warning ?? undefined" :min="0.01" :precision="2" :controls="false" :aria-label="t('FacilityEnergy.ruleEditor.warning')" @update:value="patch(index, { warning: numberValue($event) })" />
+        <a-select :value="period.warningUnit || '1'" :options="units" :aria-label="t('FacilityEnergy.ruleEditor.warningUnit')" @update:value="patch(index, { warningUnit: $event as TimeUnit })" />
       </div>
     </div>
     <a-button type="dashed" block :disabled="modelValue.length >= 24" @click="emit('update:modelValue', [...modelValue, defaultPeriod()])">+ {{ t('FacilityEnergy.addWindow') }}</a-button>

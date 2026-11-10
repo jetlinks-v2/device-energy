@@ -80,6 +80,14 @@ export interface Metric {
   scale: number
 }
 export interface Task extends Entity {
+  /** 仅本机待同步投影，不作为服务端任务状态提交。 */
+  pendingSync?: boolean
+  parentTaskId?: string
+  deviceCount?: number
+  submittedDeviceCount?: number
+  groupIds?: string[]
+  deviceTasks?: Task[]
+  deviceSnapshot?: { location?: string; specification?: string; name?: string }
   projectId: string
   kind: string
   deviceId: string
@@ -274,3 +282,9 @@ export const display = (v: unknown): string =>
       : states[String(v)] || energyNames[String(v)] || String(v)
 
 export const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
+
+export interface TaskMessage extends Entity {
+  taskId: string; messageType: 'new' | 'warning' | 'overdue'; title: string
+  taskName: string; taskKind: string; deviceCount: number; submittedDeviceCount: number
+  scheduledTime: number; deadline: number; readTime?: number | null; createTime: number
+}

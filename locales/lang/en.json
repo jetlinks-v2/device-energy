@@ -598,9 +598,13 @@
       "selectAnotherAssignee": "Select another project employee",
       "taskTransferred": "Transferred",
       "approvalResults": "Results",
-      "taskActionFailed": "The action failed. Refresh the task and try again"
+      "taskActionFailed": "The action failed. Refresh the task and try again",
+      "taskDeviceList": "Devices"
     },
     "ruleEditor": {
+      "warning": "Warning delay",
+      "warningUnit": "Warning unit",
+      "warningAfter": "Warn {minutes} minutes after start",
       "ruleNumber": "Rule {index}",
       "weekdays": "Weekdays:",
       "quick": "Quick select:",
@@ -638,6 +642,8 @@
       "unit3": "day(s)",
       "periodPreview": "{start}–{end}: {times} execution(s) every {frequency} {unit} (minimum interval {interval} {intervalUnit}, {count} required)",
       "errors": {
+        "warningRequired": "Enter the warning delay",
+        "warningRange": "Warning delay must be at least {min} minutes and less than {max} minutes",
         "empty": "Configure at least one weekday rule or date rule",
         "days": "Select at least one weekday for rule {index}",
         "periods": "Add at least one period to rule {index}",

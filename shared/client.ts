@@ -12,7 +12,8 @@ import type {
   Context,
   OwnerMeter,
   OwnerDetail,
-  FileInfo
+  FileInfo,
+  TaskMessage
 } from './types'
 export interface Transport {
   get<T>(url: string): Promise<T>
@@ -43,6 +44,8 @@ export function facilityClient(http: Transport) {
     canClaimTask: (key: string) => http.get<boolean>(prefix + '/tasks/' + id(key) + '/claimable'),
     taskHistory: (key: string, pageIndex = 0) => http.get<Pager<TaskProcess>>(prefix + '/tasks/' + id(key) + '/history?pageIndex=' + pageIndex),
     task: (key: string) => http.get<Task>(prefix + '/tasks/' + id(key)),
+    taskDevices: (key: string) => http.get<Task[]>(prefix + '/tasks/' + id(key) + '/devices'),
+    relatedTasks: (q: Query) => http.post<Pager<Task>>(prefix + '/tasks/related/_query', q),
     action: (key: string, action: string, command: TaskCommand) =>
       http.post<Task>(prefix + '/tasks/' + id(key) + '/' + id(action), command),
     downloadTask: (key: string) => http.get<Task>(prefix + '/tasks/' + id(key) + '/offline'),
@@ -59,6 +62,10 @@ export function facilityClient(http: Transport) {
     meters: () => http.get<OwnerMeter[]>(prefix + '/owner/meters'),
     ownerDetail: (binding: string, from: number, to: number) =>
       http.get<OwnerDetail>(prefix + '/owner/meters/' + id(binding) + '?from=' + from + '&to=' + to),
+    taskMessages: (q: Query) => http.post<Pager<TaskMessage>>(prefix + '/messages/_query', q),
+    unreadMessages: (projectId: string) => http.get<number>(prefix + '/messages/unread?projectId=' + id(projectId)),
+    readMessage: (key: string) => http.post<void>(prefix + '/messages/' + id(key) + '/read'),
+    readAllMessages: (projectId: string) => http.post<void>(prefix + '/messages/read-all?projectId=' + id(projectId)),
     messages: () => http.get<Entity[]>(prefix + '/owner/messages'),
     upload: http.upload
   }
