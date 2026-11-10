@@ -33,8 +33,9 @@ export function useDevice(input: Device) {
     try {
       device.value = await facility.read<Device>('devices', input.id)
       Object.assign(form, device.value)
+      options.employees = []
       const [people, spaces, linked, mapped, logs] = await Promise.all([
-        facility.options('employees'),
+        device.value.projectId ? facility.options('employees/' + encodeURIComponent(device.value.projectId)) : Promise.resolve([]),
         facility.options('spaces/' + device.value.projectId),
         facility.get<Entity[]>('devices/' + input.id + '/bindings'),
         facility.get<Entity | undefined>('devices/' + input.id + '/mapping'),

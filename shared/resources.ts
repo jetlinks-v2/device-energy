@@ -1,3 +1,4 @@
+import { defaultRule } from './cycle/editor'
 import { feText } from './i18n'
 import type { Resource, Field, Option } from './types'
 const options = (values: string[][]): Option[] => values.map(([value, label]) => ({ value, label }))
@@ -54,17 +55,15 @@ export const resources: Record<string, Resource> = {
   },
   standards: {
     path: 'standards',
-    title: feText('workStandardsAndInstructions'),
+    title: feText('workStandard'),
     fields: [
       name,
       project,
-      select('kind', feText('workType'), [
+      { ...select('kind', feText('workType'), [
         ['inspection', feText('inspection')],
         ['maintenance', feText('maintenance')]
-      ]),
-      f('instruction', feText('workInstructions'), 'textarea'),
-      f('attachments', feText('instructionAttachments'), 'files'),
-      f('checkItems', feText('inspectionItems'), 'checks'),
+      ]), required: true },
+      { ...f('checkItems', feText('inspectionItems'), 'checks'), required: true },
       enabled
     ],
     columns: columns([
@@ -74,60 +73,36 @@ export const resources: Record<string, Resource> = {
     ]),
     defaults: { kind: 'inspection', enabled: true, checkItems: [] }
   },
+  cycles: {
+    path: 'cycles', title: feText('cyclePlan'),
+    fields: [name, project, { ...select('kind', feText('workType'), [
+      ['inspection', feText('inspection')], ['maintenance', feText('maintenance')]
+    ]), required: true }, { ...f('rule', feText('executionFrequency'), 'cycle'), required: true }, enabled],
+    columns: columns([['name', feText('cyclePlan')], ['projectName', feText('project')],
+      ['enabled', feText('enabled')]]),
+    defaults: { kind: 'inspection', rule: defaultRule(), enabled: true }
+  },
   plans: {
-    path: 'plans',
-    title: feText('recurringAndAdHocPlans'),
-    fields: [
-      name,
-      project,
-      select('kind', feText('workType'), [
-        ['inspection', feText('inspection')],
-        ['maintenance', feText('maintenance')]
-      ]),
+    path: 'plans', title: feText('taskConfiguration'),
+    fields: [name, project,
+      { ...select('kind', feText('workType'), [
+        ['inspection', feText('inspection')], ['maintenance', feText('maintenance')]
+      ]), required: true },
       { ...f('standardId', feText('workStandard'), 'select', 'standards'), required: true },
-      f('deviceIds', feText('device'), 'multi', 'devices'),
-      f('groupIds', feText('equipmentRoomsGroups'), 'multi', 'groups'),
-      select('mode', feText('workOrderMode'), [
-        ['single', feText('singleWorkOrder')],
-        ['double', feText('dualWorkOrder')]
-      ]),
-      f('assigneeId', feText('assigneeLeaveBlankForTaskPool'), 'select', 'employees'),
-      f('followUserId', feText('internalFollowUpAssignee'), 'select', 'employees'),
-      f('externalOrganizationId', feText('externalContractorOrganization'), 'tree', 'organizations'),
-      { ...f('reviewerId', feText('reviewer'), 'select', 'employees'), required: true },
+      { ...f('cycleId', feText('cyclePlan'), 'select', 'cycles'), required: true },
+      { ...f('groupIds', feText('equipmentRoomsGroups'), 'multi', 'groups'), required: true },
+      { ...select('mode', feText('workOrderMode'), [
+        ['single', feText('singleWorkOrder')], ['double', feText('dualWorkOrder')]
+      ]), required: true },
+      { ...f('externalOrganizationId', feText('externalContractorOrganization'), 'tree', 'organizations'), required: true },
+      { ...f('reviewerId', feText('responsiblePerson'), 'select', 'employees'), required: true },
       { ...f('startTime', feText('startTime'), 'datetime'), required: true },
-      { ...f('endTime', feText('endTime'), 'datetime'), required: true },
-      { ...f('intervalValue', feText('interval'), 'number'), required: true },
-      select('intervalUnit', feText('intervalUnit'), [
-        ['hour', feText('hour')],
-        ['day', feText('day')],
-        ['week', feText('week')],
-        ['month', feText('month')],
-        ['year', feText('year')]
-      ]),
-      { ...f('deadlineHours', feText('completionDeadlineHours'), 'number'), required: true },
-      enabled
-    ],
-    columns: columns([
-      ['name', feText('plan')],
-      ['kind', feText('type')],
-      ['mode', feText('workOrderMode')],
+      { ...f('endTime', feText('endTime'), 'datetime'), required: true }, enabled],
+    columns: columns([['name', feText('taskConfiguration')], ['projectName', feText('project')], ['standardName', feText('workStandard')], ['cycleName', feText('cyclePlan')], ['reviewerName', feText('responsiblePerson')], ['kind', feText('type')],
       ['nextRunTime', feText('nextGenerationTime')],
-      ['endTime', feText('endTime')],
-      ['enabled', feText('enabled')]
-    ]),
-    defaults: {
-      kind: 'inspection',
-      deviceIds: [],
-      groupIds: [],
-      mode: 'single',
-      startTime: Date.now(),
-      endTime: Date.now() + 365 * 86400000,
-      intervalValue: 1,
-      intervalUnit: 'day',
-      deadlineHours: 24,
-      enabled: true
-    }
+      ['startTime', feText('startTime')], ['endTime', feText('endTime')], ['enabled', feText('enabled')]]),
+    defaults: { kind: 'inspection', deviceIds: [], groupIds: [], mode: 'single',
+      startTime: Date.now(), endTime: Date.now() + 365 * 86400000, enabled: true }
   },
   tasks: {
     path: 'tasks',

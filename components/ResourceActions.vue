@@ -28,13 +28,13 @@ const faultActionNames: Record<string, string> = {
     >
       {{ config.readonly || resource === 'faults' ? feText('details') : feText('edit') }}
     </j-permission-button>
-    <a-button
+    <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''), 'qr')"
       v-if="resource === 'groups'"
       type="link"
       @click="emit('qr')"
     >
       {{ feText('roomQrCode') }}
-    </a-button>
+    </j-permission-button>
     <template v-if="resource === 'plans'">
       <a-tooltip :title="generateReason">
       <span>
@@ -134,11 +134,11 @@ const faultActionNames: Record<string, string> = {
       </j-permission-button>
     </template>
     <a-popconfirm
-      v-if="['standards', 'groups', 'plans', 'rules'].includes(resource)"
+      v-if="['standards', 'groups', 'cycles', 'plans', 'rules'].includes(resource)"
       :title="feText('disableAndDeleteThisConfigurationHistoricalRecordsWillBeRetained')"
       @confirm="emit('remove')"
     >
-      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''), 'delete')"
         danger
         type="link"
       >

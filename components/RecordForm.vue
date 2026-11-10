@@ -1,9 +1,14 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import type { CycleRule } from '../shared/cycle/types'
+import CycleRuleEditor from './CycleRuleEditor.vue'
 import type { Field, FormValues, FormValue, Option, CheckItem, Metric } from '../shared/types'
 import AttachmentsEditor from './AttachmentsEditor.vue'
 import CheckItemsEditor from './CheckItemsEditor.vue'
 import MetricEditor from './MetricEditor.vue'
 defineProps<{ fields: Field[]; model: FormValues; options: Record<string, Option[]> }>()
+const cycleEditor = ref<InstanceType<typeof CycleRuleEditor>>()
+defineExpose({ validateCycle: () => cycleEditor.value?.validate() })
 const emit = defineEmits<{ change: [key: string, value: FormValue] }>()
 const dateText = (v: unknown) =>
   typeof v === 'number' ? new Date(v - new Date(v).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''
@@ -20,14 +25,16 @@ const dateValue = (e: Event) => new Date((e.target as HTMLInputElement).value).g
         v-for="field in fields"
         :key="field.key"
         :xs="24"
-        :md="['checks', 'metrics', 'textarea', 'files'].includes(field.type || '') ? 24 : 12"
+        :md="['checks', 'metrics', 'textarea', 'files', 'cycle'].includes(field.type || '') ? 24 : 12"
       >
         <a-form-item
           :label="field.label"
           :required="field.required"
         >
+          <CycleRuleEditor v-if="field.type === 'cycle'" :ref="(value) => cycleEditor = value as InstanceType<typeof CycleRuleEditor>"
+            :model-value="model[field.key] as CycleRule" @update:model-value="emit('change', field.key, $event)" />
           <a-switch
-            v-if="field.type === 'switch'"
+            v-else-if="field.type === 'switch'"
             :checked="!!model[field.key]"
             @update:checked="emit('change', field.key, $event)"
           />
@@ -57,9 +64,10 @@ const dateValue = (e: Event) => new Date((e.target as HTMLInputElement).value).g
             :value="model[field.key] as string | string[]"
             :mode="field.type === 'multi' ? 'multiple' : undefined"
             :options="field.options || options[field.source || ''] || []"
+            :disabled="field.disabled"
             show-search
             option-filter-prop="label"
-            allow-clear
+            :allow-clear="!field.disabled"
             @update:value="emit('change', field.key, $event as string | string[])"
           />
           <a-date-picker

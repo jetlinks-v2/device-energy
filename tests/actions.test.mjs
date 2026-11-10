@@ -16,11 +16,15 @@ function load(file) {
 const { resourcePermission } = load('shared/permissions.ts')
 const { planGenerationReason } = load('shared/planActions.ts')
 const { canExecute, canTransfer, canWithdraw } = load('shared/taskActions.ts')
-const plan = { id: 'plan', enabled: true, startTime: 100, endTime: 300, nextRunTime: 200 }
+const plan = { id: 'plan', cycleId: 'cycle', enabled: true, startTime: 100, endTime: 300, nextRunTime: 200 }
 
 test('巡检与维保操作使用各自菜单按钮，未识别资源不开放权限', () => {
   assert.deepEqual(resourcePermission('plans', 'inspection', 'generate'), ['facility/Inspection:generate'])
   assert.deepEqual(resourcePermission('plans', 'maintenance', 'generate'), ['facility/Maintenance:generate'])
+  assert.deepEqual(resourcePermission('plans', 'inspection'), ['facility/Inspection:plan-save'])
+  assert.deepEqual(resourcePermission('plans', 'maintenance'), ['facility/Maintenance:plan-save'])
+  assert.deepEqual(resourcePermission('plans', 'maintenance', 'delete'), ['facility/Maintenance:plan-delete'])
+  assert.deepEqual(resourcePermission('groups', undefined, 'qr'), ['facility/Inspection:group-qr', 'facility/Maintenance:group-qr'])
   assert.deepEqual(resourcePermission('tasks', undefined, 'execute'), ['facility/Inspection:execute', 'facility/Maintenance:execute'])
   assert.equal(resourcePermission('unknown'), false)
 })
@@ -40,7 +44,7 @@ test('停用、日期缺失或未开始的计划不能生成，边界到期允�
 })
 test('临时任务按当前时间判断有效期，不等待下一次周期', () => {
   assert.equal(planGenerationReason(plan, true, 150), '')
-  assert.equal(planGenerationReason(plan, true, 300), '')
+  assert.notEqual(planGenerationReason(plan, true, 300), '')
   assert.notEqual(planGenerationReason(plan, true, 301), '')
   assert.notEqual(planGenerationReason({ ...plan, nextRunTime: 301 }, false, 400), '')
 })

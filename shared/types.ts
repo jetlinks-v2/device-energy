@@ -1,3 +1,4 @@
+import type { CycleRule } from './cycle/types'
 import { feLocale, feText } from './i18n'
 /** PC与两类H5共享的业务契约，服务端拥有身份、权限及状态转换。 */
 export interface Term {
@@ -157,13 +158,14 @@ export interface FileInfo {
   id: string
   name?: string
 }
-export type FormValue = string | number | boolean | string[] | CheckItem[] | Metric[] | undefined
+export type FormValue = string | number | boolean | string[] | CheckItem[] | Metric[] | CycleRule | undefined
 export type FormValues = Record<string, FormValue>
 export interface Field {
   key: string
   label: string
-  type?: 'text' | 'textarea' | 'number' | 'switch' | 'select' | 'multi' | 'tree' | 'date' | 'datetime' | 'checks' | 'metrics' | 'files'
+  type?: 'text' | 'textarea' | 'number' | 'switch' | 'select' | 'multi' | 'tree' | 'date' | 'datetime' | 'checks' | 'metrics' | 'files' | 'cycle'
   required?: boolean
+  disabled?: boolean
   options?: Option[]
   source?: string
 }

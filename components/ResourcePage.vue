@@ -10,6 +10,7 @@ import { resourceSearchFields, timeColumns } from '../shared/resourceSearch'
 import type { TableHandle } from '../shared/tableQuery'
 import FacilityDataTable from './FacilityDataTable.vue'
 import ResourceActions from './ResourceActions.vue'
+import CycleRuleSummary from './CycleRuleSummary.vue'
 import GroupQr from './GroupQr.vue'
 import MappingSamples from './MappingSamples.vue'
 import RecordForm from './RecordForm.vue'
@@ -23,6 +24,16 @@ const props = defineProps<{ resource: string; kind?: string; legacy?: boolean }>
   device = ref<Device>(),
   taskId = ref<string>(),
   group = ref<Entity>()
+const recordForm = ref<InstanceType<typeof RecordForm>>()
+const emit = defineEmits<{ 'tasks-generated': [] }>()
+const command = async (row: Entity, action: string) => {
+  const generated = await vm.command(row, action)
+  if (typeof generated === 'number' && generated > 0) emit('tasks-generated')
+}
+const save = async () => {
+  try { recordForm.value?.validateCycle(); await vm.save() }
+  catch (cause) { vm.error = cause instanceof Error ? cause.message : String(cause) }
+}
 const filters = ref<ConditionFilterTerm[]>([])
 const fields = computed(() => resourceSearchFields(config.value, vm.options, props.kind))
 const columns = computed(() => [
@@ -138,7 +149,7 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
             :saving="vm.saving"
             @open="open(record as Entity)"
             @qr="group = record as Entity"
-            @command="vm.command(record as Entity, $event)"
+            @command="command(record as Entity, $event)"
             @remove="vm.remove(record as Entity)"
           />
         </template>
@@ -170,11 +181,11 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
       <template v-for="column in columns" :key="column.key" #[column.key]="record">
         <ResourceActions v-if="column.key === 'actions'" :resource="resource" :record="record"
           :saving="vm.saving" @open="open(record)" @qr="group = record"
-          @command="vm.command(record, $event)" @remove="vm.remove(record)" />
+          @command="command(record, $event)" @remove="vm.remove(record)" />
         <StatusTag v-else-if="resource === 'devices' && column.dataIndex === 'sourceState'"
           :text="display(record[column.dataIndex])"
           :status="connectionStatusTones[String(record[column.dataIndex])] || 'default'" />
-        <template v-else-if="timeColumns.has(column.dataIndex)">{{ time(record[column.dataIndex]) }}</template>
+        <template v-else-if="timeColumns.has(column.dataIndex)">{{ record[column.dataIndex] === 9223372036854775807 ? '—' : time(record[column.dataIndex]) }}</template>
         <template v-else-if="column.dataIndex === 'collectionLag'">{{ collectionLag(record) }}</template>
         <template v-else>{{ display(record[column.dataIndex]) }}</template>
       </template>
@@ -194,9 +205,11 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
     <a-modal
       v-model:open="vm.opened"
       :title="config.title"
-      width="900px"
+      :width="resource === 'cycles' ? 1100 : 900"
+      :body-style="{ maxHeight: 'calc(100vh - 240px)', overflowY: 'auto' }"
+      :destroy-on-close="true"
       :confirm-loading="vm.saving"
-      @ok="vm.save"
+      @ok="save"
     >
       <a-alert v-if="vm.error" type="error" :message="vm.error" show-icon class="facility-form-error" />
       <MappingSamples
@@ -206,12 +219,16 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
         @apply="vm.applyTemplate"
         @preview="vm.preview"
       />
-      <RecordForm
-        :fields="config.fields"
+      <RecordForm ref="recordForm"
+        :fields="vm.formFields"
         :model="vm.form"
         :options="vm.options"
         @change="vm.change"
       />
+      <template v-if="resource === 'plans'">
+        <a-tag>{{ feText('devicesSelected') }}: {{ vm.deviceCount }}</a-tag>
+        <CycleRuleSummary v-if="vm.selectedCycle" :rule="vm.selectedCycle" />
+      </template>
       <template v-if="resource === 'energy/mappings'">
         <a-button
           :loading="vm.saving"

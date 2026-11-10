@@ -1,12 +1,15 @@
 import { feText } from '../shared/i18n'
 import { clone } from '../shared/types'
-import { ref, reactive, watch, onMounted } from 'vue'
+import { computed, ref, reactive, watch, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { facility } from '../api'
-import type { Entity, FormValues, FormValue, Option, Organization, Resource } from '../shared/types'
+import type { CheckItem, Entity, FormValues, FormValue, Option, Organization, Resource } from '../shared/types'
 import { messageOf } from '../shared/types'
 import { planGenerationReason } from '../shared/planActions'
+import { usePlanReferences } from './usePlanReferences'
+import { defaultRule } from '../shared/cycle/editor'
 import { useResourceQuery } from './useResourceQuery'
+import { normalizeCheckItems, validateCheckItems } from './useCheckItems'
 const organizationOptions = (nodes: Organization[]): Option[] => nodes.flatMap(node => [
   { value: node.id, label: node.name || node.id, parentId: node.parentId,
     selectable: node.organizationType?.value === 'external', disabled: node.organizationType?.value !== 'external' },
@@ -25,6 +28,12 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
       { propertyId: string; time: number; raw: string; normalized?: number | string; unit: string; error?: string }[]
     >([]),
     templateId = ref<string>()
+  const references = usePlanReferences(resource, form, opened, options, error)
+  // Display and validation share the same fields; single work orders have no contractor.
+  const formFields = computed(() => resource().fields.filter(field =>
+    resource().path !== 'plans' || field.key !== 'externalOrganizationId' || form.mode === 'double'
+  ).map(field => ['standards', 'cycles', 'plans'].includes(resource().path) && field.key === 'kind' && kind
+    ? { ...field, disabled: true } : field))
   const loadOptions = async () => {
     try {
       const sources = new Set([
@@ -35,6 +44,7 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
       ])
       await Promise.all(
         [...sources].map(async (source) => {
+          if (resource().path === 'plans' && ['standards', 'cycles', 'groups', 'employees'].includes(source)) return
           if (source === 'organizations') {
             options[source] = organizationOptions(await facility.options<Organization>(source))
             return
@@ -52,6 +62,8 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
   const edit = (row?: Entity) => {
     Object.keys(form).forEach((key) => delete form[key])
     Object.assign(form, clone(row || resource().defaults || {}))
+    if (resource().path === 'cycles' && !form.rule) form.rule = defaultRule()
+    if (resource().path === 'standards') form.checkItems = normalizeCheckItems((form.checkItems as CheckItem[]) || [])
     if (!row && resource().path === 'plans') {
       form.startTime = Date.now()
       form.endTime = Date.now() + 365 * 86400000
@@ -63,7 +75,13 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     if (resource().path === 'energy/mappings') void loadTemplates()
   }
   const change = (key: string, value: FormValue) => {
+    if (['standards', 'cycles', 'plans'].includes(resource().path) && key === 'kind' && kind) return
+    if (resource().path === 'plans' && ['projectId', 'kind'].includes(key) && form[key] !== value) {
+      for (const field of ['standardId', 'cycleId', 'reviewerId']) form[field] = undefined
+      form.groupIds = []
+    }
     form[key] = value
+    if (resource().path === 'plans' && key === 'mode' && value !== 'double') form.externalOrganizationId = undefined
   }
   const metadata = async (key: string) => {
     try {
@@ -132,11 +150,24 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     saving.value = true
     error.value = ''
     try {
-      for (const field of resource().fields) if (field.required && !form[field.key]) throw Error(feText('pleaseEnter') + field.label)
+      for (const field of formFields.value) if (field.required && (!form[field.key] || (Array.isArray(form[field.key]) && !(form[field.key] as unknown[]).length))) throw Error(feText('pleaseEnter') + field.label)
       if (resource().path === 'rules' && ['usage', 'balance', 'instant', 'stale', 'reading-anomaly', 'state'].includes(String(form.ruleType)) && !form.propertyId) {
         throw Error(feText('pleaseEnter') + resource().fields.find(field => field.key === 'propertyId')?.label)
       }
-      await facility.save(resource().path, { ...form })
+      const payload = { ...form }
+      if (kind && ['standards', 'cycles', 'plans'].includes(resource().path)) payload.kind = kind
+      if (resource().path === 'standards') {
+        payload.checkItems = normalizeCheckItems((form.checkItems as CheckItem[]) || [])
+        const failure = validateCheckItems(payload.checkItems)
+        if (failure) throw Error(failure)
+      }
+      if (resource().path === 'plans') {
+        if (Number(form.endTime) <= Number(form.startTime)) throw Error(feText('planDatesRequired'))
+        payload.assigneeId = undefined
+        payload.followUserId = undefined
+        if (form.mode !== 'double') payload.externalOrganizationId = undefined
+      }
+      await facility.save(resource().path, payload)
       opened.value = false
       await refresh()
     } catch (e) {
@@ -163,6 +194,7 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     if (saving.value) return
     saving.value = true
     error.value = ''
+    let generated: number | undefined
     try {
       // Preserve the selected device alert as the fault's source; the server validates its ownership.
       if (action === 'fault' && resource().path === 'alerts') {
@@ -180,6 +212,7 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
         const reason = planGenerationReason(row, action === 'temporary')
         if (reason) throw Error(reason)
         const tasks = await facility.post<Entity[]>('tasks/generate/' + row.id + '?temporary=' + (action === 'temporary'))
+        generated = tasks.length
         message.success(feText('tasksGenerated') + ': ' + tasks.length)
       }
       else if (['alerts', 'alerts/plans'].includes(resource().path))
@@ -202,6 +235,7 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
           comment: window.prompt(feText('enterProcessingNotes')) || ''
         })
       await refresh()
+      return generated
     } catch (e) {
       const failure = messageOf(e)
       // Scheduling may advance the plan after the list was loaded. Reload without hiding the failure.
@@ -224,10 +258,12 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
   })
   return {
     ...query,
+    ...references,
     saving,
     opened,
     detail,
     form,
+    formFields,
     options,
     previewRows,
     templateId,
