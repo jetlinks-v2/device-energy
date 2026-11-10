@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { feText } from '../../../shared/i18n'
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
+import { PictureOutlined } from '@ant-design/icons-vue'
 import { useScanner } from '../hooks/useScanner'
 const emit = defineEmits<{ code: [code: string] }>(),
   vm = reactive(useScanner((code) => emit('code', code)))
+const fileInput = ref<HTMLInputElement>()
 </script>
 <template>
   <div>
@@ -31,14 +33,17 @@ const emit = defineEmits<{ code: [code: string] }>(),
       >
         {{ feText('stopScanning') }}
       </a-button>
-      <label>
+      <a-button @click="fileInput?.click()">
+        <PictureOutlined />
         {{ feText('readQrCodeImage') }}
-        <input
-          type="file"
-          accept="image/*"
-          @change="vm.scanImage"
-        />
-      </label>
+      </a-button>
+      <input
+        ref="fileInput"
+        hidden
+        type="file"
+        accept="image/*"
+        @change="vm.scanImage"
+      />
     </a-space>
   </div>
 </template>

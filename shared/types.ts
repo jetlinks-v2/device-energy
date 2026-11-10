@@ -42,6 +42,7 @@ export interface Device extends Entity {
 export interface Option {
   value: string
   label: string
+  parentId?: string
 }
 export interface CheckItem {
   id: string
@@ -152,7 +153,7 @@ export type FormValues = Record<string, FormValue>
 export interface Field {
   key: string
   label: string
-  type?: 'text' | 'textarea' | 'number' | 'switch' | 'select' | 'multi' | 'datetime' | 'checks' | 'metrics' | 'files'
+  type?: 'text' | 'textarea' | 'number' | 'switch' | 'select' | 'multi' | 'tree' | 'date' | 'datetime' | 'checks' | 'metrics' | 'files'
   required?: boolean
   options?: Option[]
   source?: string

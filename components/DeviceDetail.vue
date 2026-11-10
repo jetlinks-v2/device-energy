@@ -163,9 +163,15 @@ const points = computed(() => vm.series.map((v) => ({ time: v.observedTime, valu
           </a-table>
           <a-form layout="vertical">
             <a-form-item :label="feText('propertySpace')">
-              <a-select
+              <a-tree-select
                 v-model:value="vm.binding.spaceId"
-                :options="vm.options.spaces"
+                :tree-data="vm.options.spaces"
+                :tree-data-simple-mode="{ id: 'value', pId: 'parentId' }"
+                :field-names="{ label: 'label', value: 'value', children: 'children' }"
+                :aria-label="feText('propertySpace')"
+                tree-node-filter-prop="label"
+                show-search
+                allow-clear
               />
             </a-form-item>
             <a-form-item :label="feText('responsibleCustomer')">

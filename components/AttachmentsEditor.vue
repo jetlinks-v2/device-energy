@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { feText } from '../shared/i18n'
 import { reactive } from 'vue'
+import { FileUpload } from '@jetlinks-web-core/components'
 import { useAttachments } from '../hooks/useAttachments'
 const props = defineProps<{ ids: string[]; readonly?: boolean; projectId?: string }>()
 const emit = defineEmits<{ change: [ids: string[]] }>()
@@ -19,7 +20,7 @@ const vm = reactive(
     type="error"
   />
   <a-list
-    v-if="ids.length"
+    v-if="readonly && ids.length"
     :data-source="ids"
     size="small"
   >
@@ -45,16 +46,33 @@ const vm = reactive(
     </template>
   </a-list>
   <a-empty
-    v-else
+    v-else-if="readonly"
     :description="feText('noAttachments')"
     :image-style="{ height: '32px' }"
   />
-  <label v-if="!readonly">
-    {{ feText('uploadAttachmentsUpTo20MbEach') }}
-    <input
-      type="file"
-      :disabled="vm.busy"
-      @change="vm.upload"
-    />
-  </label>
+  <FileUpload v-else :value="vm.fileList" :size="20" :max-count="20" :multiple="false"
+    :disabled="vm.busy" :before-upload="vm.beforeUpload" :custom-request="vm.upload" drag @remove="vm.removeFile">
+    <div class="facility-attachment-dropzone">
+      <AIcon :type="vm.busy ? 'LoadingOutlined' : 'InboxOutlined'" />
+      <div class="facility-attachment-title">{{ feText(vm.busy ? 'uploadingAttachment' : 'clickOrDragAttachment') }}</div>
+      <a-tag>20MB</a-tag>
+    </div>
+  </FileUpload>
 </template>
+
+<style scoped>
+.facility-attachment-dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-3, .75rem);
+  padding: var(--space-4, 1rem);
+}
+.facility-attachment-dropzone > .anticon {
+  color: var(--ant-color-primary, #1677ff);
+  font-size: 28px;
+}
+.facility-attachment-title { font-weight: 500; }
+.facility-attachment-dropzone .ant-tag { margin: 0; }
+</style>

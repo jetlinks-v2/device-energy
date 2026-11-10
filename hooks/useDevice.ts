@@ -41,7 +41,8 @@ export function useDevice(input: Device) {
         facility.get<{ data: Entity[] }>('devices/' + input.id + '/history')
       ])
       options.employees = people.map((p) => ({ value: p.id, label: p.name || p.id }))
-      options.spaces = spaces.map((p) => ({ value: p.id, label: p.name || p.id }))
+      // 空间目录已经按项目和权限裁剪；保留父级 ID，由 TreeSelect 组装层级。
+      options.spaces = spaces.map((p) => ({ value: p.id, label: p.name || p.id, parentId: typeof p.parentId === 'string' ? p.parentId : undefined }))
       bindings.value = linked
       mapping.value = mapped
       history.value = logs.data

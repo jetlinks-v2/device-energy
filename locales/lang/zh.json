@@ -527,7 +527,9 @@
       "planNotDue": "本周期尚未到期，如需立即执行请使用临时任务",
       "tasksGenerated": "已生成任务",
       "nextGenerationTime": "下次生成时间",
-      "reportFilterInvalid": "统计条件请使用且关系，同一字段只保留一个条件，并选择有效时间范围。"
+      "reportFilterInvalid": "统计条件请使用且关系，同一字段只保留一个条件，并选择有效时间范围。",
+      "clickOrDragAttachment": "点击或拖拽文件上传",
+      "uploadingAttachment": "附件上传中"
     }
   }
 }

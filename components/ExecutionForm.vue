@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { feText } from '../shared/i18n'
+import { CameraOutlined } from '@ant-design/icons-vue'
 import type { Task, CheckResult } from '../shared/types'
 const props = defineProps<{ task: Task; results: CheckResult[]; busy: boolean }>(),
   emit = defineEmits<{ change: [results: CheckResult[]]; photo: [itemId: string, file: File]; submit: []; draft: [] }>()
@@ -18,9 +19,10 @@ const update = (id: string, patch: Partial<CheckResult>) =>
   )
 const value = (id: string) => props.results.find((r) => r.itemId === id)?.value || ''
 const photos = (id: string) => props.results.find((r) => r.itemId === id)?.attachments.length || 0
-const photograph = (id: string, e: Event) => {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (file) emit('photo', id, file)
+const photograph = (id: string, file: File) => {
+  emit('photo', id, file)
+  // 照片由任务 hook 上传或离线保存，阻止 Upload 再次自动提交。
+  return false
 }
 </script>
 
@@ -69,16 +71,13 @@ const photograph = (id: string, e: Event) => {
         >
           {{ feText('abnormalityFound') }}
         </a-checkbox>
-        <label class="photo">
-          {{ item.photoRequired ? feText('requiredPhotos') : feText('addPhoto') }}（{{ photos(item.id) }}）
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            :disabled="busy"
-            @change="photograph(item.id, $event)"
-          />
-        </label>
+        <a-upload accept="image/*" capture="environment" :show-upload-list="false" :disabled="busy"
+          :before-upload="(file) => photograph(item.id, file)">
+          <a-button :disabled="busy">
+            <CameraOutlined />
+            {{ item.photoRequired ? feText('requiredPhotos') : feText('addPhoto') }}（{{ photos(item.id) }}）
+          </a-button>
+        </a-upload>
       </a-space>
       <a-textarea
         :value="results.find((r) => r.itemId === item.id)?.remark"
@@ -100,15 +99,3 @@ const photograph = (id: string, e: Event) => {
     </a-space>
   </a-form>
 </template>
-<style scoped>
-.photo {
-  color: #1677ff;
-  cursor: pointer;
-}
-.photo input {
-  display: block;
-  font-size: 12px;
-  max-width: 240px;
-  margin-top: 6px;
-}
-</style>

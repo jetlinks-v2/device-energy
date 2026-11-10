@@ -20,7 +20,7 @@ const dateValue = (e: Event) => new Date((e.target as HTMLInputElement).value).g
         v-for="field in fields"
         :key="field.key"
         :xs="24"
-        :md="field.type === 'checks' || field.type === 'metrics' || field.type === 'textarea' ? 24 : 12"
+        :md="['checks', 'metrics', 'textarea', 'files'].includes(field.type || '') ? 24 : 12"
       >
         <a-form-item
           :label="field.label"
@@ -37,6 +37,20 @@ const dateValue = (e: Event) => new Date((e.target as HTMLInputElement).value).g
             style="width: 100%"
             @update:value="emit('change', field.key, $event ?? undefined)"
           />
+          <a-tree-select
+            v-else-if="field.type === 'tree'"
+            :value="model[field.key] as string | undefined"
+            :tree-data="options[field.source || ''] || []"
+            :tree-data-simple-mode="{ id: 'value', pId: 'parentId' }"
+            :field-names="{ label: 'label', value: 'value', children: 'children' }"
+            :placeholder="field.label"
+            :aria-label="field.label"
+            tree-node-filter-prop="label"
+            show-search
+            allow-clear
+            :dropdown-style="{ maxHeight: '360px', overflow: 'auto' }"
+            @update:value="emit('change', field.key, $event)"
+          />
           <a-select
             v-else-if="field.type === 'select' || field.type === 'multi'"
             :value="model[field.key] as string | string[]"
@@ -46,6 +60,17 @@ const dateValue = (e: Event) => new Date((e.target as HTMLInputElement).value).g
             option-filter-prop="label"
             allow-clear
             @update:value="emit('change', field.key, $event as string | string[])"
+          />
+          <a-date-picker
+            v-else-if="field.type === 'date'"
+            :value="model[field.key] as string | undefined"
+            value-format="YYYY-MM-DD"
+            format="YYYY-MM-DD"
+            :placeholder="field.label"
+            :aria-label="field.label"
+            style="width: 100%"
+            allow-clear
+            @update:value="emit('change', field.key, typeof $event === 'string' && $event ? $event : undefined)"
           />
           <input
             v-else-if="field.type === 'datetime'"

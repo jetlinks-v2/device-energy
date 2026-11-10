@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { feText } from '../shared/i18n'
 import { reactive } from 'vue'
+import { UploadOutlined } from '@ant-design/icons-vue'
 import { useDeviceImport } from '../hooks/useDeviceImport'
 const props = defineProps<{ projectId?: string }>(),
   emit = defineEmits<{ changed: [] }>()
@@ -24,6 +25,7 @@ const upload = (event: Event) => {
     {{ feText('exportExtendedProfileTemplate') }}
   </a-button>
   <j-permission-button hasPermission="facility/Devices:save"><label class="import-button" :aria-disabled="vm.busy">
+    <UploadOutlined />
     <span>{{ feText('importExtendedProfiles') }}</span>
     <input
       type="file"

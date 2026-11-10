@@ -527,7 +527,9 @@
       "planNotDue": "The next cycle is not due. Use an ad hoc task to execute now.",
       "tasksGenerated": "Tasks generated",
       "nextGenerationTime": "Next generation time",
-      "reportFilterInvalid": "Use AND conditions, one condition per field, and a valid time range."
+      "reportFilterInvalid": "Use AND conditions, one condition per field, and a valid time range.",
+      "clickOrDragAttachment": "Click or drag a file to upload",
+      "uploadingAttachment": "Uploading attachment"
     }
   }
 }
