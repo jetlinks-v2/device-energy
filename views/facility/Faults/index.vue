@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import FacilityWorkspace from '../../../components/FacilityWorkspace.vue'
 import ResourcePage from '../../../components/ResourcePage.vue'
 </script>
-<template><ResourcePage resource="faults" /></template>
+<template>
+  <FacilityWorkspace>
+  <ResourcePage resource="faults" />
+  </FacilityWorkspace>
+</template>

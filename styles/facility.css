@@ -1,9 +1,27 @@
 /* Shared facility page geometry follows the Cloud spacing and surface tokens. */
+.facility-workspace.full-page-warp.full-page-warp--flex {
+  overflow: hidden;
+}
 .facility-page,
 .facility-tabs {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
   min-width: 0;
   padding: var(--space-5, 1.25rem);
   background: var(--surface, #fff);
+}
+.facility-page { overflow: auto; }
+.facility-tabs { overflow: hidden; }
+.facility-tabs > .ant-tabs-nav { flex-shrink: 0; }
+.facility-tabs > .ant-tabs-content-holder {
+  min-height: 0;
+  overflow: hidden;
+}
+.facility-tabs > .ant-tabs-content-holder > .ant-tabs-content,
+.facility-tabs > .ant-tabs-content-holder > .ant-tabs-content > .ant-tabs-tabpane {
+  height: 100%;
+  min-height: 0;
 }
 .facility-page > .ant-page-header {
   padding: 0 0 var(--space-4, 1rem);
@@ -28,7 +46,12 @@
   padding: 0;
 }
 /* Nested plan management shares the reports' left and right content edges. */
-.facility-page > .facility-page { padding: var(--space-5, 1.25rem) 0 0; }
+/* 报表内嵌列表随报表自然排布，不再占一整屏或产生第二条纵向滚动条。 */
+.facility-page > .facility-page {
+  height: auto;
+  overflow: visible;
+  padding: var(--space-5, 1.25rem) 0 0;
+}
 .facility-page .ant-table-placeholder .ant-empty { margin-block: var(--space-3, .75rem); }
 .facility-page .ant-table-placeholder .ant-empty-image { height: 3rem; margin-bottom: .5rem; }
 .facility-page .ant-table-empty .ant-table-placeholder > td { padding-block: var(--space-3, .75rem); }
