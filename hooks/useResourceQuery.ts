@@ -10,7 +10,11 @@ export function useResourceQuery(resource: () => Resource, kind?: string, manage
   const rows = ref<Entity[]>([]), total = ref(0), page = ref(1), search = ref('')
   const projectId = ref<string>(), busy = ref(false), failedOnly = ref(false), error = ref('')
   const terms = ref<Term[]>([])
-  const params = computed<Query>(() => ({ terms: terms.value }))
+  const params = computed<Query>(() => ({
+    terms: managed && resource().path === 'devices' && projectId.value
+      ? [{ column: 'projectId', value: projectId.value }, ...(terms.value.length ? [{ type: 'and', terms: terms.value }] : [])]
+      : terms.value
+  }))
   let sequence = 0
   const request = async (query: Query, context?: { signal: AbortSignal }) => {
     const current = ++sequence
@@ -52,7 +56,7 @@ export function useResourceQuery(resource: () => Resource, kind?: string, manage
     }
   }
   const filter = (value: Term[]) => {
-    projectId.value = selectedProject(value)
+    if (resource().path !== 'devices') projectId.value = selectedProject(value)
     terms.value = value
   }
   if (!managed) {

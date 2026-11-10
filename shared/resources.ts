@@ -37,7 +37,6 @@ export const resources: Record<string, Resource> = {
       ['name', feText('deviceName')],
       ['sourceName', feText('cloudName')],
       ['sourceState', feText('connectionStatus')],
-      ['syncState', feText('syncStatus')],
       ['categoryName', feText('facilityCategory')],
       ['projectName', feText('businessProject')]
     ])

@@ -20,7 +20,7 @@ const statusValues: Record<string, string[]> = {
 
 /** 只开放真实持久化字段；采集积压是计算列，不作为服务端查询字段。 */
 export function resourceSearchFields(resource: Resource, options: Record<string, Option[]>, kind?: string): ConditionFilterField[] {
-  const fields: ConditionFilterField[] = [{
+  const fields: ConditionFilterField[] = resource.path === 'devices' ? [] : [{
     title: feText('businessProject'), dataIndex: 'projectId',
     search: { type: 'select', options: options.projects || [] }
   }]

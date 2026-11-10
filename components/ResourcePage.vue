@@ -15,6 +15,8 @@ import MappingSamples from './MappingSamples.vue'
 import RecordForm from './RecordForm.vue'
 import DeviceDetail from './DeviceDetail.vue'
 import TaskDetail from './TaskDetail.vue'
+import DeviceAssetCard from './devices/DeviceAssetCard.vue'
+import { connectionStatusTones } from '../shared/deviceStatus'
 const props = defineProps<{ resource: string; kind?: string; legacy?: boolean }>(),
   config = computed(() => resources[props.resource]),
   vm = reactive(useResource(() => config.value, props.kind, !props.legacy)),
@@ -25,7 +27,7 @@ const filters = ref<ConditionFilterTerm[]>([])
 const fields = computed(() => resourceSearchFields(config.value, vm.options, props.kind))
 const columns = computed(() => [
   ...config.value.columns.map((c) => ({ title: c.title, dataIndex: c.key, key: 'cell-' + c.key, scopedSlots: true, width: timeColumns.has(c.key) ? 185 : 160 })),
-  { title: feText('actions'), key: 'actions', dataIndex: 'actions', scopedSlots: true, width: 280, fixed: 'right' }
+  { title: feText('actions'), key: 'actions', dataIndex: 'actions', scopedSlots: true, width: props.resource === 'devices' ? 100 : 280, fixed: 'right' }
 ])
 const legacyColumns = computed(() => [
   ...config.value.columns.map(column => ({ title: column.title, dataIndex: column.key, key: column.key })),
@@ -62,6 +64,11 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
       closable
       @close="vm.error = ''"
     />
+    <div :class="{ 'facility-resource-controls--inline': resource === 'devices' && !legacy }">
+    <a-select v-if="resource === 'devices' && !legacy"
+      v-model:value="vm.projectId" :placeholder="feText('allBusinessProjects')"
+      allow-clear show-search option-filter-prop="label"
+      :options="vm.options.projects || []" class="facility-toolbar__project" />
     <ConditionFilter v-if="!legacy" v-model="filters" :fields="fields" class="facility-search"
       @change="vm.filter($event.filter.terms)" />
     <div v-if="legacy || !config.readonly || $slots.tools" class="facility-toolbar">
@@ -113,6 +120,7 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
         <a-tag>{{ feText('matchingMeters') }}: {{ vm.total }}</a-tag>
       </template>
     </div>
+    </div>
     <a-table
       v-if="legacy"
       row-key="id"
@@ -152,13 +160,21 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
       <template #emptyText><a-empty :description="feText('noRecords')" /></template>
     </a-table>
     <j-pro-table v-else :ref="setTable"
-      row-key="id" mode="TABLE" type="PAGE" :columns="columns" :params="vm.params" :request="vm.request"
+      row-key="id" :mode="resource === 'devices' ? undefined : 'TABLE'"
+      :mode-value="resource === 'devices' ? 'CARD' : 'TABLE'" :grid-columns="[2, 3, 4]"
+      type="PAGE" :columns="columns" :params="vm.params" :request="vm.request"
       :no-pagination="false" :pagination="{ pageSize: 12 }" :alert-show="false" :body-style="{ padding: 0 }"
       :scroll="{ x: columns.reduce((width, column) => width + column.width, 0) }">
+      <template v-if="resource === 'devices'" #card="record">
+        <DeviceAssetCard :device="record" @open="open(record)" />
+      </template>
       <template v-for="column in columns" :key="column.key" #[column.key]="record">
         <ResourceActions v-if="column.key === 'actions'" :resource="resource" :record="record"
           :saving="vm.saving" @open="open(record)" @qr="group = record"
           @command="vm.command(record, $event)" @remove="vm.remove(record)" />
+        <StatusTag v-else-if="resource === 'devices' && column.dataIndex === 'sourceState'"
+          :text="display(record[column.dataIndex])"
+          :status="connectionStatusTones[String(record[column.dataIndex])] || 'default'" />
         <template v-else-if="timeColumns.has(column.dataIndex)">{{ time(record[column.dataIndex]) }}</template>
         <template v-else-if="column.dataIndex === 'collectionLag'">{{ collectionLag(record) }}</template>
         <template v-else>{{ display(record[column.dataIndex]) }}</template>
