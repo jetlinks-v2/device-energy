@@ -11,7 +11,7 @@ import DeviceImportTools from '../../../components/DeviceImportTools.vue'
         key="devices"
         :tab="feText('deviceRegister')"
       >
-        <ResourcePage resource="devices" legacy>
+        <ResourcePage resource="devices">
           <template #tools="{ projectId, refresh }">
             <DeviceImportTools
               :project-id="projectId"
@@ -24,7 +24,7 @@ import DeviceImportTools from '../../../components/DeviceImportTools.vue'
         key="groups"
         :tab="feText('equipmentRoomsGroups')"
       >
-        <ResourcePage resource="groups" legacy />
+        <ResourcePage resource="groups" />
       </a-tab-pane>
     </a-tabs>
   </FacilityWorkspace>

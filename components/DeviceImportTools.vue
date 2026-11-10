@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { feText } from '../shared/i18n'
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { UploadOutlined } from '@ant-design/icons-vue'
 import { useDeviceImport } from '../hooks/useDeviceImport'
 const props = defineProps<{ projectId?: string }>(),
   emit = defineEmits<{ changed: [] }>()
+const fileInput = ref<HTMLInputElement>()
 const vm = reactive(
   useDeviceImport(
     () => props.projectId,
@@ -24,20 +25,16 @@ const upload = (event: Event) => {
   >
     {{ feText('exportExtendedProfileTemplate') }}
   </a-button>
-  <j-permission-button hasPermission="facility/Devices:save"><label class="import-button" :aria-disabled="vm.busy">
+  <j-permission-button hasPermission="facility/Devices:save"
+    :loading="vm.busy" :disabled="vm.busy" @click="fileInput?.click()">
     <UploadOutlined />
-    <span>{{ feText('importExtendedProfiles') }}</span>
-    <input
-      type="file"
-      accept=".csv"
-      :disabled="vm.busy"
-      @change="upload"
-    />
-  </label></j-permission-button>
+    {{ feText('importExtendedProfiles') }}
+  </j-permission-button>
+  <input ref="fileInput" type="file" accept=".csv" hidden :disabled="vm.busy" @change="upload" />
   <span
     v-if="vm.error"
     role="alert"
-    style="color: #cf1322"
+    class="facility-import-error"
   >
     {{ vm.error }}
   </span>
@@ -49,17 +46,7 @@ const upload = (event: Event) => {
   </span>
 </template>
 <style scoped>
-.import-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2rem;
-  padding-inline: .9375rem;
-  border: 1px solid var(--ant-color-border, #d9d9d9);
-  border-radius: var(--r-2, .375rem);
-  cursor: pointer;
+.facility-import-error {
+  color: var(--err);
 }
-.import-button:focus-within { outline: 2px solid var(--ant-color-primary, #1677ff); outline-offset: 2px; }
-.import-button[aria-disabled='true'] { opacity: .5; cursor: not-allowed; }
-.import-button input { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 </style>
