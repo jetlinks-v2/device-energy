@@ -3,10 +3,15 @@ import { clone } from '../shared/types'
 import { ref, reactive, watch, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { facility } from '../api'
-import type { Entity, FormValues, FormValue, Option, Resource } from '../shared/types'
+import type { Entity, FormValues, FormValue, Option, Organization, Resource } from '../shared/types'
 import { messageOf } from '../shared/types'
 import { planGenerationReason } from '../shared/planActions'
 import { useResourceQuery } from './useResourceQuery'
+const organizationOptions = (nodes: Organization[]): Option[] => nodes.flatMap(node => [
+  { value: node.id, label: node.name || node.id, parentId: node.parentId,
+    selectable: node.organizationType?.value === 'external', disabled: node.organizationType?.value !== 'external' },
+  ...organizationOptions(node.children || [])
+])
 /** 请求、选项联动和提交集中于hook，过期列表响应不会覆盖新筛选。 */
 export function useResource(resource: () => Resource, kind?: string, managed = false) {
   const query = useResourceQuery(resource, kind, managed)
@@ -30,7 +35,11 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
       ])
       await Promise.all(
         [...sources].map(async (source) => {
-          const items = ['projects', 'employees', 'organizations'].includes(source)
+          if (source === 'organizations') {
+            options[source] = organizationOptions(await facility.options<Organization>(source))
+            return
+          }
+          const items = ['projects', 'employees'].includes(source)
             ? await facility.options(source)
             : (await facility.query(source, { pageSize: 200 })).data
           options[source] = items.map((row) => ({ value: row.id, label: row.name || row.id }))

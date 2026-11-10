@@ -24,10 +24,6 @@ const metrics = [
 <template>
   <FacilityWorkspace>
     <section class="facility-page">
-      <a-page-header
-        :title="feText('facilityAndEnergyManagement')"
-        :sub-title="feText('deviceOperationsAndEnergyMonitoring')"
-      />
       <ConditionFilter v-model="search.terms" :fields="search.fields" class="facility-search" @change="search.change" />
       <a-alert
         v-if="vm.error"

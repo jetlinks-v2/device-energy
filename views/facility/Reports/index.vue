@@ -16,7 +16,6 @@ const search = reactive(useReportSearch(reports, true))
 <template>
   <FacilityWorkspace>
     <section class="facility-page">
-      <a-page-header :title="feText('reports')" />
       <a-alert
         v-if="vm.error"
         type="error"

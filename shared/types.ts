@@ -43,6 +43,15 @@ export interface Option {
   value: string
   label: string
   parentId?: string
+  selectable?: boolean
+  disabled?: boolean
+}
+export interface Organization {
+  id: string
+  name?: string
+  parentId?: string
+  organizationType?: { value: 'project' | 'external'; text: string } | null
+  children?: Organization[]
 }
 export interface CheckItem {
   id: string

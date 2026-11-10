@@ -55,7 +55,6 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
 
 <template>
   <section class="facility-page" :class="{ 'facility-resource-page': !legacy }">
-    <a-page-header :title="config.title" />
     <a-alert
       v-if="vm.error && !vm.opened"
       type="error"

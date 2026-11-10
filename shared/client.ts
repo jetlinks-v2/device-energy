@@ -40,7 +40,7 @@ export function facilityClient(http: Transport) {
       http.post<Task>(prefix + '/tasks/' + id(key) + '/' + id(action), command),
     downloadTask: (key: string) => http.get<Task>(prefix + '/tasks/' + id(key) + '/offline'),
     context: () => http.get<Context>(prefix + '/context/me'),
-    options: (kind: string) => http.get<Entity[]>(prefix + '/context/' + kind),
+    options: <T = Entity>(kind: string) => http.get<T[]>(prefix + '/context/' + kind),
     series: (key: string, property: string, from: number, to: number) =>
       http.get<Reading[]>(
         prefix + '/energy/series/' + id(key) + '?property=' + id(property) + '&from=' + from + '&to=' + to

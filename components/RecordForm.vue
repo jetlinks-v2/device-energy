@@ -46,6 +46,7 @@ const dateValue = (e: Event) => new Date((e.target as HTMLInputElement).value).g
             :placeholder="field.label"
             :aria-label="field.label"
             tree-node-filter-prop="label"
+            :tree-default-expand-all="field.source === 'organizations'"
             show-search
             allow-clear
             :dropdown-style="{ maxHeight: '360px', overflow: 'auto' }"

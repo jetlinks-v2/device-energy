@@ -93,7 +93,7 @@ export const resources: Record<string, Resource> = {
       ]),
       f('assigneeId', feText('assigneeLeaveBlankForTaskPool'), 'select', 'employees'),
       f('followUserId', feText('internalFollowUpAssignee'), 'select', 'employees'),
-      f('externalOrganizationId', feText('externalContractorOrganization'), 'select', 'organizations'),
+      f('externalOrganizationId', feText('externalContractorOrganization'), 'tree', 'organizations'),
       { ...f('reviewerId', feText('reviewer'), 'select', 'employees'), required: true },
       { ...f('startTime', feText('startTime'), 'datetime'), required: true },
       { ...f('endTime', feText('endTime'), 'datetime'), required: true },
