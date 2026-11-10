@@ -21,7 +21,7 @@ export function useResourceQuery(resource: () => Resource, kind?: string, manage
     busy.value = true
     error.value = ''
     try {
-      const result = await queryResource(resource().path, resourceQuery(query, kind), context?.signal)
+      const result = await queryResource(resource().path, resourceQuery(query, resource().path === 'groups' ? undefined : kind), context?.signal)
       if (current === sequence && !context?.signal.aborted) {
         rows.value = result.data
         total.value = result.total
@@ -47,7 +47,7 @@ export function useResourceQuery(resource: () => Resource, kind?: string, manage
       if (resource().collection && failedOnly.value) filters.push({ column: 'collectionError', termType: 'notnull', value: true })
       if (search.value) filters.push({ column: 'name', termType: 'like', value: '%' + search.value + '%' })
       if (projectId.value) filters.push({ column: 'projectId', value: projectId.value })
-      const result = await facility.query(resource().path, resourceQuery({ pageIndex: page.value - 1, pageSize: 20, terms: filters }, kind))
+      const result = await facility.query(resource().path, resourceQuery({ pageIndex: page.value - 1, pageSize: 20, terms: filters }, resource().path === 'groups' ? undefined : kind))
       if (current === sequence) { rows.value = result.data; total.value = result.total }
     } catch (cause) {
       if (current === sequence) error.value = messageOf(cause) || feText('operationFailedPleaseTryAgain')

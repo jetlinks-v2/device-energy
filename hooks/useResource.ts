@@ -68,7 +68,7 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
       form.startTime = Date.now()
       form.endTime = Date.now() + 365 * 86400000
     }
-    if (kind) form.kind = kind
+    if (kind && resource().path !== 'groups') form.kind = kind
     if (!row && projectId.value) form.projectId = projectId.value
     previewRows.value = []
     opened.value = true
@@ -196,8 +196,13 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     error.value = ''
     let generated: number | undefined
     try {
+      if (['enable', 'disable'].includes(action) && resource().fields.some(field => field.key === 'enabled')) {
+        // Use the same versioned save contract as editing; never change the row before the server accepts it.
+        await facility.save(resource().path, { ...row, enabled: action === 'enable' })
+        message.success(feText(action === 'enable' ? 'configurationEnabled' : 'configurationDisabled'))
+      }
       // Preserve the selected device alert as the fault's source; the server validates its ownership.
-      if (action === 'fault' && resource().path === 'alerts') {
+      else if (action === 'fault' && resource().path === 'alerts') {
         const description = window.prompt(feText('enterFaultDescription'))?.trim()
         if (!description) return
         await facility.save('faults', {

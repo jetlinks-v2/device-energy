@@ -30,6 +30,34 @@ function setup(resourceName = 'plans', kind) {
   return { vm, calls, transport }
 }
 
+test('配置可直接启停，保留版本与完整规则，不改动原列表记录', async () => {
+  for (const resource of ['standards', 'cycles', 'plans', 'energy/mappings', 'rules']) {
+    const { vm, calls } = setup(resource, 'inspection')
+    const row = { id: 'config', version: 7, enabled: true, kind: 'inspection',
+      checkItems: [{ id: 'check', name: '检查要求' }], rule: { mode: 'daily' }, groupIds: ['group'] }
+    await vm.command(row, 'disable')
+    assert.equal(calls.length, 1)
+    assert.deepEqual(calls[0], { path: resource, payload: { ...row, enabled: false } })
+    assert.equal(row.enabled, true)
+    await vm.command({ ...row, enabled: false }, 'enable')
+    assert.equal(calls[1].payload.enabled, true)
+    assert.equal(calls[1].payload.version, 7)
+  }
+})
+
+test('启停失败保留原状态并展示错误，提交中不能重复操作', async () => {
+  const { vm, calls, transport } = setup('plans', 'inspection')
+  const row = { id: 'config', version: 7, enabled: true }
+  transport.save = async () => { throw new Error('配置已被修改，请刷新') }
+  await vm.command(row, 'disable')
+  assert.equal(row.enabled, true)
+  assert.equal(vm.error.value, '配置已被修改，请刷新')
+  assert.equal(vm.saving.value, false)
+  vm.saving.value = true
+  await vm.command(row, 'disable')
+  assert.equal(calls.length, 0)
+})
+
 test('计划只选机房设备组，负责人、作业类型和工单模式必填，单工单不显示外协', () => {
   const { vm } = setup()
   const fields = vm.formFields.value

@@ -147,6 +147,7 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
             :resource="resource"
             :record="record as Entity"
             :saving="vm.saving"
+            :kind="kind"
             @open="open(record as Entity)"
             @qr="group = record as Entity"
             @command="command(record as Entity, $event)"
@@ -179,7 +180,7 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
         <DeviceAssetCard :device="record" @open="open(record)" />
       </template>
       <template v-for="column in columns" :key="column.key" #[column.key]="record">
-        <ResourceActions v-if="column.key === 'actions'" :resource="resource" :record="record"
+        <ResourceActions v-if="column.key === 'actions'" :resource="resource" :record="record" :kind="kind"
           :saving="vm.saving" @open="open(record)" @qr="group = record"
           @command="command(record, $event)" @remove="vm.remove(record)" />
         <StatusTag v-else-if="resource === 'devices' && column.dataIndex === 'sourceState'"

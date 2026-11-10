@@ -6,7 +6,7 @@ import { planGenerationReason } from '../shared/planActions'
 import type { Entity } from '../shared/types'
 import { resources } from '../shared/resources'
 import { resourcePermission } from '../shared/permissions'
-const props = defineProps<{ resource: string; record: Entity; saving: boolean }>()
+const props = defineProps<{ resource: string; record: Entity; saving: boolean; kind?: string }>()
 const config = computed(() => resources[props.resource])
 const now = useNow({ interval: 1000 })
 const generateReason = computed(() => planGenerationReason(props.record, false, now.value.getTime()))
@@ -21,14 +21,26 @@ const faultActionNames: Record<string, string> = {
 </script>
 <template>
   <a-space wrap>
-    <j-permission-button :hasPermission="config.readonly || resource === 'faults' ? true : resourcePermission(resource, String(record.kind || ''))"
+    <j-permission-button :hasPermission="config.readonly || resource === 'faults' ? true : resourcePermission(resource, String(record.kind || kind || ''))"
       v-if="!config.readonly || resource === 'devices' || resource === 'tasks'"
       type="link"
       @click="emit('open')"
     >
       {{ config.readonly || resource === 'faults' ? feText('details') : feText('edit') }}
     </j-permission-button>
-    <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''), 'qr')"
+    <a-popconfirm
+      v-if="!config.readonly && config.fields.some(field => field.key === 'enabled')"
+      :title="feText(record.enabled ? 'confirmDisable' : 'confirmEnable')"
+      :disabled="saving"
+      @confirm="emit('command', record.enabled ? 'disable' : 'enable')"
+    >
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''), 'toggle')"
+        type="link" :disabled="saving" :danger="!!record.enabled"
+      >
+        {{ feText(record.enabled ? 'disable' : 'enable') }}
+      </j-permission-button>
+    </a-popconfirm>
+    <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''), 'qr')"
       v-if="resource === 'groups'"
       type="link"
       @click="emit('qr')"
@@ -38,7 +50,7 @@ const faultActionNames: Record<string, string> = {
     <template v-if="resource === 'plans'">
       <a-tooltip :title="generateReason">
       <span>
-      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''), 'generate')"
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''), 'generate')"
         type="link"
         :disabled="saving || !!generateReason"
         @click="emit('command', 'generate')"
@@ -49,7 +61,7 @@ const faultActionNames: Record<string, string> = {
       </a-tooltip>
       <a-tooltip :title="temporaryReason">
       <span>
-      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''), 'generate')"
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''), 'generate')"
         type="link"
         :disabled="saving || !!temporaryReason"
         @click="emit('command', 'temporary')"
@@ -59,7 +71,7 @@ const faultActionNames: Record<string, string> = {
       </span>
       </a-tooltip>
     </template>
-    <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
+    <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''))"
       v-if="resource === 'energy/mappings'"
       type="link"
       @click="emit('command', 'collect')"
@@ -77,20 +89,20 @@ const faultActionNames: Record<string, string> = {
     <template
       v-if="['alerts', 'planAlerts'].includes(resource) && !['closed', 'recovered'].includes(String(record.state))"
     >
-      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''))"
         type="link"
         @click="emit('command', 'processing')"
       >
         {{ feText('process') }}
       </j-permission-button>
-      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''))"
         type="link"
         @click="emit('command', 'closed')"
       >
         {{ feText('close') }}
       </j-permission-button>
     </template>
-    <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
+    <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''))"
       v-if="['notifications', 'planNotifications'].includes(resource) && record.state === 'failed'"
       type="link"
       @click="emit('command', 'retry')"
@@ -103,13 +115,13 @@ const faultActionNames: Record<string, string> = {
         (resource === 'replacements' && record.state === 'pending')
       "
     >
-      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''))"
         type="link"
         @click="emit('command', 'approve')"
       >
         {{ feText('approve') }}
       </j-permission-button>
-      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''))"
         type="link"
         danger
         @click="emit('command', 'reject')"
@@ -118,7 +130,7 @@ const faultActionNames: Record<string, string> = {
       </j-permission-button>
     </template>
     <template v-if="resource === 'faults'">
-      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''))"
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''))"
         v-for="action in record.state === 'open'
           ? ['start']
           : record.state === 'processing'
@@ -138,7 +150,7 @@ const faultActionNames: Record<string, string> = {
       :title="feText('disableAndDeleteThisConfigurationHistoricalRecordsWillBeRetained')"
       @confirm="emit('remove')"
     >
-      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || ''), 'delete')"
+      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''), 'delete')"
         danger
         type="link"
       >

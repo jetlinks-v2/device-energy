@@ -2,6 +2,7 @@
 import { feText } from '../shared/i18n'
 import { CameraOutlined } from '@ant-design/icons-vue'
 import type { Task, CheckResult } from '../shared/types'
+import { resourcePermission } from '../shared/permissions'
 const props = defineProps<{ task: Task; results: CheckResult[]; busy: boolean }>(),
   emit = defineEmits<{ change: [results: CheckResult[]]; photo: [itemId: string, file: File]; submit: []; draft: [] }>()
 const update = (id: string, patch: Partial<CheckResult>) =>
@@ -87,9 +88,9 @@ const photograph = (id: string, file: File) => {
       />
     </a-card>
     <a-space>
-      <a-button @click="emit('draft')">{{ feText('saveDraft') }}</a-button>
+      <j-permission-button :hasPermission="resourcePermission('tasks', task.kind, 'execute')" :disabled="busy" @click="emit('draft')">{{ feText('saveDraft') }}</j-permission-button>
       <j-permission-button
-        :hasPermission="'facility/' + (task.kind === 'maintenance' ? 'Maintenance' : 'Inspection') + ':execute'"
+        :hasPermission="resourcePermission('tasks', task.kind, 'execute')"
         type="primary"
         :loading="busy"
         @click="emit('submit')"
