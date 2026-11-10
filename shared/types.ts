@@ -84,18 +84,24 @@ export interface Task extends Entity {
   kind: string
   deviceId: string
   deviceName: string
-  mode: string
   assigneeId?: string
-  followUserId?: string
   reviewerId: string
+  scheduledTime: number
   deadline: number
   state: string
   standardSnapshot: CheckItem[]
   results: CheckResult[]
-  followResults: CheckResult[]
   instructionSnapshot?: string
   instructionAttachments: string[]
 }
+export interface TaskProcess extends Entity {
+  action: string
+  fromState?: string
+  toState: string
+  creatorName?: string
+  comment?: string
+}
+export interface TaskAssignee { id: string; name: string }
 export interface TaskCommand {
   version: number
   userId?: string
@@ -182,6 +188,12 @@ export const time = (value: unknown) =>
   typeof value === 'number'
     ? new Date(value).toLocaleString(feLocale() === 'en' ? 'en-GB' : 'zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })
     : '—'
+/** Task windows are displayed to minutes; persisted timestamps remain unchanged. */
+export const taskTime = (value: unknown) => typeof value === 'number'
+  ? new Date(value).toLocaleString(feLocale() === 'en' ? 'en-GB' : 'zh-CN', {
+      timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }) : '—'
 /** Cursor lag is collection backlog, not a claim that devices have stopped reporting. */
 export const collectionLag = (row: Entity, now = Date.now()): number | string =>
   row.enabled && typeof row.lastCollectedTime === 'number'
@@ -208,7 +220,7 @@ export const states: Record<string, string> = {
   claimed: feText('claimed'),
   executing: feText('executing'),
   rectify: feText('rectifying'),
-  'external-submitted': feText('awaitingInternalFollowUp'),
+  'external-submitted': feText('awaitingReview'),
   review: feText('awaitingReview'),
   completed: feText('completed'),
   cancelled: feText('cancelled'),
@@ -238,8 +250,6 @@ export const states: Record<string, string> = {
   near: feText('approachingThreshold'),
   warning: feText('warning'),
   critical: feText('critical'),
-  single: feText('singleWorkOrder'),
-  double: feText('dualWorkOrder'),
   counter: feText('cumulativeReading'),
   increment: feText('periodIncrement'),
   instant: feText('instantaneousMetric'),

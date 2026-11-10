@@ -29,8 +29,8 @@ export function useHome() {
     try {
       if (can('facility-task')) {
         tasks.value = navigator.onLine
-          ? (await facility.tasks(pool.value ? { terms: [{ column: 'state', value: 'open' }] } : {}, !pool.value)).data
-          : await offline.cachedTasks(scope())
+          ? (await facility.tasks(pool.value ? { terms: [{ column: 'state', value: 'open' }] } : {}, !pool.value, pool.value)).data
+          : pool.value ? [] : await offline.cachedTasks(scope())
         pending.value = await offline.entries(scope())
       }
       if (can('facility-owner')) {

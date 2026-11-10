@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import dayjs from 'dayjs'
 import type { CycleRule } from '../shared/cycle/types'
 import CycleRuleEditor from './CycleRuleEditor.vue'
 import type { Field, FormValues, FormValue, Option, CheckItem, Metric } from '../shared/types'
@@ -10,9 +11,6 @@ defineProps<{ fields: Field[]; model: FormValues; options: Record<string, Option
 const cycleEditor = ref<InstanceType<typeof CycleRuleEditor>>()
 defineExpose({ validateCycle: () => cycleEditor.value?.validate() })
 const emit = defineEmits<{ change: [key: string, value: FormValue] }>()
-const dateText = (v: unknown) =>
-  typeof v === 'number' ? new Date(v - new Date(v).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''
-const dateValue = (e: Event) => new Date((e.target as HTMLInputElement).value).getTime()
 </script>
 
 <template>
@@ -81,11 +79,16 @@ const dateValue = (e: Event) => new Date((e.target as HTMLInputElement).value).g
             allow-clear
             @update:value="emit('change', field.key, typeof $event === 'string' && $event ? $event : undefined)"
           />
-          <input
+          <a-date-picker
             v-else-if="field.type === 'datetime'"
-            type="datetime-local"
-            :value="dateText(model[field.key])"
-            @change="emit('change', field.key, dateValue($event))"
+            :value="typeof model[field.key] === 'number' && Number.isFinite(model[field.key]) ? dayjs(model[field.key] as number) : undefined"
+            :show-time="{ format: 'HH:mm' }"
+            format="YYYY-MM-DD HH:mm"
+            :placeholder="field.label"
+            :aria-label="field.label"
+            style="width: 100%"
+            allow-clear
+            @change="emit('change', field.key, $event ? dayjs($event).startOf('minute').valueOf() : undefined)"
           />
           <a-textarea
             v-else-if="field.type === 'textarea'"
@@ -120,11 +123,3 @@ const dateValue = (e: Event) => new Date((e.target as HTMLInputElement).value).g
     </a-row>
   </a-form>
 </template>
-<style scoped>
-input[type='datetime-local'] {
-  width: 100%;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  padding: 5px 10px;
-}
-</style>

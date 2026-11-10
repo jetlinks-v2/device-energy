@@ -17,11 +17,11 @@ const bundled = await build({
     }[args.path] }))
   } }]
 })
-function setup(transport) {
+function setup(transport, path = 'plans') {
   const watchers = [], module = { exports: {} }, options = {}, error = { value: '' }
   new Function('transport', 'watchers', 'module', 'exports', bundled.outputFiles[0].text)(transport, watchers, module, module.exports)
   const form = { projectId: 'project-a', kind: 'inspection' }
-  module.exports.usePlanReferences(() => ({ path: 'plans' }), form, { value: true }, options, error)
+  module.exports.usePlanReferences(() => ({ path }), form, { value: true }, options, error)
   return { form, options, error, refresh: () => watchers[0]() }
 }
 
@@ -38,6 +38,44 @@ test('巡检和维保候选分别按当前项目及作业类型过滤，只加�
       assert.ok(call.query.terms.some(term => term.column === 'enabled' && term.value === true))
     }
   }
+})
+
+test('设备组只查询当前项目且任一旧标志已启用的设备，分页取全，未选项目不查', async () => {
+  const calls = []
+  const vm = setup({ query: async (path, query) => {
+    calls.push({ path, query })
+    return { total: 201, data: query.pageIndex === 0 ? Array.from({ length: 200 }, (_, id) => ({ id: String(id) })) : [{ id: 'last' }] }
+  } }, 'groups')
+  await vm.refresh()
+  assert.equal(vm.options.devices.length, 201)
+  assert.ok(calls.every(call => call.path === 'devices'))
+  assert.deepEqual(calls[0].query.terms, [
+    { column: 'projectId', value: 'project-a' },
+    { type: 'and', terms: [{ column: 'inspectionEnabled', value: true }, { type: 'or', column: 'maintenanceEnabled', value: true }] }
+  ])
+  vm.form.projectId = undefined
+  await vm.refresh()
+  assert.equal(calls.length, 2)
+  assert.deepEqual(vm.options.devices, [])
+})
+
+test('设备组切换项目不被旧候选覆盖，接口失败清空候选并显示原因', async () => {
+  let release
+  const old = new Promise(resolve => { release = resolve })
+  const vm = setup({ query: async (path, query) => {
+    const project = query.terms[0].value
+    if (project === 'project-a') await old
+    if (project === 'failed') throw new Error('查询失败')
+    return { total: 1, data: [{ id: project }] }
+  } }, 'groups')
+  const previous = vm.refresh()
+  vm.form.projectId = 'project-b'
+  await vm.refresh()
+  release(); await previous
+  assert.equal(vm.options.devices[0].value, 'project-b')
+  vm.form.projectId = 'failed'; await vm.refresh()
+  assert.deepEqual(vm.options.devices, [])
+  assert.equal(vm.error.value, '查询失败')
 })
 
 test('切换项目及类型后旧请求返回不能覆盖新候选，失败时不回退全量候选', async () => {

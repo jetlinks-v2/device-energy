@@ -4,12 +4,12 @@ import { energyOptions, resources } from './resources'
 import { states, type Option, type Resource } from './types'
 
 export const timeColumns = new Set([
-  'startTime', 'endTime', 'createTime', 'deadline', 'effectiveTime', 'observedTime',
+  'startTime', 'endTime', 'createTime', 'scheduledTime', 'deadline', 'effectiveTime', 'observedTime',
   'lastSuccessTime', 'nextRunTime', 'lastCollectedTime', 'lastCollectionTime', 'lastCollectionSuccessTime'
 ])
 const optionsFor = (values: string[]) => values.map(value => ({ value, label: states[value] || value }))
 const statusValues: Record<string, string[]> = {
-  tasks: ['open', 'claimed', 'executing', 'rectify', 'external-submitted', 'review', 'completed', 'cancelled'],
+  tasks: ['open', 'claimed', 'executing', 'rectify', 'review', 'completed', 'closed', 'cancelled'],
   faults: ['open', 'processing', 'closed'],
   alerts: ['open', 'acknowledged', 'closed', 'recovered'],
   'alerts/plans': ['open', 'acknowledged', 'closed', 'recovered'],
@@ -34,7 +34,6 @@ export function resourceSearchFields(resource: Resource, options: Record<string,
     if (resource.path === 'devices' && key === 'syncState') choices = optionsFor(['active', 'inactive', 'pending-project', 'source-unavailable'])
     if (key === 'meterLevel') choices = resources['energy/mappings'].fields.find(item => item.key === key)?.options
     if (key === 'kind') choices = optionsFor(['inspection', 'maintenance'])
-    if (key === 'mode') choices = optionsFor(['single', 'double'])
     if (key === 'channel') choices = optionsFor(['sms', 'h5', 'inside'])
     if (key === 'level') choices = optionsFor(['near', 'warning', 'critical'])
     if (key === 'sourceType') choices = optionsFor(['manual', 'task', 'alert'])

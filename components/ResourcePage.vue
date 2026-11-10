@@ -3,7 +3,7 @@ import { feText } from '../shared/i18n'
 import { computed, reactive, ref } from 'vue'
 import { resources } from '../shared/resources'
 import { resourcePermission } from '../shared/permissions'
-import { collectionLag, display, time, type Entity, type Device } from '../shared/types'
+import { collectionLag, display, time, taskTime, type Entity, type Device } from '../shared/types'
 import { useResource } from '../hooks/useResource'
 import ConditionFilter, { type ConditionFilterTerm } from '@jetlinks-web-core/components/ConditionFilter'
 import { resourceSearchFields, timeColumns } from '../shared/resourceSearch'
@@ -16,6 +16,8 @@ import MappingSamples from './MappingSamples.vue'
 import RecordForm from './RecordForm.vue'
 import DeviceDetail from './DeviceDetail.vue'
 import TaskDetail from './TaskDetail.vue'
+import TaskDispatch from './TaskDispatch.vue'
+import TaskReviewButton from './TaskReviewButton.vue'
 import DeviceAssetCard from './devices/DeviceAssetCard.vue'
 import { connectionStatusTones } from '../shared/deviceStatus'
 const props = defineProps<{ resource: string; kind?: string; legacy?: boolean }>(),
@@ -23,13 +25,9 @@ const props = defineProps<{ resource: string; kind?: string; legacy?: boolean }>
   vm = reactive(useResource(() => config.value, props.kind, !props.legacy)),
   device = ref<Device>(),
   taskId = ref<string>(),
+  dispatchId = ref<string>(),
   group = ref<Entity>()
 const recordForm = ref<InstanceType<typeof RecordForm>>()
-const emit = defineEmits<{ 'tasks-generated': [] }>()
-const command = async (row: Entity, action: string) => {
-  const generated = await vm.command(row, action)
-  if (typeof generated === 'number' && generated > 0) emit('tasks-generated')
-}
 const save = async () => {
   try { recordForm.value?.validateCycle(); await vm.save() }
   catch (cause) { vm.error = cause instanceof Error ? cause.message : String(cause) }
@@ -81,7 +79,7 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
       :options="vm.options.projects || []" class="facility-toolbar__project" />
     <ConditionFilter v-if="!legacy" v-model="filters" :fields="fields" class="facility-search"
       @change="vm.filter($event.filter.terms)" />
-    <div v-if="legacy || !config.readonly || $slots.tools" class="facility-toolbar">
+    <div v-if="legacy || !config.readonly || resource === 'tasks' || $slots.tools" class="facility-toolbar">
       <a-select
         v-if="legacy"
         v-model:value="vm.projectId"
@@ -119,6 +117,7 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
       >
         {{ feText('add') }}
       </j-permission-button>
+      <TaskReviewButton v-if="resource === 'tasks'" :kind="kind" :options="vm.options" @changed="vm.refresh" />
       <slot
         name="tools"
         :rows="vm.rows"
@@ -149,19 +148,20 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
             :saving="vm.saving"
             :kind="kind"
             @open="open(record as Entity)"
+            @dispatch="dispatchId = record.id"
             @qr="group = record as Entity"
-            @command="command(record as Entity, $event)"
+            @command="vm.command(record as Entity, $event)"
             @remove="vm.remove(record as Entity)"
           />
         </template>
         <template
           v-else-if="
-            ['startTime', 'endTime', 'createTime', 'deadline', 'effectiveTime', 'observedTime', 'lastSuccessTime', 'nextRunTime', 'lastCollectedTime', 'lastCollectionTime', 'lastCollectionSuccessTime'].includes(
+            ['startTime', 'endTime', 'createTime', 'scheduledTime', 'deadline', 'effectiveTime', 'observedTime', 'lastSuccessTime', 'nextRunTime', 'lastCollectedTime', 'lastCollectionTime', 'lastCollectionSuccessTime'].includes(
               String(column.key)
             )
           "
         >
-          {{ time(record[String(column.key)]) }}
+          {{ resource === 'tasks' ? taskTime(record[String(column.key)]) : time(record[String(column.key)]) }}
         </template>
         <template v-else-if="column.key === 'collectionLag'">
           {{ collectionLag(record as Entity) }}
@@ -181,12 +181,12 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
       </template>
       <template v-for="column in columns" :key="column.key" #[column.key]="record">
         <ResourceActions v-if="column.key === 'actions'" :resource="resource" :record="record" :kind="kind"
-          :saving="vm.saving" @open="open(record)" @qr="group = record"
-          @command="command(record, $event)" @remove="vm.remove(record)" />
+          :saving="vm.saving" @open="open(record)" @dispatch="dispatchId = record.id" @qr="group = record"
+          @command="vm.command(record, $event)" @remove="vm.remove(record)" />
         <StatusTag v-else-if="resource === 'devices' && column.dataIndex === 'sourceState'"
           :text="display(record[column.dataIndex])"
           :status="connectionStatusTones[String(record[column.dataIndex])] || 'default'" />
-        <template v-else-if="timeColumns.has(column.dataIndex)">{{ record[column.dataIndex] === 9223372036854775807 ? '—' : time(record[column.dataIndex]) }}</template>
+        <template v-else-if="timeColumns.has(column.dataIndex)">{{ record[column.dataIndex] === 9223372036854775807 ? '—' : (resource === 'tasks' ? taskTime(record[column.dataIndex]) : time(record[column.dataIndex])) }}</template>
         <template v-else-if="column.dataIndex === 'collectionLag'">{{ collectionLag(record) }}</template>
         <template v-else>{{ display(record[column.dataIndex]) }}</template>
       </template>
@@ -265,6 +265,8 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
       :group="group"
       @close="group = undefined"
     />
+    <TaskDispatch v-if="dispatchId" :id="dispatchId" @close="dispatchId = undefined"
+      @saved="dispatchId = undefined; vm.refresh()" />
     <TaskDetail
       v-if="taskId"
       :id="taskId"

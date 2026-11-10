@@ -33,6 +33,7 @@ export function useDevice(input: Device) {
     try {
       device.value = await facility.read<Device>('devices', input.id)
       Object.assign(form, device.value)
+      form.workEnabled = !!(device.value.inspectionEnabled || device.value.maintenanceEnabled)
       options.employees = []
       const [people, spaces, linked, mapped, logs] = await Promise.all([
         device.value.projectId ? facility.options('employees/' + encodeURIComponent(device.value.projectId)) : Promise.resolve([]),
@@ -66,7 +67,10 @@ export function useDevice(input: Device) {
   const save = async () => {
     busy.value = true
     try {
-      await facility.updateDevice({ ...device.value, ...form })
+      const { workEnabled, ...values } = form
+      // Both legacy columns now represent one switch; explicit false must clear both.
+      await facility.updateDevice({ ...device.value, ...values,
+        inspectionEnabled: !!workEnabled, maintenanceEnabled: !!workEnabled })
       await refresh()
     } catch (e) {
       error.value = messageOf(e)

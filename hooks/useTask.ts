@@ -2,31 +2,43 @@ import { feText } from '../shared/i18n'
 import { clone } from '../shared/types'
 import { ref, computed, onMounted } from 'vue'
 import { facility } from '../api'
-import type { Task, CheckResult, Entity, Option } from '../shared/types'
+import type { Task, CheckResult, TaskProcess } from '../shared/types'
 import { messageOf } from '../shared/types'
 import { canExecute, taskActions } from '../shared/taskActions'
-export function useTask(id: string) {
+export function useTask(id: string, changed?: () => void) {
   const task = ref<Task>(),
     results = ref<CheckResult[]>([]),
     userId = ref(''),
     busy = ref(false),
     error = ref(''),
     comment = ref(''),
-    transferUser = ref<string>(),
-    employees = ref<Option[]>([])
+    pendingAction = ref(''),
+    claimable = ref(false),
+    history = ref<TaskProcess[]>([]), historyTotal = ref(0), historyPage = ref(1),
+    historyBusy = ref(false), historyError = ref('')
+  const loadHistory = async (page = 1) => {
+    if (historyBusy.value) return
+    historyBusy.value = true
+    historyError.value = ''
+    try {
+      const result = await facility.taskHistory(id, page - 1)
+      history.value = result.data
+      historyTotal.value = result.total
+      historyPage.value = page
+    } catch (cause) { historyError.value = messageOf(cause) }
+    finally { historyBusy.value = false }
+  }
   const refresh = async () => {
     busy.value = true
     error.value = ''
+    claimable.value = false
     try {
-      const [row, context, people] = await Promise.all([
-        facility.task(id),
-        facility.context(),
-        facility.options('employees')
-      ])
+      const [row, context] = await Promise.all([facility.task(id), facility.context()])
       task.value = row
       userId.value = context.userId
-      employees.value = people.map((p) => ({ value: p.id, label: p.name || p.id }))
-      results.value = clone(row.state === 'external-submitted' ? row.followResults || [] : row.results || [])
+      if (row.state === 'open') claimable.value = await facility.canClaimTask(id)
+      void loadHistory()
+      results.value = clone(row.results || [])
     } catch (e) {
       error.value = messageOf(e)
     } finally {
@@ -34,15 +46,18 @@ export function useTask(id: string) {
     }
   }
   const action = async (name: string) => {
-    if (!task.value) return
+    if (!task.value || busy.value) return
+    if (name === 'reject' && !comment.value.trim()) { error.value = feText('enterRectificationReason'); return }
     busy.value = true
     error.value = ''
     try {
       await facility.action(id, name, {
         version: task.value.version,
-        comment: comment.value,
-        userId: transferUser.value
+        comment: comment.value
       })
+      changed?.()
+      pendingAction.value = ''
+      comment.value = ''
       await refresh()
     } catch (e) {
       error.value = messageOf(e)
@@ -50,15 +65,24 @@ export function useTask(id: string) {
       busy.value = false
     }
   }
+  const requestAction = (name: string) => {
+    if (busy.value) return
+    comment.value = ''
+    error.value = ''
+    if (['approve', 'reject'].includes(name)) pendingAction.value = name
+    else void action(name)
+  }
   const submit = async () => {
-    if (!task.value) return
+    if (!task.value || busy.value) return
     busy.value = true
+    error.value = ''
     try {
-      await facility.action(id, task.value.state === 'external-submitted' ? 'follow' : 'submit', {
+      await facility.action(id, 'submit', {
         version: task.value.version,
         results: results.value,
         submissionId: crypto.randomUUID()
       })
+      changed?.()
       await refresh()
     } catch (e) {
       error.value = messageOf(e)
@@ -83,7 +107,7 @@ export function useTask(id: string) {
   const draft = () => {
     error.value = feText('draftSavedOnThisPageUseTheStaffMobileAppForOffline')
   }
-  const actions = computed(() => (task.value ? taskActions(task.value, userId.value) : [])),
+  const actions = computed(() => (task.value ? taskActions(task.value, userId.value, claimable.value) : [])),
     executable = computed(() => !!task.value && canExecute(task.value, userId.value))
   onMounted(() => void refresh())
   return {
@@ -93,8 +117,9 @@ export function useTask(id: string) {
     busy,
     error,
     comment,
-    transferUser,
-    employees,
+    pendingAction,
+    requestAction,
+    history, historyTotal, historyPage, historyBusy, historyError, loadHistory,
     actions,
     executable,
     refresh,

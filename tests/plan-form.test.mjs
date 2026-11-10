@@ -27,8 +27,24 @@ function setup(resourceName = 'plans', kind) {
   const vm = module.exports.useResource(() => resource, kind)
   vm.edit()
   Object.assign(vm.form, { name: '巡检计划', projectId: 'project', standardId: 'standard', cycleId: 'cycle', groupIds: ['group'], reviewerId: 'owner' })
+  if (resourceName === 'plans') Object.assign(vm.form, { startTime: Date.now(), endTime: Date.now() + 86400000 })
   return { vm, calls, transport }
 }
+
+test('新增任务配置时间留空且必填，编辑保留时间，清空后不能保存', async () => {
+  const { vm, calls } = setup('plans', 'inspection')
+  vm.edit()
+  assert.equal(vm.form.startTime, undefined)
+  assert.equal(vm.form.endTime, undefined)
+  vm.edit({ id: 'plan', version: 1, name: '计划', projectId: 'project', kind: 'inspection', mode: 'single',
+    standardId: 'standard', cycleId: 'cycle', groupIds: ['group'], reviewerId: 'owner', startTime: 100000, endTime: 200000 })
+  assert.equal(vm.form.startTime, 100000)
+  assert.equal(vm.form.endTime, 200000)
+  vm.change('startTime', undefined)
+  await vm.save()
+  assert.equal(calls.length, 0)
+  assert.ok(vm.error.value.includes('开始时间'))
+})
 
 test('配置可直接启停，保留版本与完整规则，不改动原列表记录', async () => {
   for (const resource of ['standards', 'cycles', 'plans', 'energy/mappings', 'rules']) {
@@ -58,33 +74,25 @@ test('启停失败保留原状态并展示错误，提交中不能重复操作',
   assert.equal(calls.length, 0)
 })
 
-test('计划只选机房设备组，负责人、作业类型和工单模式必填，单工单不显示外协', () => {
+test('任务配置只选设备组，负责人和作业类型必填，不再区分工单模式和外协', () => {
   const { vm } = setup()
   const fields = vm.formFields.value
-  for (const key of ['deviceIds', 'assigneeId', 'followUserId', 'externalOrganizationId'])
+  for (const key of ['deviceIds', 'assigneeId', 'followUserId', 'externalOrganizationId', 'mode'])
     assert.equal(fields.some(field => field.key === key), false)
-  for (const key of ['reviewerId', 'kind', 'mode', 'cycleId', 'groupIds', 'startTime', 'endTime']) assert.equal(fields.find(field => field.key === key).required, true)
+  for (const key of ['reviewerId', 'kind', 'cycleId', 'groupIds', 'startTime', 'endTime']) assert.equal(fields.find(field => field.key === key).required, true)
   assert.equal(fields.find(field => field.key === 'reviewerId').label, '负责人')
 })
 
-test('双工单外协必填，填好后可保存；切回单工单清除外协', async () => {
+test('旧双工单字段不再提交，所有任务使用项目工单流程', async () => {
   const { vm, calls } = setup()
-  vm.change('mode', 'double')
-  assert.equal(vm.formFields.value.find(field => field.key === 'externalOrganizationId').required, true)
+  Object.assign(vm.form, { mode: 'double', externalOrganizationId: 'vendor', followUserId: 'follower' })
   await vm.save()
-  assert.equal(calls.length, 0)
-  assert.ok(vm.error.value.includes('外协'))
-  vm.change('externalOrganizationId', 'vendor')
-  await vm.save()
-  assert.equal(calls[0].payload.externalOrganizationId, 'vendor')
-  vm.change('mode', 'single')
-  assert.equal(vm.form.externalOrganizationId, undefined)
-  await vm.save()
-  assert.equal(calls[1].payload.externalOrganizationId, undefined)
+  assert.equal(calls.length, 1)
+  for (const key of ['mode', 'externalOrganizationId', 'followUserId']) assert.equal(calls[0].payload[key], undefined)
 })
 
-test('缺作业类型或工单模式阻止请求，旧执行人及跟进人不再提交，保留旧设备范围', async () => {
-  for (const key of ['kind', 'mode', 'reviewerId']) {
+test('缺作业类型或负责人阻止请求，旧执行人及跟进人不再提交，保留旧设备范围', async () => {
+  for (const key of ['kind', 'reviewerId']) {
     const { vm, calls } = setup()
     vm.form[key] = undefined
     await vm.save()
@@ -141,19 +149,6 @@ test('任务配置随巡检维保入口固定类型，保存不能提交另一�
   }
 })
 
-test('生成返回数量用于同页查看任务，失败不返回成功数量并保留具体错误', async () => {
-  const { vm, transport } = setup('plans', 'inspection')
-  const now = Date.now()
-  const row = { id: 'plan', cycleId: 'cycle', enabled: true, startTime: now - 60000, endTime: now + 60000, nextRunTime: now - 1000 }
-  transport.post = async () => [{ id: 'task' }]
-  assert.equal(await vm.command(row, 'generate'), 1)
-  transport.post = async () => []
-  assert.equal(await vm.command(row, 'generate'), 0)
-  transport.post = async () => { throw Error('生成失败') }
-  assert.equal(await vm.command(row, 'generate'), undefined)
-  assert.equal(vm.error.value, '生成失败')
-})
-
 test('检查项校验失败时不发送保存请求，并指出具体问题', async () => {
   const { vm, calls } = setup('standards', 'inspection')
   vm.form.checkItems = []
@@ -179,4 +174,12 @@ test('周期只维护规则且绑定项目，有效期只由任务配置决定�
   vm.form.endTime = Number(vm.form.startTime) - 1
   await vm.save()
   assert.equal(calls.length, 0)
+})
+
+test('设备组切换项目清空原设备选择，入口类型不写入设备组', () => {
+  const { vm } = setup('groups', 'inspection')
+  vm.edit({ id: 'group', projectId: 'project-a', deviceIds: ['device-a'] })
+  assert.equal(vm.form.kind, undefined)
+  vm.change('projectId', 'project-b')
+  assert.deepEqual(vm.form.deviceIds, [])
 })

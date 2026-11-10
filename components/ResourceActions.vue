@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { feText } from '../shared/i18n'
 import { computed } from 'vue'
-import { useNow } from '@vueuse/core'
-import { planGenerationReason } from '../shared/planActions'
 import type { Entity } from '../shared/types'
+import { canTransfer, canWithdraw } from '../shared/taskActions'
+import type { Task } from '../shared/types'
 import { resources } from '../shared/resources'
 import { resourcePermission } from '../shared/permissions'
 const props = defineProps<{ resource: string; record: Entity; saving: boolean; kind?: string }>()
 const config = computed(() => resources[props.resource])
-const now = useNow({ interval: 1000 })
-const generateReason = computed(() => planGenerationReason(props.record, false, now.value.getTime()))
-const temporaryReason = computed(() => planGenerationReason(props.record, true, now.value.getTime()))
-const emit = defineEmits<{ open: []; qr: []; command: [action: string]; remove: [] }>()
+const emit = defineEmits<{ open: []; dispatch: []; qr: []; command: [action: string]; remove: [] }>()
 const faultActionNames: Record<string, string> = {
   start: feText('startProcessing'),
   resolve: feText('submitForVerification'),
@@ -28,6 +25,16 @@ const faultActionNames: Record<string, string> = {
     >
       {{ config.readonly || resource === 'faults' ? feText('details') : feText('edit') }}
     </j-permission-button>
+    <j-permission-button v-if="resource === 'tasks' && canTransfer(record as Task)"
+      :hasPermission="resourcePermission('tasks', String(record.kind || kind || ''), 'dispatch')"
+      type="link" :disabled="saving" @click="emit('dispatch')">
+      {{ feText(record.assigneeId ? 'transferTask' : 'dispatchTask') }}
+    </j-permission-button>
+    <a-popconfirm v-if="resource === 'tasks' && canWithdraw(record as Task)" :title="feText('confirmCloseTask')"
+      :disabled="saving" @confirm="emit('command', 'close')">
+      <j-permission-button :hasPermission="resourcePermission('tasks', String(record.kind || kind || ''), 'close')"
+        type="link" :disabled="saving">{{ feText('closeTask') }}</j-permission-button>
+    </a-popconfirm>
     <a-popconfirm
       v-if="!config.readonly && config.fields.some(field => field.key === 'enabled')"
       :title="feText(record.enabled ? 'confirmDisable' : 'confirmEnable')"
@@ -35,7 +42,7 @@ const faultActionNames: Record<string, string> = {
       @confirm="emit('command', record.enabled ? 'disable' : 'enable')"
     >
       <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''), 'toggle')"
-        type="link" :disabled="saving" :danger="!!record.enabled"
+        type="link" :disabled="saving"
       >
         {{ feText(record.enabled ? 'disable' : 'enable') }}
       </j-permission-button>
@@ -47,30 +54,6 @@ const faultActionNames: Record<string, string> = {
     >
       {{ feText('roomQrCode') }}
     </j-permission-button>
-    <template v-if="resource === 'plans'">
-      <a-tooltip :title="generateReason">
-      <span>
-      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''), 'generate')"
-        type="link"
-        :disabled="saving || !!generateReason"
-        @click="emit('command', 'generate')"
-      >
-        {{ feText('generateTasks') }}
-      </j-permission-button>
-      </span>
-      </a-tooltip>
-      <a-tooltip :title="temporaryReason">
-      <span>
-      <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''), 'generate')"
-        type="link"
-        :disabled="saving || !!temporaryReason"
-        @click="emit('command', 'temporary')"
-      >
-        {{ feText('adHocTask') }}
-      </j-permission-button>
-      </span>
-      </a-tooltip>
-    </template>
     <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''))"
       v-if="resource === 'energy/mappings'"
       type="link"

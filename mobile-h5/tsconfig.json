@@ -23,7 +23,6 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.vue",
-    "../shared/**/*.ts",
     "../components/ExecutionForm.vue",
     "../components/SeriesChart.vue",
     "vite.config.ts"

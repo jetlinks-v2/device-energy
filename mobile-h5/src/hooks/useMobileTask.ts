@@ -11,6 +11,7 @@ export function useMobileTask(id: string) {
   const task = ref<Task>(),
     results = ref<CheckResult[]>([]),
     busy = ref(false),
+    claimable = ref(false),
     error = ref(''),
     notice = ref(''),
     attachment = ref<{ url: string; type: string }>()
@@ -23,16 +24,21 @@ export function useMobileTask(id: string) {
   const load = async () => {
     busy.value = true
     error.value = ''
+    claimable.value = false
     try {
       await account()
       if (navigator.onLine) {
         task.value = await facility.task(id)
+        if (task.value.state === 'open' && state.authorization?.permissions.some(permission =>
+          permission.id === 'facility-task' && permission.actions.includes('save'))) {
+          claimable.value = await facility.canClaimTask(id)
+        }
       } else task.value = await offline.cachedTask(context, id)
       if (!task.value) throw Error(feText('thisTaskHasNotBeenDownloadedConnectClaimAndDownloadItBefore'))
       const draft = await offline.loadDraft(context, id)
       results.value =
         draft?.results ||
-        clone(task.value.state === 'external-submitted' ? task.value.followResults || [] : task.value.results || [])
+        clone(task.value.results || [])
     } catch (e) {
       error.value = messageOf(e)
     } finally {
@@ -40,10 +46,11 @@ export function useMobileTask(id: string) {
     }
   }
   const claim = async () => {
-    if (!task.value) return
+    if (!task.value || !claimable.value || busy.value || !navigator.onLine) return
     busy.value = true
     try {
       task.value = await facility.action(id, 'claim', { version: task.value.version })
+      claimable.value = false
       await download()
     } catch (e) {
       error.value = messageOf(e)
@@ -107,7 +114,7 @@ export function useMobileTask(id: string) {
       await offline.enqueue(
         context,
         clone(task.value),
-        task.value.state === 'external-submitted' ? 'follow' : 'submit',
+        'submit',
         clone(results.value)
       )
       notice.value = feText('resultsSavedToTheSyncCenter')
@@ -130,6 +137,7 @@ export function useMobileTask(id: string) {
   onMounted(() => void load())
   return {
     task,
+    claimable,
     results,
     busy,
     error,

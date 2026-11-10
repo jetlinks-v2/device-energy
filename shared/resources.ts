@@ -91,18 +91,13 @@ export const resources: Record<string, Resource> = {
       { ...f('standardId', feText('workStandard'), 'select', 'standards'), required: true },
       { ...f('cycleId', feText('cyclePlan'), 'select', 'cycles'), required: true },
       { ...f('groupIds', feText('equipmentRoomsGroups'), 'multi', 'groups'), required: true },
-      { ...select('mode', feText('workOrderMode'), [
-        ['single', feText('singleWorkOrder')], ['double', feText('dualWorkOrder')]
-      ]), required: true },
-      { ...f('externalOrganizationId', feText('externalContractorOrganization'), 'tree', 'organizations'), required: true },
       { ...f('reviewerId', feText('responsiblePerson'), 'select', 'employees'), required: true },
       { ...f('startTime', feText('startTime'), 'datetime'), required: true },
       { ...f('endTime', feText('endTime'), 'datetime'), required: true }, enabled],
     columns: columns([['name', feText('taskConfiguration')], ['projectName', feText('project')], ['standardName', feText('workStandard')], ['cycleName', feText('cyclePlan')], ['reviewerName', feText('responsiblePerson')], ['kind', feText('type')],
       ['nextRunTime', feText('nextGenerationTime')],
       ['startTime', feText('startTime')], ['endTime', feText('endTime')], ['enabled', feText('enabled')]]),
-    defaults: { kind: 'inspection', deviceIds: [], groupIds: [], mode: 'single',
-      startTime: Date.now(), endTime: Date.now() + 365 * 86400000, enabled: true }
+    defaults: { kind: 'inspection', deviceIds: [], groupIds: [], enabled: true }
   },
   tasks: {
     path: 'tasks',
@@ -111,11 +106,12 @@ export const resources: Record<string, Resource> = {
     fields: [],
     columns: columns([
       ['name', feText('task')],
+      ['projectName', feText('businessProject')],
       ['deviceName', feText('device')],
       ['kind', feText('type')],
-      ['mode', feText('workOrderMode')],
       ['state', feText('status')],
-      ['deadline', feText('deadline')]
+      ['scheduledTime', feText('taskStartTime')],
+      ['deadline', feText('taskEndTime')]
     ])
   },
   faults: {
@@ -370,8 +366,7 @@ export const deviceFields: Field[] = [
   f('spaceId', feText('installationSpace'), 'tree', 'spaces'),
   f('location', feText('installationLocation')),
   f('floor', feText('floor')),
-  f('inspectionEnabled', feText('enableInspections'), 'switch'),
-  f('maintenanceEnabled', feText('enableMaintenance'), 'switch'),
+  f('workEnabled', feText('enableInspectionMaintenance'), 'switch'),
   f('energyEnabled', feText('enableEnergyMonitoring'), 'switch'),
   f('attachments', feText('deviceAttachments'), 'files'),
   f('remark', feText('remarks'), 'textarea')

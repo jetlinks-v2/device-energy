@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 import { useMobileTask } from '../hooks/useMobileTask'
 import { state } from '../services/session'
 import { canExecute } from '../../../shared/taskActions'
-import { display, time } from '../../../shared/types'
+import { display, taskTime } from '../../../shared/types'
 import ExecutionForm from '../../../components/ExecutionForm.vue'
 const route = useRoute(),
   vm = reactive(useMobileTask(String(route.params.id))),
@@ -30,11 +30,14 @@ const route = useRoute(),
       <template v-if="vm.task">
         <h2>{{ vm.task.name }}</h2>
         <p>{{ vm.task.deviceName }} · {{ display(vm.task.state) }}</p>
-        <p>{{ feText('due2') }}{{ time(vm.task.deadline) }}</p>
+        <p>{{ vm.task.projectName || '—' }}</p>
+        <p>{{ feText('taskStartTime') }}：{{ taskTime(vm.task.scheduledTime) }}</p>
+        <p>{{ feText('taskEndTime') }}：{{ taskTime(vm.task.deadline) }}</p>
         <a-space class="toolbar">
           <a-button
-            v-if="vm.task.state === 'open'"
+            v-if="vm.claimable"
             type="primary"
+            :disabled="vm.busy"
             @click="vm.claim"
           >
             {{ feText('claimAndDownload') }}

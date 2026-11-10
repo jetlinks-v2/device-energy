@@ -5,7 +5,6 @@ import { message } from 'ant-design-vue'
 import { facility } from '../api'
 import type { CheckItem, Entity, FormValues, FormValue, Option, Organization, Resource } from '../shared/types'
 import { messageOf } from '../shared/types'
-import { planGenerationReason } from '../shared/planActions'
 import { usePlanReferences } from './usePlanReferences'
 import { defaultRule } from '../shared/cycle/editor'
 import { useResourceQuery } from './useResourceQuery'
@@ -29,11 +28,9 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     >([]),
     templateId = ref<string>()
   const references = usePlanReferences(resource, form, opened, options, error)
-  // Display and validation share the same fields; single work orders have no contractor.
-  const formFields = computed(() => resource().fields.filter(field =>
-    resource().path !== 'plans' || field.key !== 'externalOrganizationId' || form.mode === 'double'
-  ).map(field => ['standards', 'cycles', 'plans'].includes(resource().path) && field.key === 'kind' && kind
-    ? { ...field, disabled: true } : field))
+  const formFields = computed(() => resource().fields.map(field =>
+    ['standards', 'cycles', 'plans'].includes(resource().path) && field.key === 'kind' && kind
+      ? { ...field, disabled: true } : field))
   const loadOptions = async () => {
     try {
       const sources = new Set([
@@ -45,6 +42,7 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
       await Promise.all(
         [...sources].map(async (source) => {
           if (resource().path === 'plans' && ['standards', 'cycles', 'groups', 'employees'].includes(source)) return
+          if (resource().path === 'groups' && source === 'devices') return
           if (source === 'organizations') {
             options[source] = organizationOptions(await facility.options<Organization>(source))
             return
@@ -64,10 +62,6 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     Object.assign(form, clone(row || resource().defaults || {}))
     if (resource().path === 'cycles' && !form.rule) form.rule = defaultRule()
     if (resource().path === 'standards') form.checkItems = normalizeCheckItems((form.checkItems as CheckItem[]) || [])
-    if (!row && resource().path === 'plans') {
-      form.startTime = Date.now()
-      form.endTime = Date.now() + 365 * 86400000
-    }
     if (kind && resource().path !== 'groups') form.kind = kind
     if (!row && projectId.value) form.projectId = projectId.value
     previewRows.value = []
@@ -76,12 +70,12 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
   }
   const change = (key: string, value: FormValue) => {
     if (['standards', 'cycles', 'plans'].includes(resource().path) && key === 'kind' && kind) return
+    if (resource().path === 'groups' && key === 'projectId' && form.projectId !== value) form.deviceIds = []
     if (resource().path === 'plans' && ['projectId', 'kind'].includes(key) && form[key] !== value) {
       for (const field of ['standardId', 'cycleId', 'reviewerId']) form[field] = undefined
       form.groupIds = []
     }
     form[key] = value
-    if (resource().path === 'plans' && key === 'mode' && value !== 'double') form.externalOrganizationId = undefined
   }
   const metadata = async (key: string) => {
     try {
@@ -165,7 +159,8 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
         if (Number(form.endTime) <= Number(form.startTime)) throw Error(feText('planDatesRequired'))
         payload.assigneeId = undefined
         payload.followUserId = undefined
-        if (form.mode !== 'double') payload.externalOrganizationId = undefined
+        payload.mode = undefined
+        payload.externalOrganizationId = undefined
       }
       await facility.save(resource().path, payload)
       opened.value = false
@@ -194,7 +189,6 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     if (saving.value) return
     saving.value = true
     error.value = ''
-    let generated: number | undefined
     try {
       if (['enable', 'disable'].includes(action) && resource().fields.some(field => field.key === 'enabled')) {
         // Use the same versioned save contract as editing; never change the row before the server accepts it.
@@ -213,12 +207,6 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
           sourceId: row.id
         })
         message.success(feText('faultRegistered'))
-      } else if (action === 'generate' || action === 'temporary') {
-        const reason = planGenerationReason(row, action === 'temporary')
-        if (reason) throw Error(reason)
-        const tasks = await facility.post<Entity[]>('tasks/generate/' + row.id + '?temporary=' + (action === 'temporary'))
-        generated = tasks.length
-        message.success(feText('tasksGenerated') + ': ' + tasks.length)
       }
       else if (['alerts', 'alerts/plans'].includes(resource().path))
         await facility.post('alerts/' + row.id + '/handle', {
@@ -234,18 +222,16 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
           approve: action === 'approve'
         })
       else if (resource().path === 'energy/mappings') await facility.post('energy/collect/' + row.deviceId)
+      else if (resource().path === 'tasks' && action === 'close')
+        await facility.action(row.id, 'close', { version: row.version })
       else if (resource().path === 'faults')
         await facility.post('faults/' + row.id + '/' + action, {
           version: row.version,
           comment: window.prompt(feText('enterProcessingNotes')) || ''
         })
       await refresh()
-      return generated
     } catch (e) {
-      const failure = messageOf(e)
-      // Scheduling may advance the plan after the list was loaded. Reload without hiding the failure.
-      if (action === 'generate' || action === 'temporary') await refresh()
-      error.value = failure
+      error.value = messageOf(e)
     } finally {
       saving.value = false
     }

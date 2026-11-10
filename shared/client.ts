@@ -5,6 +5,8 @@ import type {
   Device,
   Task,
   TaskCommand,
+  TaskAssignee,
+  TaskProcess,
   Reading,
   Usage,
   Context,
@@ -34,7 +36,12 @@ export function facilityClient(http: Transport) {
     devices: (q: Query) => http.post<Pager<Device>>(prefix + '/devices/_query', q),
     updateDevice: (row: Entity) => http.post<Device>(prefix + '/devices/' + id(row.id), row),
     sync: (project: string) => http.post<Entity>(prefix + '/devices/sync/' + id(project)),
-    tasks: (q: Query, mine = false) => http.post<Pager<Task>>(prefix + '/tasks/_query?mine=' + mine, q),
+    tasks: (q: Query, mine = false, pool = false) => http.post<Pager<Task>>(prefix + '/tasks/_query?mine=' + mine + '&pool=' + pool, q),
+    taskReviews: (q: Query, status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending') =>
+      http.post<Pager<Task>>(prefix + '/tasks/review/_query?status=' + status, q),
+    taskAssignees: (key: string) => http.get<TaskAssignee[]>(prefix + '/tasks/' + id(key) + '/assignees'),
+    canClaimTask: (key: string) => http.get<boolean>(prefix + '/tasks/' + id(key) + '/claimable'),
+    taskHistory: (key: string, pageIndex = 0) => http.get<Pager<TaskProcess>>(prefix + '/tasks/' + id(key) + '/history?pageIndex=' + pageIndex),
     task: (key: string) => http.get<Task>(prefix + '/tasks/' + id(key)),
     action: (key: string, action: string, command: TaskCommand) =>
       http.post<Task>(prefix + '/tasks/' + id(key) + '/' + id(action), command),

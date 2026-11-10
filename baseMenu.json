@@ -219,7 +219,7 @@
               },
               {
                 "id": "dispatch",
-                "name": "分派与撤回",
+                "name": "派单与转单",
                 "permissions": [
                   {
                     "permission": "facility-task",
@@ -229,16 +229,45 @@
                   }
                 ],
                 "enabled": true,
-                "granted": true
+                "granted": true,
+                "i18nMessages": {
+                  "zh_CN": "派单与转单",
+                  "en_US": "Dispatch / transfer",
+                  "en": "Dispatch / transfer"
+                }
               },
               {
                 "id": "review",
-                "name": "审核与整改",
+                "name": "任务审批",
                 "permissions": [
                   {
                     "permission": "facility-task",
                     "actions": [
                       "review"
+                    ]
+                  }
+                ],
+                "enabled": true,
+                "granted": true,
+                "i18nMessages": {
+                  "zh_CN": "任务审批",
+                  "en_US": "Task review",
+                  "en": "Task review"
+                }
+              },
+              {
+                "id": "close",
+                "name": "关闭任务",
+                "i18nMessages": {
+                  "zh_CN": "关闭任务",
+                  "en_US": "Close task",
+                  "en": "Close task"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-task",
+                    "actions": [
+                      "close"
                     ]
                   }
                 ],
@@ -539,26 +568,6 @@
             ],
             "buttons": [
               {
-                "id": "generate",
-                "name": "生成任务",
-                "permissions": [
-                  {
-                    "permission": "facility-task",
-                    "actions": [
-                      "generate"
-                    ]
-                  },
-                  {
-                    "permission": "facility-plan",
-                    "actions": [
-                      "save"
-                    ]
-                  }
-                ],
-                "enabled": true,
-                "granted": true
-              },
-              {
                 "id": "save",
                 "name": "新增／编辑任务配置",
                 "permissions": [
@@ -624,8 +633,7 @@
               "facilityCycle",
               "facilityStandard",
               "facilityGroup",
-              "facilityDevice",
-              "facilityTask"
+              "facilityDevice"
             ],
             "parentId": "facility-Inspection",
             "status": 1,
@@ -835,7 +843,7 @@
               },
               {
                 "id": "dispatch",
-                "name": "分派与撤回",
+                "name": "派单与转单",
                 "permissions": [
                   {
                     "permission": "facility-task",
@@ -845,16 +853,45 @@
                   }
                 ],
                 "enabled": true,
-                "granted": true
+                "granted": true,
+                "i18nMessages": {
+                  "zh_CN": "派单与转单",
+                  "en_US": "Dispatch / transfer",
+                  "en": "Dispatch / transfer"
+                }
               },
               {
                 "id": "review",
-                "name": "审核与整改",
+                "name": "任务审批",
                 "permissions": [
                   {
                     "permission": "facility-task",
                     "actions": [
                       "review"
+                    ]
+                  }
+                ],
+                "enabled": true,
+                "granted": true,
+                "i18nMessages": {
+                  "zh_CN": "任务审批",
+                  "en_US": "Task review",
+                  "en": "Task review"
+                }
+              },
+              {
+                "id": "close",
+                "name": "关闭任务",
+                "i18nMessages": {
+                  "zh_CN": "关闭任务",
+                  "en_US": "Close task",
+                  "en": "Close task"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-task",
+                    "actions": [
+                      "close"
                     ]
                   }
                 ],
@@ -1155,26 +1192,6 @@
             ],
             "buttons": [
               {
-                "id": "generate",
-                "name": "生成任务",
-                "permissions": [
-                  {
-                    "permission": "facility-task",
-                    "actions": [
-                      "generate"
-                    ]
-                  },
-                  {
-                    "permission": "facility-plan",
-                    "actions": [
-                      "save"
-                    ]
-                  }
-                ],
-                "enabled": true,
-                "granted": true
-              },
-              {
                 "id": "save",
                 "name": "新增／编辑任务配置",
                 "permissions": [
@@ -1240,8 +1257,7 @@
               "facilityCycle",
               "facilityStandard",
               "facilityGroup",
-              "facilityDevice",
-              "facilityTask"
+              "facilityDevice"
             ],
             "parentId": "facility-Maintenance",
             "status": 1,

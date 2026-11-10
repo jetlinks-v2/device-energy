@@ -25,8 +25,22 @@ export function usePlanReferences(resource: () => Resource, form: FormValues, op
     throw Error(feText('referenceLimit'))
   }
   watch(() => [opened.value, form.projectId, form.kind], async () => {
-    if (resource().path !== 'plans') return
+    if (!['plans', 'groups'].includes(resource().path)) return
     const current = ++sequence
+    if (resource().path === 'groups') {
+      options.devices = []
+      if (!opened.value || !form.projectId) return
+      try {
+        const rows = await candidates('devices', { terms: [
+          { column: 'projectId', value: form.projectId },
+          // Existing records may have only one of the former independent flags set.
+          { type: 'and', terms: [{ column: 'inspectionEnabled', value: true },
+            { type: 'or', column: 'maintenanceEnabled', value: true }] }
+        ] })
+        if (current === sequence) options.devices = rows.map(row => ({ value: row.id, label: row.name || row.id }))
+      } catch (cause) { if (current === sequence) error.value = messageOf(cause) }
+      return
+    }
     cycles.value = []; groups.value = []
     for (const source of ['standards', 'cycles', 'groups', 'employees']) options[source] = []
     if (!opened.value || !form.projectId) return
