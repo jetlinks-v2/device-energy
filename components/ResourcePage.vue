@@ -5,20 +5,30 @@ import { resources } from '../shared/resources'
 import { resourcePermission } from '../shared/permissions'
 import { collectionLag, display, time, type Entity, type Device } from '../shared/types'
 import { useResource } from '../hooks/useResource'
+import ConditionFilter, { type ConditionFilterTerm } from '@jetlinks-web-core/components/ConditionFilter'
+import { resourceSearchFields, timeColumns } from '../shared/resourceSearch'
+import type { TableHandle } from '../shared/tableQuery'
+import FacilityDataTable from './FacilityDataTable.vue'
 import ResourceActions from './ResourceActions.vue'
 import GroupQr from './GroupQr.vue'
 import MappingSamples from './MappingSamples.vue'
 import RecordForm from './RecordForm.vue'
 import DeviceDetail from './DeviceDetail.vue'
 import TaskDetail from './TaskDetail.vue'
-const props = defineProps<{ resource: string; kind?: string }>(),
+const props = defineProps<{ resource: string; kind?: string; legacy?: boolean }>(),
   config = computed(() => resources[props.resource]),
-  vm = reactive(useResource(() => config.value, props.kind)),
+  vm = reactive(useResource(() => config.value, props.kind, !props.legacy)),
   device = ref<Device>(),
   taskId = ref<string>(),
   group = ref<Entity>()
+const filters = ref<ConditionFilterTerm[]>([])
+const fields = computed(() => resourceSearchFields(config.value, vm.options, props.kind))
 const columns = computed(() => [
-  ...config.value.columns.map((c) => ({ title: c.title, dataIndex: c.key, key: c.key })),
+  ...config.value.columns.map((c) => ({ title: c.title, dataIndex: c.key, key: 'cell-' + c.key, scopedSlots: true, width: timeColumns.has(c.key) ? 185 : 160 })),
+  { title: feText('actions'), key: 'actions', dataIndex: 'actions', scopedSlots: true, width: 280, fixed: 'right' }
+])
+const legacyColumns = computed(() => [
+  ...config.value.columns.map(column => ({ title: column.title, dataIndex: column.key, key: column.key })),
   { title: feText('actions'), key: 'actions', width: 280 }
 ])
 const open = (row: Entity) => {
@@ -38,10 +48,11 @@ const closeTask = () => {
 const changes = (v: { current?: number }) => {
   vm.page = v.current || 1
 }
+const setTable = (value: unknown) => { vm.table = value ? value as TableHandle : undefined }
 </script>
 
 <template>
-  <section class="facility-page">
+  <section class="facility-page" :class="{ 'facility-resource-page': !legacy }">
     <a-page-header :title="config.title" />
     <a-alert
       v-if="vm.error && !vm.opened"
@@ -51,8 +62,11 @@ const changes = (v: { current?: number }) => {
       closable
       @close="vm.error = ''"
     />
-    <div class="facility-toolbar">
+    <ConditionFilter v-if="!legacy" v-model="filters" :fields="fields" class="facility-search"
+      @change="vm.filter($event.filter.terms)" />
+    <div v-if="legacy || !config.readonly || $slots.tools" class="facility-toolbar">
       <a-select
+        v-if="legacy"
         v-model:value="vm.projectId"
         :placeholder="feText('allBusinessProjects')"
         allow-clear
@@ -60,12 +74,14 @@ const changes = (v: { current?: number }) => {
         class="facility-toolbar__project"
       />
       <a-input-search
+        v-if="legacy"
         v-model:value="vm.search"
         class="facility-toolbar__search"
         :placeholder="feText('searchByName')"
         @search="vm.refresh"
       />
       <a-button
+        v-if="legacy"
         :loading="vm.busy"
         @click="vm.refresh"
       >
@@ -92,14 +108,15 @@ const changes = (v: { current?: number }) => {
         :project-id="vm.projectId"
         :refresh="vm.refresh"
       />
-      <template v-if="config.collection">
+      <template v-if="legacy && config.collection">
         <a-checkbox v-model:checked="vm.failedOnly">{{ feText('failedCollectionsOnly') }}</a-checkbox>
         <a-tag>{{ feText('matchingMeters') }}: {{ vm.total }}</a-tag>
       </template>
     </div>
     <a-table
+      v-if="legacy"
       row-key="id"
-      :columns="columns"
+      :columns="legacyColumns"
       :data-source="vm.rows"
       :loading="vm.busy"
       :pagination="{ current: vm.page, total: vm.total, pageSize: 20, showSizeChanger: false }"
@@ -134,6 +151,19 @@ const changes = (v: { current?: number }) => {
       </template>
       <template #emptyText><a-empty :description="feText('noRecords')" /></template>
     </a-table>
+    <j-pro-table v-else :ref="setTable"
+      row-key="id" mode="TABLE" type="PAGE" :columns="columns" :params="vm.params" :request="vm.request"
+      :no-pagination="false" :pagination="{ pageSize: 12 }" :alert-show="false" :body-style="{ padding: 0 }"
+      :scroll="{ x: columns.reduce((width, column) => width + column.width, 0) }">
+      <template v-for="column in columns" :key="column.key" #[column.key]="record">
+        <ResourceActions v-if="column.key === 'actions'" :resource="resource" :record="record"
+          :saving="vm.saving" @open="open(record)" @qr="group = record"
+          @command="vm.command(record, $event)" @remove="vm.remove(record)" />
+        <template v-else-if="timeColumns.has(column.dataIndex)">{{ time(record[column.dataIndex]) }}</template>
+        <template v-else-if="column.dataIndex === 'collectionLag'">{{ collectionLag(record) }}</template>
+        <template v-else>{{ display(record[column.dataIndex]) }}</template>
+      </template>
+    </j-pro-table>
     <a-modal
       :open="!!vm.detail"
       :title="feText('details')"
@@ -174,11 +204,11 @@ const changes = (v: { current?: number }) => {
         >
           {{ feText('previewSamplesFromTheLast24Hours') }}
         </a-button>
-        <a-table
+        <FacilityDataTable
           v-if="vm.previewRows.length"
           :data-source="vm.previewRows"
           :pagination="false"
-          size="small"
+          row-key="propertyId"
           :columns="[
             { title: feText('property'), dataIndex: 'propertyId' },
             { title: feText('rawReading'), dataIndex: 'raw' },

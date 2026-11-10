@@ -3,20 +3,15 @@ import { clone } from '../shared/types'
 import { ref, reactive, watch, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { facility } from '../api'
-import type { Entity, FormValues, FormValue, Option, Resource, Device } from '../shared/types'
+import type { Entity, FormValues, FormValue, Option, Resource } from '../shared/types'
 import { messageOf } from '../shared/types'
 import { planGenerationReason } from '../shared/planActions'
+import { useResourceQuery } from './useResourceQuery'
 /** 请求、选项联动和提交集中于hook，过期列表响应不会覆盖新筛选。 */
-export function useResource(resource: () => Resource, kind?: string) {
-  const rows = ref<Entity[]>([]),
-    total = ref(0),
-    page = ref(1),
-    search = ref(''),
-    projectId = ref<string>(),
-    busy = ref(false),
-    saving = ref(false),
-    failedOnly = ref(false),
-    error = ref(''),
+export function useResource(resource: () => Resource, kind?: string, managed = false) {
+  const query = useResourceQuery(resource, kind, managed)
+  const { projectId, busy, error, refresh } = query
+  const saving = ref(false),
     opened = ref(false),
     detail = ref<Entity>(),
     form = reactive<FormValues>({}),
@@ -25,43 +20,6 @@ export function useResource(resource: () => Resource, kind?: string) {
       { propertyId: string; time: number; raw: string; normalized?: number | string; unit: string; error?: string }[]
     >([]),
     templateId = ref<string>()
-  let sequence = 0
-  const refresh = async () => {
-    const version = ++sequence
-    busy.value = true
-    error.value = ''
-    try {
-      const terms = []
-      if (resource().collection && failedOnly.value)
-        terms.push({ column: 'collectionError', termType: 'notnull', value: true })
-      if (kind) terms.push({ column: 'kind', value: kind })
-      if (search.value)
-        terms.push({
-          column:
-            (
-              {
-                operations: 'targetId',
-                'alerts/notifications': 'title',
-                'energy/readings': 'propertyId',
-                'energy/replacements': 'oldDeviceId',
-                'reports/targets': 'projectId'
-              } as Record<string, string>
-            )[resource().path] || 'name',
-          termType: 'like',
-          value: '%' + search.value + '%'
-        })
-      if (projectId.value) terms.push({ column: 'projectId', value: projectId.value })
-      const result = await facility.query(resource().path, { pageIndex: page.value - 1, pageSize: 20, terms })
-      if (version === sequence) {
-        rows.value = result.data
-        total.value = result.total
-      }
-    } catch (e) {
-      if (version === sequence) error.value = messageOf(e)
-    } finally {
-      if (version === sequence) busy.value = false
-    }
-  }
   const loadOptions = async () => {
     try {
       const sources = new Set([
@@ -252,21 +210,12 @@ export function useResource(resource: () => Resource, kind?: string) {
       error.value = messageOf(e)
     }
   }
-  watch([() => resource().path, page, projectId, failedOnly], () => void refresh())
   onMounted(() => {
-    void refresh()
     void loadOptions()
   })
   return {
-    rows,
-    total,
-    page,
-    search,
-    projectId,
-    busy,
+    ...query,
     saving,
-    failedOnly,
-    error,
     opened,
     detail,
     form,

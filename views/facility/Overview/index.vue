@@ -2,9 +2,14 @@
 import FacilityWorkspace from '../../../components/FacilityWorkspace.vue'
 import { feText } from '../../../shared/i18n'
 import { reactive } from 'vue'
+import ConditionFilter from '@jetlinks-web-core/components/ConditionFilter'
+import FacilityDataTable from '../../../components/FacilityDataTable.vue'
+import { useReportSearch } from '../../../hooks/useReportSearch'
 import { useReports } from '../../../hooks/useReports'
 import { display } from '../../../shared/types'
-const vm = reactive(useReports())
+const reports = useReports()
+const vm = reactive(reports)
+const search = reactive(useReportSearch(reports, false))
 const metrics = [
   { key: 'devices', label: feText('totalDevices') },
   { key: 'online', label: feText('onlineDevices') },
@@ -23,21 +28,7 @@ const metrics = [
         :title="feText('facilityAndEnergyManagement')"
         :sub-title="feText('deviceOperationsAndEnergyMonitoring')"
       />
-      <div class="facility-toolbar">
-        <a-select
-          v-model:value="vm.projectId"
-          :options="vm.projects"
-          allow-clear
-          :placeholder="feText('allBusinessProjects')"
-          class="facility-toolbar__project"
-        />
-        <a-button
-          :loading="vm.busy"
-          @click="vm.refresh"
-        >
-          {{ feText('refresh') }}
-        </a-button>
-      </div>
+      <ConditionFilter v-model="search.terms" :fields="search.fields" class="facility-search" @change="search.change" />
       <a-alert
         v-if="vm.error"
         type="error"
@@ -57,7 +48,7 @@ const metrics = [
           :title="feText('energyUsageInTheLast24Hours')"
           style="margin-top: 20px"
         >
-          <a-table
+          <FacilityDataTable
             :data-source="vm.rows"
             :row-key="(r) => r.deviceId + r.propertyId"
             :columns="[
@@ -71,7 +62,7 @@ const metrics = [
               <template v-if="column.dataIndex === 'energyType'">
                 {{ display(record.energyType) }}
               </template>
-              <template v-if="column.key === 'usage'">
+              <template v-else-if="column.key === 'usage'">
                 {{ record.usage.value }}
                 <a-tag
                   v-if="!record.usage.complete"
@@ -80,8 +71,9 @@ const metrics = [
                   {{ feText('incompleteData') }}
                 </a-tag>
               </template>
+              <template v-else>{{ display(record[column.dataIndex]) }}</template>
             </template>
-          </a-table>
+          </FacilityDataTable>
         </a-card>
       </a-spin>
     </section>

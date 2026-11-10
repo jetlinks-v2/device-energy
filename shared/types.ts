@@ -1,9 +1,11 @@
 import { feLocale, feText } from './i18n'
 /** PC与两类H5共享的业务契约，服务端拥有身份、权限及状态转换。 */
 export interface Term {
-  column: string
-  value: unknown
+  column?: string
+  value?: unknown
   termType?: string
+  type?: string
+  terms?: Term[]
 }
 export interface Query {
   pageIndex?: number

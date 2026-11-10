@@ -526,7 +526,8 @@
       "planFinished": "The plan has ended. Adjust its dates.",
       "planNotDue": "The next cycle is not due. Use an ad hoc task to execute now.",
       "tasksGenerated": "Tasks generated",
-      "nextGenerationTime": "Next generation time"
+      "nextGenerationTime": "Next generation time",
+      "reportFilterInvalid": "Use AND conditions, one condition per field, and a valid time range."
     }
   }
 }

@@ -2,10 +2,15 @@
 import FacilityWorkspace from '../../../components/FacilityWorkspace.vue'
 import { feText } from '../../../shared/i18n'
 import { reactive } from 'vue'
+import ConditionFilter from '@jetlinks-web-core/components/ConditionFilter'
+import FacilityDataTable from '../../../components/FacilityDataTable.vue'
+import { useReportSearch } from '../../../hooks/useReportSearch'
 import { useReports } from '../../../hooks/useReports'
 import ResourcePage from '../../../components/ResourcePage.vue'
-import { energyNames } from '../../../shared/types'
-const vm = reactive(useReports(true))
+import { display, energyNames } from '../../../shared/types'
+const reports = useReports(true)
+const vm = reactive(reports)
+const search = reactive(useReportSearch(reports, true))
 </script>
 
 <template>
@@ -18,49 +23,9 @@ const vm = reactive(useReports(true))
         :message="vm.error"
         show-icon
       />
-      <div class="facility-toolbar">
-        <a-select
-          v-model:value="vm.projectId"
-          :options="vm.projects"
-          allow-clear
-          :placeholder="feText('allBusinessProjects')"
-          class="facility-toolbar__project"
-        />
-        <a-select
-          v-model:value="vm.level"
-          :options="[
-            { value: 'master', label: feText('masterMeter') },
-            { value: 'submeter', label: feText('submeter') },
-            { value: 'branch', label: feText('branch') },
-            { value: 'other', label: feText('other') }
-          ]"
-          class="facility-toolbar__level"
-        />
-        <a-date-picker
-          class="facility-toolbar__date"
-          show-time
-          :placeholder="feText('startTime')"
-          @change="(value) => (vm.from = Number(value?.valueOf()) || vm.from)"
-        />
-        <a-date-picker
-          class="facility-toolbar__date"
-          show-time
-          :placeholder="feText('endTime')"
-          @change="(value) => (vm.to = Number(value?.valueOf()) || vm.to)"
-        />
-        <a-button
-          type="primary"
-          :loading="vm.busy"
-          @click="vm.refresh"
-        >
-          {{ feText('search') }}
-        </a-button>
-        <a-button
-          :disabled="!vm.rows.length"
-          @click="vm.exportCsv"
-        >
-          {{ feText('exportCurrentResults') }}
-        </a-button>
+      <ConditionFilter v-model="search.terms" :fields="search.fields" class="facility-search" @change="search.change" />
+      <div class="facility-toolbar facility-actions">
+        <a-button :disabled="!search.valid || !vm.rows.length || vm.busy" @click="vm.exportCsv">{{ feText('exportCurrentResults') }}</a-button>
       </div>
       <a-descriptions
         bordered
@@ -70,7 +35,7 @@ const vm = reactive(useReports(true))
         <a-descriptions-item :label="feText('overdueTasks')">{{ vm.overview.overdue }}</a-descriptions-item>
         <a-descriptions-item :label="feText('pendingAlerts')">{{ vm.overview.alerts }}</a-descriptions-item>
       </a-descriptions>
-      <a-table
+      <FacilityDataTable
         :data-source="vm.rows"
         :loading="vm.busy"
         :row-key="(r) => r.deviceId + r.propertyId"
@@ -85,16 +50,17 @@ const vm = reactive(useReports(true))
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'energy'">{{ energyNames[record.energyType] }}</template>
-          <template v-if="column.key === 'usage'">{{ record.usage.value }}</template>
-          <template v-if="column.key === 'complete'">
+          <template v-else-if="column.key === 'usage'">{{ record.usage.value }}</template>
+          <template v-else-if="column.key === 'complete'">
             <a-tag :color="record.usage.complete ? 'green' : 'orange'">
               {{ record.usage.complete ? feText('complete') : feText('incomplete') }}
             </a-tag>
           </template>
+          <template v-else>{{ display(record[column.dataIndex]) }}</template>
         </template>
-      </a-table>
+      </FacilityDataTable>
       <a-divider>{{ feText('completedAndOverdueWork') }}</a-divider>
-      <a-table
+      <FacilityDataTable
         :data-source="vm.operations?.tasks || []"
         row-key="kind"
         :pagination="false"
@@ -117,7 +83,7 @@ const vm = reactive(useReports(true))
           {{ count }}
         </a-descriptions-item>
       </a-descriptions>
-      <a-table
+      <FacilityDataTable
         :data-source="Object.entries(vm.operations?.faultTrend || {}).map(([date, count]) => ({ date, count }))"
         row-key="date"
         :columns="[
@@ -127,7 +93,7 @@ const vm = reactive(useReports(true))
       />
       <a-divider>{{ feText('periodAndYearComparisons') }}</a-divider>
       <p>{{ feText('growthRatesAreHiddenWhenDataIsIncompleteOrTheBaselineIs') }}</p>
-      <a-table
+      <FacilityDataTable
         :data-source="vm.comparison"
         :row-key="(row) => row.deviceId + row.propertyId"
         :columns="[
@@ -138,32 +104,9 @@ const vm = reactive(useReports(true))
         ]"
       />
       <a-divider>{{ feText('dailyMonthlyAnnualReports') }}</a-divider>
-      <div class="facility-toolbar">
-        <a-select
-          v-model:value="vm.period"
-          :options="[
-            { value: 'day', label: feText('dailyReport') },
-            { value: 'month', label: feText('monthlyReport') },
-            { value: 'year', label: feText('annualReport') }
-          ]"
-          class="facility-toolbar__period"
-        />
-        <a-input-number
-          v-model:value="vm.year"
-          :min="2000"
-          :max="2200"
-        />
-        <a-input-number
-          v-model:value="vm.month"
-          :min="1"
-          :max="12"
-        />
-        <a-button
-          :loading="vm.busy"
-          @click="vm.loadPeriods"
-        >
-          {{ feText('generatePeriodReport') }}
-        </a-button>
+      <ConditionFilter v-model="search.periodTerms" :fields="search.periodFields" class="facility-search" @change="search.changePeriod" />
+      <div class="facility-toolbar facility-actions">
+        <a-button :disabled="!search.valid || !search.periodValid" :loading="vm.busy" @click="vm.loadPeriods">{{ feText('generatePeriodReport') }}</a-button>
       </div>
       <a-collapse v-if="vm.periodRows.length" style="margin-top: 16px">
         <a-collapse-panel
@@ -171,7 +114,7 @@ const vm = reactive(useReports(true))
           :key="row.period"
           :header="row.period"
         >
-          <a-table
+          <FacilityDataTable
             :data-source="row.meters"
             :row-key="(r) => r.deviceId + r.propertyId"
             :pagination="false"
@@ -192,12 +135,13 @@ const vm = reactive(useReports(true))
                   {{ feText('incomplete') }}
                 </a-tag>
               </template>
+              <template v-else>{{ display(record[column.dataIndex]) }}</template>
             </template>
-          </a-table>
+          </FacilityDataTable>
         </a-collapse-panel>
       </a-collapse>
       <a-divider>{{ feText('monthlyEnergyPlanProgress') }}</a-divider>
-      <a-table
+      <FacilityDataTable
         :data-source="vm.targets"
         row-key="id"
         :columns="[
@@ -222,8 +166,9 @@ const vm = reactive(useReports(true))
               {{ feText('planTargetReachedOrExceeded') }}
             </a-tag>
           </template>
+          <template v-else>{{ display(record[column.dataIndex]) }}</template>
         </template>
-      </a-table>
+      </FacilityDataTable>
       <ResourcePage resource="targets" />
     </section>
   </FacilityWorkspace>

@@ -12,6 +12,20 @@
   background: var(--surface, #fff);
 }
 .facility-page { overflow: auto; }
+.facility-resource-page {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.facility-resource-page > :not(.jtable-body-spin) { flex-shrink: 0; }
+.facility-resource-page > .jtable-body-spin {
+  flex: 1;
+  height: 0;
+  min-height: 0;
+}
+.facility-search { margin-bottom: var(--space-4, 1rem); }
+.facility-actions { justify-content: flex-end; }
+.facility-data-table.jtable-body-spin { height: auto; flex: none; }
 .facility-tabs { overflow: hidden; }
 .facility-tabs > .ant-tabs-nav { flex-shrink: 0; }
 .facility-tabs > .ant-tabs-content-holder {
@@ -45,12 +59,15 @@
 .facility-tabs > .ant-tabs-content-holder > .ant-tabs-content > .ant-tabs-tabpane > .facility-page {
   padding: 0;
 }
-/* Nested plan management shares the reports' left and right content edges. */
-/* 报表内嵌列表随报表自然排布，不再占一整屏或产生第二条纵向滚动条。 */
+/* 报表内嵌列表沿用内容边距，提供固定表格区域以保持分页可见。 */
 .facility-page > .facility-page {
   height: auto;
   overflow: visible;
   padding: var(--space-5, 1.25rem) 0 0;
+}
+.facility-page > .facility-resource-page {
+  height: clamp(22rem, 55vh, 36rem);
+  overflow: hidden;
 }
 .facility-page .ant-table-placeholder .ant-empty { margin-block: var(--space-3, .75rem); }
 .facility-page .ant-table-placeholder .ant-empty-image { height: 3rem; margin-bottom: .5rem; }

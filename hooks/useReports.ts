@@ -1,5 +1,5 @@
 import { feText } from '../shared/i18n'
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { facility } from '../api'
 import type { Entity, Option, Usage } from '../shared/types'
 import { messageOf } from '../shared/types'
@@ -16,7 +16,8 @@ export function useReports(detailed = false) {
     projectId = ref<string>(),
     overview = ref<Record<string, unknown>>({}),
     rows = ref<EnergyRow[]>([]),
-    busy = ref(false),
+    refreshing = ref(false),
+    periodLoading = ref(false),
     error = ref(''),
     from = ref(Date.now() - 86400000),
     to = ref(Date.now()),
@@ -39,47 +40,52 @@ export function useReports(detailed = false) {
     period = ref('day'),
     year = ref(new Date().getFullYear()),
     month = ref(new Date().getMonth() + 1)
+  const busy = computed(() => refreshing.value || periodLoading.value)
+  let generation = 0, periodGeneration = 0
+  onBeforeUnmount(() => { generation++; periodGeneration++ })
   const refresh = async () => {
-    busy.value = true
+    const current = ++generation
+    // 筛选变化使旧统计及周期结果失效，迟到的响应不能覆盖新条件。
+    periodGeneration++
+    periodLoading.value = false
+    periodRows.value = []
+    rows.value = []
+    overview.value = {}
+    operations.value = undefined
+    comparison.value = []
+    targets.value = []
+    refreshing.value = true
     error.value = ''
     try {
       const query = projectId.value ? 'projectId=' + encodeURIComponent(projectId.value) + '&' : ''
-      const [summary, energy] = await Promise.all([
+      const range = 'from=' + from.value + '&to=' + to.value
+      const aggregation = '&level=' + level.value
+      const [summary, energy, operationResult, comparisonResult, targetResult] = await Promise.all([
         facility.get<Record<string, unknown>>('reports/overview?' + query),
-        facility.get<EnergyRow[]>(
-          'reports/energy?' + query + 'from=' + from.value + '&to=' + to.value + '&level=' + level.value
-        )
+        facility.get<EnergyRow[]>('reports/energy?' + query + range + aggregation),
+        detailed ? facility.get<typeof operations.value>('reports/operations?' + query + range) : undefined,
+        detailed ? facility.get<typeof comparison.value>('reports/comparison?' + query + range + aggregation) : [],
+        detailed ? facility.get<Record<string, unknown>[]>('reports/targets/execution?' + query + 'year=' + year.value + '&month=' + month.value) : []
       ])
+      if (current !== generation) return
       overview.value = summary
       rows.value = energy
-      if (detailed) {
-        const extra = await Promise.all([
-          facility.get<typeof operations.value>(
-            'reports/operations?' + query + 'from=' + from.value + '&to=' + to.value
-          ),
-          facility.get<typeof comparison.value>(
-            'reports/comparison?' + query + 'from=' + from.value + '&to=' + to.value + '&level=' + level.value
-          ),
-          facility.get<Record<string, unknown>[]>(
-            'reports/targets/execution?' + query + 'year=' + year.value + '&month=' + month.value
-          )
-        ])
-        operations.value = extra[0]
-        comparison.value = extra[1]
-        targets.value = extra[2]
-      }
+      operations.value = operationResult
+      comparison.value = comparisonResult
+      targets.value = targetResult
     } catch (e) {
-      error.value = messageOf(e)
+      if (current === generation) error.value = messageOf(e)
     } finally {
-      busy.value = false
+      if (current === generation) refreshing.value = false
     }
   }
   const loadPeriods = async () => {
-    busy.value = true
+    const current = ++periodGeneration
+    periodLoading.value = true
     error.value = ''
     try {
       const query = projectId.value ? 'projectId=' + encodeURIComponent(projectId.value) + '&' : ''
-      periodRows.value = await facility.get<typeof periodRows.value>(
+      const result = await facility.get<typeof periodRows.value>(
         'reports/periods?' +
           query +
           'period=' +
@@ -91,10 +97,11 @@ export function useReports(detailed = false) {
           '&level=' +
           level.value
       )
+      if (current === periodGeneration) periodRows.value = result
     } catch (e) {
-      error.value = messageOf(e)
+      if (current === periodGeneration) error.value = messageOf(e)
     } finally {
-      busy.value = false
+      if (current === periodGeneration) periodLoading.value = false
     }
   }
   const exportCsv = () => {

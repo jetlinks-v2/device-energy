@@ -9,7 +9,7 @@ interface Response<T> {
 }
 interface Http {
   get<T>(url: string): Promise<Response<T>>
-  post<T>(url: string, data?: unknown): Promise<Response<T>>
+  post<T>(url: string, data?: unknown, options?: { signal?: AbortSignal }): Promise<Response<T>>
   remove<T>(url: string): Promise<Response<T>>
 }
 const http = request as Http
@@ -27,6 +27,12 @@ export const facility = facilityClient({
     return unwrap(await http.post('/file/facility/upload?projectId=' + encodeURIComponent(projectId), body))
   }
 })
+
+/** 平台表格拥有请求生命周期，取消信号继续传给宿主 HTTP 客户端。 */
+export const queryResource = async (path: string, query: import('../shared/types').Query, signal?: AbortSignal) =>
+  unwrap(await http.post<import('../shared/types').Pager<import('../shared/types').Entity>>(
+    '/property/facility-energy/' + path + '/_query', query, { signal }
+  ))
 
 export const downloadFile = async (id: string): Promise<Blob> => {
   const response = await request.get('/file/' + encodeURIComponent(id), {}, { responseType: 'blob' })
