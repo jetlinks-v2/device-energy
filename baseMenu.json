@@ -2372,38 +2372,94 @@
         ],
         "buttons": [
           {
-            "id": "preview",
-            "name": "预览账单",
-            "permissions": [
-              {
-                "permission": "facility-meter-billing",
-                "actions": [
-                  "query"
-                ]
-              }
-            ],
-            "i18nMessages": {
-              "zh_CN": "预览账单",
-              "en_US": "Preview bills",
-              "en": "Preview bills"
-            }
-          },
-          {
-            "id": "generate",
-            "name": "生成应收",
+            "id": "detail",
+            "name": "详情",
             "permissions": [
               {
                 "permission": "facility-meter-billing",
                 "actions": [
                   "query",
-                  "generate"
+                  "detail"
                 ]
               }
             ],
             "i18nMessages": {
-              "zh_CN": "生成应收",
-              "en_US": "Generate receivables",
-              "en": "Generate receivables"
+              "zh_CN": "详情",
+              "en_US": "Details",
+              "en": "Details"
+            }
+          },
+          {
+            "id": "review",
+            "name": "审核",
+            "permissions": [
+              {
+                "permission": "facility-meter-billing",
+                "actions": [
+                  "query",
+                  "review"
+                ]
+              }
+            ],
+            "i18nMessages": {
+              "zh_CN": "审核",
+              "en_US": "Review",
+              "en": "Review"
+            }
+          },
+          {
+            "id": "reject",
+            "name": "驳回",
+            "permissions": [
+              {
+                "permission": "facility-meter-billing",
+                "actions": [
+                  "query",
+                  "reject"
+                ]
+              }
+            ],
+            "i18nMessages": {
+              "zh_CN": "驳回",
+              "en_US": "Reject",
+              "en": "Reject"
+            }
+          },
+          {
+            "id": "recalculate",
+            "name": "重新核算",
+            "permissions": [
+              {
+                "permission": "facility-meter-billing",
+                "actions": [
+                  "query",
+                  "recalculate"
+                ]
+              }
+            ],
+            "i18nMessages": {
+              "zh_CN": "重新核算",
+              "en_US": "Recalculate",
+              "en": "Recalculate"
+            }
+          },
+          {
+            "id": "recover",
+            "name": "重试出账",
+            "permissions": [
+              {
+                "permission": "facility-meter-billing",
+                "actions": [
+                  "query",
+                  "recover",
+                  "review"
+                ]
+              }
+            ],
+            "i18nMessages": {
+              "zh_CN": "重试出账",
+              "en_US": "Retry posting",
+              "en": "Retry posting"
             }
           }
         ],

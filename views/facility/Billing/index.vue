@@ -1,18 +1,61 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref, toRef, watch } from 'vue'
+import ConditionFilter, { type ConditionFilterTerm } from '@jetlinks-web-core/components/ConditionFilter'
 import FacilityWorkspace from '../../../components/FacilityWorkspace.vue'
-import MeterBillPreview from '../../../components/configuration/MeterBillPreview.vue'
+import MeterBillReview from '../../../components/configuration/MeterBillReview.vue'
+import MeterBillDetail from '../../../components/configuration/MeterBillDetail.vue'
 import { useBillingProject } from '../../../hooks/useBillingProject'
+import { useMeterBillLedger } from '../../../hooks/useMeterBillLedger'
 import { feText } from '../../../shared/i18n'
-const vm = reactive(useBillingProject())
+import { meterMoney, meterSearchFields } from '../../../shared/meterBillPresentation'
+import type { TableHandle } from '../../../shared/tableQuery'
+const project = reactive(useBillingProject()), vm = reactive(useMeterBillLedger(toRef(project, 'projectId')))
+const filters = ref<ConditionFilterTerm[]>([]), fields = meterSearchFields()
+watch(() => project.projectId, () => { filters.value = [] })
+const setTable = (value: unknown) => { vm.table = value as TableHandle | undefined }
+const columns = [
+  { title: feText('billingMonth'), dataIndex: 'accountPeriod', width: 100 },
+  { title: feText('installationSpace'), dataIndex: 'fullName', width: 260, ellipsis: true },
+  { title: feText('billingCustomer'), dataIndex: 'customerName', width: 110 },
+  { title: feText('deviceName'), key: 'device', scopedSlots: true, width: 170 },
+  { title: feText('usageQuantity'), key: 'quantity', scopedSlots: true, width: 110, align: 'right' },
+  { title: feText('billAmount'), key: 'amount', scopedSlots: true, width: 110, align: 'right' },
+  { title: feText('billNo'), dataIndex: 'billNo', width: 240 },
+  { title: feText('receivableDate'), dataIndex: 'receivableDate', width: 120 },
+  { title: feText('dueDate'), dataIndex: 'dueDate', width: 120 },
+  { title: feText('actions'), key: 'actions', scopedSlots: true, width: 80, fixed: 'right' }
+]
 </script>
 <template>
   <FacilityWorkspace>
-    <section class="facility-page facility-resource-page">
-      <div class="facility-toolbar"><a-select v-model:value="vm.projectId" :options="vm.projects" :loading="vm.loading" :placeholder="feText('chooseProject')" show-search option-filter-prop="label" class="facility-toolbar__project" /></div>
-      <a-alert v-if="vm.error" :message="vm.error" type="error" show-icon />
-      <MeterBillPreview v-if="vm.projectId" :key="vm.projectId" :project-id="vm.projectId" />
-      <a-empty v-else :description="feText('chooseProject')" />
+    <section class="facility-page facility-resource-page meter-ledger">
+      <div class="meter-ledger__filters">
+        <a-select v-model:value="project.projectId" :options="project.projects" :loading="project.loading" :placeholder="feText('chooseProject')"
+          show-search option-filter-prop="label" class="meter-ledger__project" :disabled="vm.reviewing" />
+        <ConditionFilter :key="project.projectId" v-model="filters" class="meter-ledger__search" :fields="fields" @change="vm.filter($event.filter.terms)" />
+        <j-permission-button hasPermission="facility/Billing:review" type="primary" :disabled="!project.projectId" @click="vm.reviewing = true">{{ feText('meterReview') }}</j-permission-button>
+      </div>
+      <a-alert v-if="project.error || vm.error" :message="project.error || vm.error" type="error" show-icon />
+      <j-pro-table v-if="project.projectId" :key="project.projectId" :ref="setTable" mode="TABLE" type="PAGE" row-key="id"
+        :columns="columns" :params="vm.params" :request="vm.request" :alert-show="false" :body-style="{ padding: 0 }"
+        :pagination="{ pageSize: 20, showSizeChanger: false }" :no-pagination="false" :scroll="{ x: 1520 }">
+        <template #device="row">{{ row.result?.deviceName || '—' }}</template>
+        <template #quantity="row">{{ meterMoney(row.result?.quantity) }} {{ row.result?.energyType === 'water' ? 'm³' : row.result?.energyType === 'electricity' ? 'kW·h' : '' }}</template>
+        <template #amount="row"><strong>{{ meterMoney(row.result?.amount) }}</strong></template>
+        <template #actions="row"><j-permission-button hasPermission="facility/Billing:detail" type="link"
+          @click="vm.detail = { id: row.id, projectId: project.projectId!, published: true }">{{ feText('details') }}</j-permission-button></template>
+      </j-pro-table>
+      <a-empty v-else-if="!project.loading" :description="feText('chooseProject')" />
+      <MeterBillReview v-if="vm.reviewing && project.projectId" :project-id="project.projectId" @close="vm.reviewing = false" @changed="vm.refresh" />
+      <MeterBillDetail v-if="vm.detail" :target="vm.detail" @close="vm.detail = undefined" />
     </section>
   </FacilityWorkspace>
 </template>
+<style scoped>
+.meter-ledger { min-width: 0; overflow: hidden; }
+.meter-ledger__filters { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.meter-ledger__project { width: 220px; flex: 0 0 220px; }
+.meter-ledger__search { flex: 1; min-width: 0; }
+.meter-ledger :deep(.pro-table-container) { min-width: 0; }
+@media (max-width: 1100px) { .meter-ledger__project { width: 180px; flex-basis: 180px; } }
+</style>

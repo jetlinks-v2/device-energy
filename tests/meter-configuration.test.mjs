@@ -46,25 +46,39 @@ test('切换项目后旧空间请求不能覆盖新项目候选或恢复旧空�
   assert.equal(vm.spaceId.value, undefined); assert.deepEqual(vm.spaces.value.map(row => row.value), ['new'])
   scope.stop()
 })
-test('确认仅提交服务端指纹和账期，部分出账失败保持可见', async () => {
-  const submitted = [], dialogs = []
-  const { useMeterBillPreview } = load('useMeterBillPreview', { generate: async rows => {
-    submitted.push(rows); return [{ id: 'one', result: { billId: 'bill' } }, { id: 'two', deviceName: '102水表', error: '月结已关闭' }]
-  } }, {}, dialogs)
-  const project = vue.ref('p'), scope = vue.effectScope(), vm = scope.run(() => useMeterBillPreview(project))
-  vm.month.value = '2024-02'; vm.receivableDate.value = '2024-03-01'; vm.dueDate.value = '2024-03-20'; await tick(); vm.preview()
-  vm.selectedRows.value = [{ id: 'one', result: { fingerprint: 'fp1', amount: 999 } }, { id: 'two', result: { fingerprint: 'fp2', amount: 888 } }]
-  vm.selected.value = ['one', 'two']; vm.generate(); await dialogs[0].onOk()
-  assert.deepEqual(Object.keys(submitted[0][0]).sort(), ['deviceId', 'dueDate', 'fingerprint', 'month', 'receivableDate'])
-  assert.equal(vm.results.value[1].error, '月结已关闭'); assert.equal(vm.selected.value.length, 0)
-  scope.stop()
+test('审核只提交版本和意见，批量部分失败保留原因', async () => {
+  const submitted = [], changed = []
+  const { useMeterBillReview } = load('useMeterBillReview', { review: async (action, rows) => {
+    submitted.push({ action, rows }); return [{ id: 'one', success: true }, { id: 'two', name: '102水表', success: false, error: '读数已经变化' }]
+  } })
+  const vm = useMeterBillReview('5G', () => changed.push(true))
+  vm.selected.value = [{ id: 'one', version: 3, amount: 999, state: 'pending' }, { id: 'two', version: 4, state: 'pending' }]
+  vm.start('review'); await vm.confirm()
+  assert.equal(submitted[0].action, 'review')
+  assert.deepEqual(Object.keys(submitted[0].rows[0]).sort(), ['comment', 'id', 'version'])
+  assert.equal(submitted[0].rows[0].version, 3)
+  assert.equal(vm.outcomes.value[1].error, '读数已经变化')
+  assert.equal(vm.selected.value.length, 0); assert.equal(changed.length, 1)
 })
-test('出账确认打开后切换项目使旧确认失效', async () => {
-  let generated = 0; const dialogs = []
-  const { useMeterBillPreview } = load('useMeterBillPreview', { generate: () => { generated++ } }, {}, dialogs)
-  const project = vue.ref('p'), scope = vue.effectScope(), vm = scope.run(() => useMeterBillPreview(project))
-  vm.month.value = '2024-02'; vm.receivableDate.value = '2024-03-01'; vm.dueDate.value = '2024-03-20'; await tick(); vm.preview()
-  vm.selectedRows.value = [{ id: 'one', result: { fingerprint: 'fp1' } }]; vm.generate()
-  project.value = 'other'; await tick(); await dialogs[0].onOk(); assert.equal(generated, 0)
+
+test('驳回必须填原因，状态/条件切换清理已选账单', async () => {
+  let submitted = 0
+  const { useMeterBillReview } = load('useMeterBillReview', { review: async () => { submitted++; return [] } })
+  const vm = useMeterBillReview('5G', () => {})
+  vm.selected.value = [{ id: 'one', version: 3, state: 'pending' }]
+  vm.start('reject'); await vm.confirm(); assert.equal(submitted, 0); assert.ok(vm.error.value)
+  vm.action.value = undefined; vm.changeStatus('approved'); assert.equal(vm.selected.value.length, 0)
+  vm.selected.value = [{ id: 'old', version: 1 }]; vm.filter([{ column: 'month', value: '2026-10' }]); assert.equal(vm.selected.value.length, 0)
+})
+
+test('台账默认查询不依赖日期，切换项目后旧响应不能覆盖', async () => {
+  const requests = new Map()
+  const { useMeterBillLedger } = load('useMeterBillLedger', { ledger: (project, query) => new Promise(resolve => requests.set(project, resolve)) })
+  const scope = vue.effectScope(), project = vue.ref('5G'), vm = scope.run(() => useMeterBillLedger(project))
+  const old = vm.request({ pageIndex: 0, pageSize: 20 })
+  project.value = 'new'; await tick()
+  const current = vm.request({ pageIndex: 0, pageSize: 20 })
+  requests.get('new')({ data: [{ id: 'new-bill' }], total: 1 }); assert.equal((await current).result.data[0].id, 'new-bill')
+  requests.get('5G')({ data: [{ id: 'old-bill' }], total: 1 }); assert.equal((await old).result.data.length, 0)
   scope.stop()
 })

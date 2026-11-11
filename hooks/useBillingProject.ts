@@ -8,7 +8,7 @@ export function useBillingProject() {
     loading.value = true
     try {
       projects.value = (await facility.options('projects')).map(row => ({ value: row.id, label: row.name || row.id }))
-      if (projects.value.length === 1) projectId.value = projects.value[0].value
+      projectId.value = projects.value[0]?.value
     } catch (cause) { error.value = messageOf(cause) }
     finally { loading.value = false }
   })
