@@ -33,9 +33,11 @@ const columns = [
         <a-select v-model:value="project.projectId" :options="project.projects" :loading="project.loading" :placeholder="feText('chooseProject')"
           show-search option-filter-prop="label" class="meter-ledger__project" :disabled="vm.reviewing" />
         <ConditionFilter :key="project.projectId" v-model="filters" class="meter-ledger__search" :fields="fields" @change="vm.filter($event.filter.terms)" />
-        <j-permission-button hasPermission="facility/Billing:review" type="primary" :disabled="!project.projectId" @click="vm.reviewing = true">{{ feText('meterReview') }}</j-permission-button>
       </div>
       <a-alert v-if="project.error || vm.error" :message="project.error || vm.error" type="error" show-icon />
+      <div class="facility-toolbar">
+        <j-permission-button hasPermission="facility/Billing:review" type="primary" :disabled="!project.projectId" @click="vm.reviewing = true">{{ feText('meterReview') }}</j-permission-button>
+      </div>
       <j-pro-table v-if="project.projectId" :key="project.projectId" :ref="setTable" mode="TABLE" type="PAGE" row-key="id"
         :columns="columns" :params="vm.params" :request="vm.request" :alert-show="false" :body-style="{ padding: 0 }"
         :pagination="{ pageSize: 20, showSizeChanger: false }" :no-pagination="false" :scroll="{ x: 1520 }">
@@ -53,7 +55,7 @@ const columns = [
 </template>
 <style scoped>
 .meter-ledger { min-width: 0; overflow: hidden; }
-.meter-ledger__filters { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.meter-ledger__filters { display: flex; align-items: center; gap: 12px; min-width: 0; margin-bottom: var(--space-4, 1rem); }
 .meter-ledger__project { width: 220px; flex: 0 0 220px; }
 .meter-ledger__search { flex: 1; min-width: 0; }
 .meter-ledger :deep(.pro-table-container) { min-width: 0; }
