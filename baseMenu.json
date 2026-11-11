@@ -2157,6 +2157,232 @@
         "showPage": [
           "facility-owner"
         ]
+      },
+      {
+        "id": "facility-Configuration",
+        "code": "facility/Configuration",
+        "name": "配置管理",
+        "url": "/facility/configuration",
+        "owner": "app",
+        "sortIndex": 9,
+        "parentId": "facility-management",
+        "permissions": [],
+        "buttons": [],
+        "status": 1,
+        "runtime": true,
+        "accessSupport": "support",
+        "granted": true,
+        "options": {
+          "show": true,
+          "meta": {
+            "componentCode": "facility/Configuration"
+          }
+        },
+        "i18nMessages": {
+          "name": {
+            "zh_CN": "配置管理",
+            "zh": "配置管理",
+            "en_US": "配置管理",
+            "en": "配置管理"
+          }
+        },
+        "showPage": [],
+        "icon": "SettingOutlined",
+        "children": [
+          {
+            "id": "facility-Configuration-Devices",
+            "code": "facility/Configuration/Devices",
+            "name": "设备归属配置",
+            "url": "/facility/configuration/devices",
+            "owner": "app",
+            "sortIndex": 1,
+            "parentId": "facility-Configuration",
+            "permissions": [
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              }
+            ],
+            "buttons": [
+              {
+                "id": "save",
+                "name": "配置设备归属",
+                "permissions": [
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query",
+                      "save"
+                    ]
+                  }
+                ],
+                "i18nMessages": {
+                  "zh_CN": "配置设备归属",
+                  "en_US": "配置设备归属",
+                  "en": "配置设备归属"
+                }
+              },
+              {
+                "id": "sync",
+                "name": "同步设备",
+                "permissions": [
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "save"
+                    ]
+                  }
+                ],
+                "i18nMessages": {
+                  "zh_CN": "同步设备",
+                  "en_US": "同步设备",
+                  "en": "同步设备"
+                }
+              }
+            ],
+            "status": 1,
+            "runtime": true,
+            "accessSupport": "support",
+            "granted": true,
+            "options": {
+              "show": true,
+              "meta": {
+                "componentCode": "facility/Configuration/Devices"
+              }
+            },
+            "i18nMessages": {
+              "name": {
+                "zh_CN": "设备归属配置",
+                "zh": "设备归属配置",
+                "en_US": "设备归属配置",
+                "en": "设备归属配置"
+              }
+            },
+            "showPage": [
+              "facility-device"
+            ],
+            "assetTypes": [
+              "facilityDevice",
+              "facilityMapping",
+              "space",
+              "org"
+            ]
+          },
+          {
+            "id": "facility-Configuration-MeterBilling",
+            "code": "facility/Configuration/MeterBilling",
+            "name": "水电计费配置",
+            "url": "/facility/configuration/meter-billing",
+            "owner": "app",
+            "sortIndex": 2,
+            "parentId": "facility-Configuration",
+            "permissions": [
+              {
+                "permission": "facility-meter-billing",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-mapping",
+                "actions": [
+                  "query"
+                ]
+              }
+            ],
+            "buttons": [
+              {
+                "id": "save",
+                "name": "保存收费规则",
+                "permissions": [
+                  {
+                    "permission": "facility-meter-billing",
+                    "actions": [
+                      "save"
+                    ]
+                  }
+                ],
+                "i18nMessages": {
+                  "zh_CN": "保存收费规则",
+                  "en_US": "保存收费规则",
+                  "en": "保存收费规则"
+                }
+              },
+              {
+                "id": "preview",
+                "name": "预览账单",
+                "permissions": [
+                  {
+                    "permission": "facility-meter-billing",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ],
+                "i18nMessages": {
+                  "zh_CN": "预览账单",
+                  "en_US": "预览账单",
+                  "en": "预览账单"
+                }
+              },
+              {
+                "id": "generate",
+                "name": "生成应收",
+                "permissions": [
+                  {
+                    "permission": "facility-meter-billing",
+                    "actions": [
+                      "query",
+                      "generate"
+                    ]
+                  }
+                ],
+                "i18nMessages": {
+                  "zh_CN": "生成应收",
+                  "en_US": "生成应收",
+                  "en": "生成应收"
+                }
+              }
+            ],
+            "status": 1,
+            "runtime": true,
+            "accessSupport": "support",
+            "granted": true,
+            "options": {
+              "show": true,
+              "meta": {
+                "componentCode": "facility/Configuration/MeterBilling"
+              }
+            },
+            "i18nMessages": {
+              "name": {
+                "zh_CN": "水电计费配置",
+                "zh": "水电计费配置",
+                "en_US": "水电计费配置",
+                "en": "水电计费配置"
+              }
+            },
+            "showPage": [
+              "facility-meter-billing",
+              "facility-device",
+              "facility-mapping"
+            ],
+            "assetTypes": [
+              "facilityDevice",
+              "facilityMapping",
+              "space",
+              "org"
+            ]
+          }
+        ]
       }
     ]
   }
