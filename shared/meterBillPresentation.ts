@@ -2,6 +2,10 @@ import type { ConditionFilterField } from '@jetlinks-web-core/components/Conditi
 import { feText } from './i18n'
 import type { MeterReviewState } from './meterBilling'
 
+export const meterUnit = (type?: string) => type === 'electricity' ? 'kW·h' : type === 'water' || type === 'gas' ? 'm³' : ''
+export const meterEnergy = (type?: string) => type === 'water' || type === 'electricity' || type === 'gas' ? feText(type) : '—'
+export const meterChargeName = (type?: string) => type === 'water' ? feText('waterCharge') : type === 'electricity' ? feText('electricCharge') : type === 'gas' ? feText('gasCharge') : '—'
+export const meterChargeColor = (type?: string) => type === 'water' ? 'cyan' : type === 'electricity' ? 'purple' : type === 'gas' ? 'orange' : undefined
 export const meterMoney = (value: unknown) => value == null ? '—' : Number(value).toFixed(2)
 export const meterState = (state: MeterReviewState) => ({
   pending: feText('meterPending'), approved: feText('meterApproved'), rejected: feText('meterRejected'),
@@ -15,7 +19,7 @@ export const meterSearchFields = (review = false): ConditionFilterField[] => [
   ...(review ? [
     { title: feText('deviceName'), dataIndex: 'deviceName', search: { type: 'string' as const } },
     { title: feText('energyType'), dataIndex: 'meterType', search: { type: 'select' as const, options: [
-      { value: 'water', label: feText('water') }, { value: 'electricity', label: feText('electricity') }
+      { value: 'water', label: feText('water') }, { value: 'electricity', label: feText('electricity') }, { value: 'gas', label: feText('gas') }
     ] } }
   ] : [
     { title: feText('billNo'), dataIndex: 'billNo', search: { type: 'string' as const } },

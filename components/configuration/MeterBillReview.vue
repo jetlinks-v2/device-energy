@@ -3,10 +3,11 @@ import { reactive, ref } from 'vue'
 import ConditionFilter, { type ConditionFilterTerm } from '@jetlinks-web-core/components/ConditionFilter'
 import { useMeterBillReview } from '../../hooks/useMeterBillReview'
 import { feText } from '../../shared/i18n'
-import { meterColor, meterMoney, meterSearchFields, meterState } from '../../shared/meterBillPresentation'
+import { meterColor, meterMoney, meterSearchFields, meterState, meterUnit, meterChargeName, meterChargeColor } from '../../shared/meterBillPresentation'
 import type { MeterDetailTarget, MeterMonthlyBill, MeterReviewAction } from '../../shared/meterBilling'
 import type { TableHandle } from '../../shared/tableQuery'
 import MeterBillDetail from './MeterBillDetail.vue'
+import MeterEnergyFilter from './MeterEnergyFilter.vue'
 const props = defineProps<{ projectId: string }>(), emit = defineEmits<{ close: []; changed: [] }>()
 const vm = reactive(useMeterBillReview(props.projectId, () => emit('changed')))
 const filters = ref<ConditionFilterTerm[]>([]), detail = ref<MeterDetailTarget>(), fields = meterSearchFields(true)
@@ -14,6 +15,7 @@ const tabs = [{ key: 'pending', label: 'meterPending' }, { key: 'approved', labe
   { key: 'rejected', label: 'meterRejected' }, { key: 'error', label: 'meterException' }, { key: 'all', label: 'reviewAll' }] as const
 const columns = [
   { title: feText('billingMonth'), dataIndex: 'month', width: 100 },
+  { title: feText('meterChargeType'), key: 'energy', scopedSlots: true, width: 100 },
   { title: feText('installationSpace'), dataIndex: 'fullName', width: 240, ellipsis: true },
   { title: feText('billingCustomer'), dataIndex: 'customerName', width: 100 },
   { title: feText('deviceName'), dataIndex: 'deviceName', width: 180 },
@@ -33,6 +35,7 @@ const detailChanged = () => { vm.table?.reload(); emit('changed') }
       <a-tabs :active-key="vm.status" :animated="false" @change="vm.changeStatus">
         <a-tab-pane v-for="tab in tabs" :key="tab.key" :tab="feText(tab.label)" :disabled="vm.busy || !!vm.action || !!detail" />
       </a-tabs>
+      <MeterEnergyFilter :value="vm.energy" :disabled="vm.busy || !!vm.action || !!detail" @change="vm.changeEnergy" />
       <ConditionFilter v-model="filters" :fields="fields" @change="vm.filter($event.filter.terms)" />
       <div v-if="vm.status === 'pending'" class="meter-review__batch">
         <a-space>
@@ -42,15 +45,16 @@ const detailChanged = () => { vm.table?.reload(); emit('changed') }
         <span v-if="vm.selected.length">{{ feText('meterSelected') }} {{ vm.selected.length }}</span>
       </div>
       <a-alert v-if="vm.error" :message="vm.error" type="error" show-icon />
-      <a-alert v-if="vm.outcomes.length" :type="vm.outcomes.some(row => !row.success) ? 'warning' : 'success'" show-icon
+      <a-alert v-if="vm.outcomes.some(row => !row.success)" type="warning" show-icon
         :message="`${feText('approvalSucceeded')} ${vm.outcomes.filter(row => row.success).length}，${feText('approvalFailed')} ${vm.outcomes.filter(row => !row.success).length}`">
         <template #description><div v-for="row in vm.outcomes.filter(row => !row.success)" :key="row.id">{{ row.name }}：{{ row.error }}</div></template>
       </a-alert>
       <j-pro-table :key="vm.status" :ref="setTable" mode="TABLE" type="PAGE" row-key="id" :columns="columns"
         :params="vm.params" :request="vm.request" :row-selection="vm.status === 'pending' ? vm.selection : undefined" :alert-show="false"
         :pagination="{ pageSize: 12, showSizeChanger: false }" :no-pagination="false" :body-style="{ padding: 0 }"
-        :scroll="{ x: 1250, y: 'min(420px, calc(100dvh - 400px))' }">
-        <template #quantity="row">{{ meterMoney(row.quantity) }} {{ row.meterType === 'water' ? 'm³' : 'kW·h' }}</template>
+        :scroll="{ x: 1350, y: 'min(420px, calc(100dvh - 440px))' }">
+        <template #energy="row"><a-tag :color="meterChargeColor(row.meterType)">{{ meterChargeName(row.meterType) }}</a-tag></template>
+        <template #quantity="row">{{ meterMoney(row.quantity) }} {{ meterUnit(row.meterType) }}</template>
         <template #amount="row"><strong>{{ meterMoney(row.amount) }}</strong></template>
         <template #state="row"><a-tag :color="meterColor(row.state)">{{ meterState(row.state) }}</a-tag></template>
         <template #actions="row">

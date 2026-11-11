@@ -2273,7 +2273,7 @@
           {
             "id": "facility-Configuration-MeterBilling",
             "code": "facility/Configuration/MeterBilling",
-            "name": "水电计费配置",
+            "name": "水电气计费配置",
             "url": "/facility/configuration/meter-billing",
             "owner": "app",
             "sortIndex": 2,
@@ -2323,10 +2323,10 @@
             },
             "i18nMessages": {
               "name": {
-                "zh_CN": "水电计费配置",
-                "zh": "水电计费配置",
-                "en_US": "水电计费配置",
-                "en": "水电计费配置"
+                "zh_CN": "水电气计费配置",
+                "zh": "水电气计费配置",
+                "en_US": "水电气计费配置",
+                "en": "水电气计费配置"
               }
             },
             "showPage": [

@@ -1,5 +1,5 @@
 import type { Device, Entity } from './types'
-export type MeterType = 'device' | 'water' | 'electricity'
+export type MeterType = 'device' | 'water' | 'electricity' | 'gas'
 export interface AllocatedDevice extends Device { meterType?: MeterType; spaceId?: string; allocationSince?: number; productName?: string }
 export interface Allocation { id: string; version: number; projectId: string; meterType: MeterType; spaceId?: string; updateSpace: boolean }
 export interface MeterVariable { code: string; name: string; system: boolean }
@@ -8,7 +8,7 @@ export interface MeterStandard {
   price: number; effectiveFrom?: string; effectiveTo?: string; variables: MeterVariable[]
 }
 export interface MeterRule extends Partial<Entity> {
-  projectId: string; energyType: 'water' | 'electricity'; subjectId?: string; standardId?: string; usageVariable?: string
+  projectId: string; energyType: 'water' | 'electricity' | 'gas'; subjectId?: string; standardId?: string; usageVariable?: string
   fixedValues: Record<string, number | string>; effectiveFrom?: string; effectiveTo?: string; enabled: boolean
 }
 export type MeterAssociation = Pick<MeterRule, 'id' | 'version' | 'projectId' | 'energyType' | 'subjectId' | 'standardId'>

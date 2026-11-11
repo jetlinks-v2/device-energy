@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import type { FormInstance } from 'ant-design-vue'
 import { feText } from '../../shared/i18n'
 import type { MeterAssociation, MeterRule, MeterStandard } from '../../shared/meterBilling'
-const props = defineProps<{ projectId: string; energyType: 'water' | 'electricity'; rule?: MeterRule; standards: MeterStandard[]; saving: boolean }>()
+const props = defineProps<{ projectId: string; energyType: 'water' | 'electricity' | 'gas'; rule?: MeterRule; standards: MeterStandard[]; saving: boolean }>()
 const emit = defineEmits<{ save: [rule: MeterAssociation] }>()
 const form = ref<FormInstance>(), model = ref<MeterAssociation>({ projectId: props.projectId, energyType: props.energyType })
 // Submit only the selected association; finance remains the source of formula, variables, prices and dates.
@@ -20,7 +20,7 @@ async function save() {
 </script>
 <template>
   <a-card class="meter-rule-card" :bordered="true">
-    <template #title><a-space><AIcon :type="energyType === 'water' ? 'ExperimentOutlined' : 'ThunderboltOutlined'" /><span>{{ feText(energyType === 'water' ? 'waterCharge' : 'electricCharge') }}</span></a-space></template>
+    <template #title><a-space><AIcon :type="energyType === 'water' ? 'ExperimentOutlined' : energyType === 'gas' ? 'FireOutlined' : 'ThunderboltOutlined'" /><span>{{ feText(energyType === 'water' ? 'waterCharge' : energyType === 'gas' ? 'gasCharge' : 'electricCharge') }}</span></a-space></template>
     <template #extra><a-tag :color="rule?.enabled ? 'blue' : undefined">{{ rule ? feText(rule.enabled ? 'configured' : 'disabled') : feText('notConfigured') }}</a-tag></template>
     <a-form ref="form" :model="model" layout="vertical" :disabled="saving">
       <div class="meter-form-grid">

@@ -9,7 +9,7 @@ import type { AllocatedDevice } from '../../shared/meterBilling'
 const vm = reactive(useDeviceConfiguration()), filters = ref<ConditionFilterTerm[]>([])
 const types: Option[] = [
   { value: 'device', label: feText('ordinaryDevice') }, { value: 'water', label: feText('waterMeter') },
-  { value: 'electricity', label: feText('electricMeter') }
+  { value: 'electricity', label: feText('electricMeter') }, { value: 'gas', label: feText('gasMeter') }
 ]
 const fields: ConditionFilterField[] = [
   { title: feText('deviceName'), dataIndex: 'name', search: { type: 'string' } },

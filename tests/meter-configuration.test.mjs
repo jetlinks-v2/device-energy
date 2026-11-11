@@ -5,7 +5,13 @@ import test from 'node:test'
 const require = createRequire(new URL('../../../package.json', import.meta.url))
 const vue = require('vue'), { transformSync } = require('esbuild')
 const tick = async () => { await vue.nextTick(); await Promise.resolve(); await vue.nextTick() }
-function load(name, api, facility = {}, dialogs = []) {
+function loadShared(name) {
+  const code = transformSync(readFileSync(new URL('../shared/' + name + '.ts', import.meta.url), 'utf8'), { loader: 'ts', format: 'cjs' }).code
+  const module = { exports: {} }
+  new Function('module', 'exports', code)(module, module.exports)
+  return module.exports
+}
+function load(name, api, facility = {}, dialogs = [], notices = []) {
   const source = readFileSync(new URL('../hooks/' + name + '.ts', import.meta.url), 'utf8')
   const code = transformSync(source, { loader: 'ts', format: 'cjs' }).code
   const module = { exports: {} }
@@ -15,7 +21,8 @@ function load(name, api, facility = {}, dialogs = []) {
     if (id === '../api/meterBilling') return { meterApi: api }
     if (id === '../shared/i18n') return { feText: key => key }
     if (id === '../shared/types') return { messageOf: cause => cause.message }
-    if (id === 'ant-design-vue') return { message: { warning() {}, success() {}, info() {} }, Modal: { confirm: options => dialogs.push(options) } }
+    if (id === '../shared/meterBillQuery') return loadShared('meterBillQuery')
+    if (id === 'ant-design-vue') return { message: { warning() {}, success: (...args) => notices.push(args), info() {} }, Modal: { confirm: options => dialogs.push(options) } }
     throw Error(id)
   }, module, module.exports)
   return module.exports
@@ -33,6 +40,20 @@ test('单设备空间加载中或失败时不保存，加载后保留原安装�
   vm.edit([row]); await tick(); resolve([{ id: 'room', name: '101', fullName: '园区/1栋/101' }]); await tick()
   assert.equal(vm.spacesReady.value, true); assert.equal(vm.spaceId.value, 'room')
   await vm.save(); assert.equal(saved[0][0].spaceId, 'room'); assert.equal(saved[0][0].updateSpace, true)
+  scope.stop()
+})
+
+test('燃气表配置保存项目、类型和安装空间，不回退成水表或电表', async () => {
+  const saved = []
+  const { useDeviceConfiguration } = load('useDeviceConfiguration', { allocate: async rows => { saved.push(rows) } },
+    { options: async () => [{ id: 'room', name: '101' }] })
+  const scope = vue.effectScope(), vm = scope.run(() => useDeviceConfiguration())
+  vm.edit([{ id: 'gas', version: 2, projectId: 'p', meterType: 'gas', spaceId: 'room' }]); await tick()
+  await vm.save()
+  assert.equal(saved.length, 1)
+  assert.equal(saved[0][0].meterType, 'gas')
+  assert.equal(saved[0][0].projectId, 'p')
+  assert.equal(saved[0][0].spaceId, 'room')
   scope.stop()
 })
 test('切换项目后旧空间请求不能覆盖新项目候选或恢复旧空间', async () => {
@@ -61,6 +82,19 @@ test('审核只提交版本和意见，批量部分失败保留原因', async ()
   assert.equal(vm.selected.value.length, 0); assert.equal(changed.length, 1)
 })
 
+test('审核全部成功短暂提示，部分失败保留原因且不提示全部成功', async () => {
+  const notices = []
+  let results = [{ id: 'one', success: true }]
+  const { useMeterBillReview } = load('useMeterBillReview', { review: async () => results }, {}, [], notices)
+  const vm = useMeterBillReview('5G', () => {})
+  vm.start('review', [{ id: 'one', version: 1, state: 'pending' }]); await vm.confirm()
+  assert.deepEqual(notices, [['approvalSucceeded 1', 3]])
+  results = [{ id: 'one', success: true }, { id: 'two', success: false, error: '账单已经变化' }]
+  vm.start('review', [{ id: 'one', version: 1 }, { id: 'two', version: 2 }]); await vm.confirm()
+  assert.equal(notices.length, 1)
+  assert.equal(vm.outcomes.value.filter(row => !row.success)[0].error, '账单已经变化')
+})
+
 test('驳回必须填原因，状态/条件切换清理已选账单', async () => {
   let submitted = 0
   const { useMeterBillReview } = load('useMeterBillReview', { review: async () => { submitted++; return [] } })
@@ -80,5 +114,50 @@ test('台账默认查询不依赖日期，切换项目后旧响应不能覆盖',
   const current = vm.request({ pageIndex: 0, pageSize: 20 })
   requests.get('new')({ data: [{ id: 'new-bill' }], total: 1 }); assert.equal((await current).result.data[0].id, 'new-bill')
   requests.get('5G')({ data: [{ id: 'old-bill' }], total: 1 }); assert.equal((await old).result.data.length, 0)
+  scope.stop()
+})
+
+test('能源快捷筛选与OR搜索取交集，全部费用移除固定分类且保留分页', () => {
+  const { meterBillQuery } = loadShared('meterBillQuery')
+  const query = { pageIndex: 2, pageSize: 12, terms: [{ column: 'fullName', value: '201' }, { type: 'or', column: 'customerName', value: '李白' }] }
+  const gas = meterBillQuery(query, 'gas', 'energyType')
+  assert.equal(gas.pageIndex, 2)
+  assert.deepEqual(gas.terms, [{ column: 'energyType', termType: 'eq', value: 'gas' }, { type: 'and', terms: query.terms }])
+  assert.deepEqual(meterBillQuery(query, 'all', 'energyType'), query)
+})
+
+test('审核能源切换清理勾选、保留状态搜索并丢弃旧响应；确认期间不能切换', async () => {
+  const requests = [], submitted = []
+  const { useMeterBillReview } = load('useMeterBillReview', {
+    reviews: (project, state, query) => new Promise(resolve => requests.push({ project, state, query, resolve })),
+    review: async (action, rows) => { submitted.push(rows); return [] }
+  })
+  const vm = useMeterBillReview('5G', () => {})
+  vm.filter([{ column: 'month', value: '2026-10' }]); vm.changeStatus('approved')
+  const old = vm.request({ terms: vm.params.value.terms, pageIndex: 0 })
+  vm.selected.value = [{ id: 'water', version: 1, state: 'pending' }]
+  vm.changeEnergy('gas'); assert.equal(vm.selected.value.length, 0)
+  const current = vm.request({ terms: vm.params.value.terms, pageIndex: 0 })
+  assert.equal(requests[1].state, 'approved')
+  assert.equal(requests[1].query.terms[0].column, 'meterType'); assert.equal(requests[1].query.terms[0].value, 'gas')
+  assert.deepEqual(requests[1].query.terms[1].terms, [{ column: 'month', value: '2026-10' }])
+  requests[1].resolve({ data: [{ id: 'gas' }], total: 1 }); assert.equal((await current).result.data[0].id, 'gas')
+  requests[0].resolve({ data: [{ id: 'water' }], total: 1 }); assert.equal((await old).result.data.length, 0)
+  vm.start('review', [{ id: 'gas', version: 2, state: 'pending' }]); vm.changeEnergy('water')
+  assert.equal(vm.energy.value, 'gas'); await vm.confirm()
+  assert.deepEqual(submitted[0].map(row => row.id), ['gas'])
+})
+
+test('台账能源筛选请求后端快照类型，快速切换不会显示旧分类响应', async () => {
+  const requests = []
+  const { useMeterBillLedger } = load('useMeterBillLedger', { ledger: (project, query) => new Promise(resolve => requests.push({ query, resolve })) })
+  const scope = vue.effectScope(), vm = scope.run(() => useMeterBillLedger(vue.ref('5G')))
+  vm.changeEnergy('water'); const old = vm.request({ pageIndex: 0, pageSize: 20 })
+  vm.changeEnergy('gas'); const current = vm.request({ pageIndex: 0, pageSize: 20 })
+  assert.equal(requests[1].query.terms[0].column, 'energyType'); assert.equal(requests[1].query.terms[0].value, 'gas')
+  requests[1].resolve({ data: [{ id: 'gas' }], total: 1 }); assert.equal((await current).result.total, 1)
+  requests[0].resolve({ data: [{ id: 'water' }], total: 1 }); assert.equal((await old).result.total, 0)
+  vm.changeEnergy('all'); const all = vm.request({ pageIndex: 0 })
+  assert.equal(requests[2].query.terms, undefined); requests[2].resolve({ data: [], total: 0 }); await all
   scope.stop()
 })

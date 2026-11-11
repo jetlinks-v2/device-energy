@@ -5,7 +5,7 @@ import MeterRuleEditor from '../../../../components/configuration/MeterRuleEdito
 import { useMeterBilling } from '../../../../hooks/useMeterBilling'
 import { feText } from '../../../../shared/i18n'
 const vm = reactive(useMeterBilling())
-const types = ['water', 'electricity'] as const
+const types = ['water', 'electricity', 'gas'] as const
 </script>
 <template>
   <FacilityWorkspace>

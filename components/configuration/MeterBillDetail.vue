@@ -3,13 +3,13 @@ import { reactive } from 'vue'
 import { useMeterBillDetail } from '../../hooks/useMeterBillDetail'
 import { feText } from '../../shared/i18n'
 import { taskTime } from '../../shared/types'
-import { meterMoney, meterState, meterColor } from '../../shared/meterBillPresentation'
+import { meterMoney, meterState, meterColor, meterUnit, meterEnergy } from '../../shared/meterBillPresentation'
 import type { MeterDetailTarget, MeterMonthlyBill, MeterReviewAction } from '../../shared/meterBilling'
 const props = defineProps<{ target: MeterDetailTarget }>()
 const emit = defineEmits<{ close: []; changed: []; action: [action: MeterReviewAction, row: MeterMonthlyBill] }>()
 const vm = reactive(useMeterBillDetail(props.target, () => emit('changed')))
 const logName = (action: string) => ({ review: feText('meterApproved'), reject: feText('meterRejected'), recalculate: feText('meterRecalculate'), recover: feText('meterRecover') })[action] || action
-const variableName = (key: string) => ({ STANDARD_PRICE: feText('meterUnitPrice'), WATER_USAGE: feText('meterWaterUsage'), ELECTRICITY_USAGE: feText('meterElectricUsage'), BILLING_AREA: feText('managementArea'), PERIOD_MONTHS: feText('meterPeriodMonths') })[key] || key
+const variableName = (key: string) => ({ STANDARD_PRICE: feText('meterUnitPrice'), WATER_USAGE: feText('meterWaterUsage'), ELECTRICITY_USAGE: feText('meterElectricUsage'), GAS_USAGE: feText('meterGasUsage'), BILLING_AREA: feText('managementArea'), PERIOD_MONTHS: feText('meterPeriodMonths') })[key] || key
 </script>
 <template>
   <a-drawer open :title="feText('meterBillDetail')" :width="'min(780px, calc(100vw - 48px))'" :mask-closable="false"
@@ -25,7 +25,7 @@ const variableName = (key: string) => ({ STANDARD_PRICE: feText('meterUnitPrice'
           </div>
           <a-descriptions :column="2" size="small">
             <a-descriptions-item :label="feText('deviceName')">{{ vm.result?.deviceName || vm.row?.deviceName }}</a-descriptions-item>
-            <a-descriptions-item :label="feText('energyType')">{{ feText((vm.result?.energyType || vm.row?.meterType) === 'water' ? 'water' : 'electricity') }}</a-descriptions-item>
+            <a-descriptions-item :label="feText('energyType')">{{ meterEnergy(vm.result?.energyType || vm.row?.meterType) }}</a-descriptions-item>
             <a-descriptions-item :label="feText('receivableDate')">{{ vm.receivableDate || '—' }}</a-descriptions-item>
             <a-descriptions-item :label="feText('dueDate')">{{ vm.dueDate || '—' }}</a-descriptions-item>
             <a-descriptions-item :label="feText('billNo')" :span="2">{{ vm.result?.billNo || '—' }}</a-descriptions-item>
@@ -42,7 +42,7 @@ const variableName = (key: string) => ({ STANDARD_PRICE: feText('meterUnitPrice'
               <div v-for="(reading, index) in vm.result.detail.readings" :key="index">
                 <span>{{ feText(index === 0 ? 'meterStartReading' : 'meterEndReading') }}</span><strong>{{ meterMoney(reading.value) }}</strong><span>{{ taskTime(reading.time) }}</span>
               </div>
-              <div><span>{{ feText('usageQuantity') }}</span><strong>{{ meterMoney(vm.result.quantity) }}</strong><span>{{ vm.result.energyType === 'water' ? 'm³' : 'kW·h' }}</span></div>
+              <div><span>{{ feText('usageQuantity') }}</span><strong>{{ meterMoney(vm.result.quantity) }}</strong><span>{{ meterUnit(vm.result.energyType) }}</span></div>
             </div>
             <a-empty v-else :image="undefined" :description="feText('meterNoReadoutSnapshot')" />
           </section>
