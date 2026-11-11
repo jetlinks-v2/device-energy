@@ -3,7 +3,7 @@ import { message } from 'ant-design-vue'
 import { facility } from '../api'
 import { meterApi } from '../api/meterBilling'
 import { messageOf, type Option } from '../shared/types'
-import type { MeterRule, MeterStandard } from '../shared/meterBilling'
+import type { MeterAssociation, MeterRule, MeterStandard } from '../shared/meterBilling'
 import { feText } from '../shared/i18n'
 export function useMeterBilling() {
   const projects = ref<Option[]>([]), projectId = ref<string>(), standards = ref<MeterStandard[]>([]), rules = ref<MeterRule[]>([])
@@ -20,7 +20,7 @@ export function useMeterBilling() {
     } catch (cause) { if (current === sequence) error.value = messageOf(cause) }
     finally { if (current === sequence) busy.value = false }
   })
-  const save = async (rule: MeterRule) => {
+  const save = async (rule: MeterAssociation) => {
     const project = projectId.value, current = sequence
     if (!project || rule.projectId !== project) return
     saving.value = rule.energyType; error.value = ''

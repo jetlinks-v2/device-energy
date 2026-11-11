@@ -27,8 +27,8 @@ const select = (keys: string[], rows: MeterBillRow[]) => { vm.selected = keys; v
         <a-form-item :label="feText('receivableDate')"><a-date-picker v-model:value="vm.receivableDate" value-format="YYYY-MM-DD" :disabled="vm.generating" /></a-form-item>
         <a-form-item :label="feText('dueDate')"><a-date-picker v-model:value="vm.dueDate" value-format="YYYY-MM-DD" :disabled="vm.generating" /></a-form-item>
       </a-form>
-      <j-permission-button hasPermission="facility/Configuration/MeterBilling:preview" :disabled="vm.generating" @click="vm.preview">{{ feText('previewBills') }}</j-permission-button>
-      <j-permission-button hasPermission="facility/Configuration/MeterBilling:generate" type="primary" :disabled="!vm.selected.length" :loading="vm.generating" @click="vm.generate">{{ feText('generateBills') }}</j-permission-button>
+      <j-permission-button hasPermission="facility/Billing:preview" :disabled="vm.generating" @click="vm.preview">{{ feText('previewBills') }}</j-permission-button>
+      <j-permission-button hasPermission="facility/Billing:generate" type="primary" :disabled="!vm.selected.length" :loading="vm.generating" @click="vm.generate">{{ feText('generateBills') }}</j-permission-button>
     </div>
     <a-alert v-for="row in vm.results.filter(row => row.error)" :key="row.id" type="error" show-icon :message="row.deviceName + '：' + row.error" />
     <j-pro-table :ref="setTable" row-key="id" mode="TABLE" type="PAGE" :columns="columns" :params="vm.params" :request="vm.request"

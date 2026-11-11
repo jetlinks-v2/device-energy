@@ -76,6 +76,21 @@ const grants = (menu, selected = []) => {
   return (resource, action) => permissions.some(p => p.permission === resource && p.actions.includes(action))
 }
 
+test('计费出账作为独立一级业务菜单初始化，配置保存不捆绑生成应收权限', () => {
+  const configuration = all.find(menu => menu.code === 'facility/Configuration/MeterBilling')
+  const billing = menus[0].children.find(menu => menu.code === 'facility/Billing')
+  assert.ok(billing)
+  assert.equal(billing.parentId, menus[0].id)
+  assert.equal(billing.options.meta.componentCode, 'facility/Billing')
+  assert.deepEqual(configuration.buttons.map(b => b.id), ['save'])
+  assert.deepEqual(billing.buttons.map(b => b.id), ['preview', 'generate'])
+  assert.equal(grants(configuration, ['save'])('facility-meter-billing', 'generate'), false)
+  assert.equal(grants(billing, ['preview'])('facility-meter-billing', 'save'), false)
+  assert.ok(grants(billing, ['generate'])('facility-meter-billing', 'generate'))
+  const initialized = filterMenuByPermission(permissions, structuredClone(menus), true)
+  assert.ok(initialized[0].children.some(menu => menu.code === 'facility/Billing'))
+})
+
 test('员工移动端单独授权即可覆盖实际使用的全部任务动作，审批和关闭不捆绑执行权限', () => {
   const employee = all.find(menu => menu.code === 'facility/Employee')
   const scan = dir => readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? scan(new URL(entry.name + '/', dir)) : /\.(ts|vue)$/.test(entry.name) ? [readFileSync(new URL(entry.name, dir), 'utf8')] : [])

@@ -11,6 +11,7 @@ export interface MeterRule extends Partial<Entity> {
   projectId: string; energyType: 'water' | 'electricity'; subjectId?: string; standardId?: string; usageVariable?: string
   fixedValues: Record<string, number | string>; effectiveFrom?: string; effectiveTo?: string; enabled: boolean
 }
+export type MeterAssociation = Pick<MeterRule, 'id' | 'version' | 'projectId' | 'energyType' | 'subjectId' | 'standardId'>
 export interface BillingPeriod { projectId: string; month: string; receivableDate: string; dueDate: string; query?: Query }
 export interface MeterBillResult {
   deviceId: string; deviceName: string; projectId: string; spaceId: string; fullName: string; customerName: string

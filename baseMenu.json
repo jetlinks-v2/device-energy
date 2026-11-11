@@ -1893,7 +1893,7 @@
         "name": "设备同步状态",
         "url": "/system-management/sync",
         "owner": "app",
-        "sortIndex": 100,
+        "sortIndex": 101,
         "parentId": "facility-management",
         "permissions": [
           {
@@ -1936,7 +1936,7 @@
         "name": "应用操作日志",
         "url": "/system-management/operations",
         "owner": "app",
-        "sortIndex": 100,
+        "sortIndex": 101,
         "parentId": "facility-management",
         "permissions": [
           {
@@ -1979,7 +1979,7 @@
         "name": "员工移动端",
         "url": "/facility/employee",
         "owner": "app",
-        "sortIndex": 100,
+        "sortIndex": 101,
         "parentId": "facility-management",
         "permissions": [
           {
@@ -2123,7 +2123,7 @@
         "name": "业主移动端",
         "url": "/facility/owner",
         "owner": "app",
-        "sortIndex": 100,
+        "sortIndex": 101,
         "parentId": "facility-management",
         "permissions": [
           {
@@ -2290,18 +2290,12 @@
                 "actions": [
                   "query"
                 ]
-              },
-              {
-                "permission": "facility-mapping",
-                "actions": [
-                  "query"
-                ]
               }
             ],
             "buttons": [
               {
                 "id": "save",
-                "name": "保存收费规则",
+                "name": "保存收费关联",
                 "permissions": [
                   {
                     "permission": "facility-meter-billing",
@@ -2311,44 +2305,9 @@
                   }
                 ],
                 "i18nMessages": {
-                  "zh_CN": "保存收费规则",
-                  "en_US": "保存收费规则",
-                  "en": "保存收费规则"
-                }
-              },
-              {
-                "id": "preview",
-                "name": "预览账单",
-                "permissions": [
-                  {
-                    "permission": "facility-meter-billing",
-                    "actions": [
-                      "query"
-                    ]
-                  }
-                ],
-                "i18nMessages": {
-                  "zh_CN": "预览账单",
-                  "en_US": "预览账单",
-                  "en": "预览账单"
-                }
-              },
-              {
-                "id": "generate",
-                "name": "生成应收",
-                "permissions": [
-                  {
-                    "permission": "facility-meter-billing",
-                    "actions": [
-                      "query",
-                      "generate"
-                    ]
-                  }
-                ],
-                "i18nMessages": {
-                  "zh_CN": "生成应收",
-                  "en_US": "生成应收",
-                  "en": "生成应收"
+                  "zh_CN": "保存收费关联",
+                  "en_US": "Save charge association",
+                  "en": "Save charge association"
                 }
               }
             ],
@@ -2372,8 +2331,7 @@
             },
             "showPage": [
               "facility-meter-billing",
-              "facility-device",
-              "facility-mapping"
+              "facility-device"
             ],
             "assetTypes": [
               "facilityDevice",
@@ -2383,6 +2341,102 @@
             ]
           }
         ]
+      },
+      {
+        "id": "facility-Billing",
+        "code": "facility/Billing",
+        "name": "计费出账",
+        "url": "/facility/billing",
+        "owner": "app",
+        "sortIndex": 10,
+        "parentId": "facility-management",
+        "permissions": [
+          {
+            "permission": "facility-meter-billing",
+            "actions": [
+              "query"
+            ]
+          },
+          {
+            "permission": "facility-device",
+            "actions": [
+              "query"
+            ]
+          },
+          {
+            "permission": "facility-mapping",
+            "actions": [
+              "query"
+            ]
+          }
+        ],
+        "buttons": [
+          {
+            "id": "preview",
+            "name": "预览账单",
+            "permissions": [
+              {
+                "permission": "facility-meter-billing",
+                "actions": [
+                  "query"
+                ]
+              }
+            ],
+            "i18nMessages": {
+              "zh_CN": "预览账单",
+              "en_US": "Preview bills",
+              "en": "Preview bills"
+            }
+          },
+          {
+            "id": "generate",
+            "name": "生成应收",
+            "permissions": [
+              {
+                "permission": "facility-meter-billing",
+                "actions": [
+                  "query",
+                  "generate"
+                ]
+              }
+            ],
+            "i18nMessages": {
+              "zh_CN": "生成应收",
+              "en_US": "Generate receivables",
+              "en": "Generate receivables"
+            }
+          }
+        ],
+        "status": 1,
+        "runtime": true,
+        "accessSupport": "support",
+        "granted": true,
+        "options": {
+          "show": true,
+          "meta": {
+            "componentCode": "facility/Billing"
+          }
+        },
+        "i18nMessages": {
+          "name": {
+            "zh_CN": "计费出账",
+            "zh": "计费出账",
+            "en_US": "Billing",
+            "en": "Billing"
+          }
+        },
+        "showPage": [
+          "facility-meter-billing",
+          "facility-device",
+          "facility-mapping"
+        ],
+        "assetTypes": [
+          "facilityDevice",
+          "facilityMapping",
+          "space",
+          "org"
+        ],
+        "icon": "AccountBookOutlined"
       }
     ]
   }

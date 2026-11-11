@@ -2,13 +2,8 @@
 .meter-rule-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5, 1.25rem); }
 .meter-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4, 1rem); }
 .meter-form-grid .ant-picker, .meter-form-grid .ant-input-number { width: 100%; }
-.meter-rule-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4, 1rem); }
-.meter-formula { padding: var(--space-3, .75rem); background: var(--ant-color-fill-alter, #fafafa); border-radius: var(--ant-border-radius, 6px); overflow-wrap: anywhere; }
-.meter-configuration-tabs { flex: 1; min-height: 0; overflow: hidden; }
-.meter-configuration-tabs > .ant-tabs-content-holder { min-height: 0; overflow: auto; }
-.meter-configuration-tabs > .ant-tabs-content-holder > .ant-tabs-content,
-.meter-configuration-tabs .ant-tabs-tabpane { height: 100%; }
-.meter-preview { height: 100%; gap: var(--space-3, .75rem); }
+.meter-rule-footer { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-4, 1rem); }
+.meter-preview { gap: var(--space-3, .75rem); }
 .meter-period .ant-form { display: flex; flex-wrap: wrap; gap: var(--space-3, .75rem); }
 .meter-period .ant-form-item { margin-inline-end: 0; }
 .meter-period .ant-picker { width: 148px; }
@@ -101,6 +96,8 @@
   height: clamp(22rem, 55vh, 36rem);
   overflow: hidden;
 }
+/* The standalone billing table fills the remaining viewport beneath the project selector. */
+.facility-page > .meter-preview { flex: 1; flex-shrink: 1; height: 0; min-height: 0; }
 .facility-page .ant-table-placeholder .ant-empty { margin-block: var(--space-3, .75rem); }
 .facility-page .ant-table-placeholder .ant-empty-image { height: 3rem; margin-bottom: .5rem; }
 .facility-page .ant-table-empty .ant-table-placeholder > td { padding-block: var(--space-3, .75rem); }
