@@ -2,6 +2,7 @@ import { defaultRule } from './cycle/editor'
 import { feText } from './i18n'
 import type { Resource, Field, Option } from './types'
 import { display, type Entity } from './types'
+import { operationTargets, operationActions, operationComment } from './operationLog'
 const options = (values: string[][]): Option[] => values.map(([value, label]) => ({ value, label }))
 export const energyOptions = options([
   ['water', feText('water')],
@@ -17,6 +18,7 @@ export const metricOptions = options([
 ])
 /** 指标代码不参与通用状态翻译；按每条采集记录保存的指标语义展示。 */
 export function resourceCellText(resource: Resource, key: string, row: Entity, projects: Option[] = [], devices: Option[] = []): string {
+  if (resource.path === 'operations' && key === 'comment') return operationComment(row)
   if (key === 'projectName' && !row.projectName) {
     return projects.find(project => project.value === row.projectId)?.label || '—'
   }
@@ -343,11 +345,15 @@ export const resources: Record<string, Resource> = {
     path: 'operations',
     title: feText('applicationActivityLog'),
     readonly: true,
-    fields: [],
+    fields: [
+      { ...f('targetType', feText('businessObject'), 'select'), options: operationTargets },
+      { ...f('action', feText('logAction'), 'select'), options: operationActions }
+    ],
     columns: columns([
+      ['projectName', feText('businessProject')],
       ['targetType', feText('businessObject')],
-      ['targetId', feText('relatedRecord')],
-      ['action', feText('actions')],
+      ['targetId', feText('logRelatedId')],
+      ['action', feText('logAction')],
       ['creatorName', feText('operator')],
       ['comment', feText('notes')],
       ['createTime', feText('time')]

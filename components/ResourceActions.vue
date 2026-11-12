@@ -20,7 +20,7 @@ const faultActionNames: Record<string, string> = {
 <template>
   <a-space wrap>
     <j-permission-button :hasPermission="detailOnly ? true : resourcePermission(resource, String(record.kind || kind || ''))"
-      v-if="!config.readonly || resource === 'devices' || resource === 'tasks'"
+      v-if="!config.readonly || ['devices', 'tasks', 'operations'].includes(resource)"
       type="link"
       @click="emit('open')"
     >

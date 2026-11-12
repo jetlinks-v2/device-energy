@@ -13,6 +13,7 @@ import { resourceSearchFields, timeColumns } from '../shared/resourceSearch'
 import type { TableHandle } from '../shared/tableQuery'
 import FacilityDataTable from './FacilityDataTable.vue'
 import ResourceActions from './ResourceActions.vue'
+import OperationLogDetail from './OperationLogDetail.vue'
 import CycleRuleSummary from './CycleRuleSummary.vue'
 import GroupQr from './GroupQr.vue'
 import MappingSamples from './MappingSamples.vue'
@@ -46,8 +47,8 @@ if (!props.legacy && initialTerms.length) {
 const fields = computed(() => resourceSearchFields(config.value, vm.options, props.kind))
 const showActions = computed(() => !['collection', 'readings'].includes(props.resource))
 const columns = computed(() => [
-  ...config.value.columns.map((c) => ({ title: c.title, dataIndex: c.key, key: 'cell-' + c.key, scopedSlots: true, width: timeColumns.has(c.key) ? 185 : 160 })),
-  ...(showActions.value ? [{ title: feText('actions'), key: 'actions', dataIndex: 'actions', scopedSlots: true, width: props.resource === 'devices' ? 100 : 280, fixed: 'right' }] : [])
+  ...config.value.columns.map((c) => ({ title: c.title, dataIndex: c.key, key: 'cell-' + c.key, scopedSlots: true, ellipsis: props.resource === 'operations' && ['targetId', 'comment'].includes(c.key), width: timeColumns.has(c.key) ? 185 : props.resource === 'operations' && c.key === 'comment' ? 260 : 160 })),
+  ...(showActions.value ? [{ title: feText('actions'), key: 'actions', dataIndex: 'actions', scopedSlots: true, width: ['devices', 'operations'].includes(props.resource) ? 100 : 280, fixed: 'right' }] : [])
 ])
 const legacyColumns = computed(() => [
   ...config.value.columns.map(column => ({ title: column.title, dataIndex: column.key, key: column.key })),
@@ -56,7 +57,7 @@ const legacyColumns = computed(() => [
 const open = (row: Entity) => {
   if (props.resource === 'devices') device.value = row as Device
   else if (props.resource === 'tasks') taskId.value = row.id
-  else if (['faults', 'readings', 'replacements'].includes(props.resource)) vm.detail = row
+  else if (['faults', 'readings', 'replacements', 'operations'].includes(props.resource)) vm.detail = row
   else vm.edit(row)
 }
 const closeDevice = () => {
@@ -205,7 +206,7 @@ const cellText = (key: string, row: Entity) => resourceCellText(config.value, ke
       </template>
     </j-pro-table>
     <a-modal
-      :open="!!vm.detail"
+      :open="!!vm.detail && resource !== 'operations'"
       :title="feText('details')"
       :footer="null"
       @cancel="vm.detail = undefined"
@@ -220,6 +221,8 @@ const cellText = (key: string, row: Entity) => resourceCellText(config.value, ke
         <a-descriptions-item v-if="resource === 'readings'" :label="feText('reasonForManualReading')">{{ vm.detail.reason || '—' }}</a-descriptions-item>
       </a-descriptions>
     </a-modal>
+    <OperationLogDetail v-if="resource === 'operations' && vm.detail" :record="vm.detail"
+      :projects="vm.options.projects || []" @close="vm.detail = undefined" />
     <a-modal
       v-model:open="vm.opened"
       :title="config.title"
