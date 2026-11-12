@@ -78,7 +78,7 @@
         "name": "设备资产",
         "url": "/facility/devices",
         "owner": "app",
-        "sortIndex": 2,
+        "sortIndex": 10,
         "permissions": [
           {
             "permission": "facility-device",
@@ -207,7 +207,7 @@
         "name": "巡检管理",
         "url": "/facility/inspection",
         "owner": "app",
-        "sortIndex": 3,
+        "sortIndex": 2,
         "permissions": [],
         "buttons": [],
         "assetTypes": [],
@@ -850,7 +850,7 @@
         "name": "维保管理",
         "url": "/facility/maintenance",
         "owner": "app",
-        "sortIndex": 4,
+        "sortIndex": 3,
         "permissions": [],
         "buttons": [],
         "assetTypes": [],
@@ -1493,7 +1493,7 @@
         "name": "故障管理",
         "url": "/facility/faults",
         "owner": "app",
-        "sortIndex": 5,
+        "sortIndex": 4,
         "permissions": [
           {
             "permission": "facility-fault",
@@ -1638,7 +1638,7 @@
         "name": "能源管理",
         "url": "/facility/energy",
         "owner": "app",
-        "sortIndex": 6,
+        "sortIndex": 5,
         "permissions": [
           {
             "permission": "facility-mapping",
@@ -2137,7 +2137,7 @@
         "name": "设备同步状态",
         "url": "/system-management/sync",
         "owner": "app",
-        "sortIndex": 101,
+        "sortIndex": 13,
         "parentId": "facility-management",
         "permissions": [
           {
@@ -2180,7 +2180,7 @@
         "name": "应用操作日志",
         "url": "/system-management/operations",
         "owner": "app",
-        "sortIndex": 101,
+        "sortIndex": 12,
         "parentId": "facility-management",
         "permissions": [
           {
@@ -2432,7 +2432,7 @@
         "name": "业主移动端",
         "url": "/facility/owner",
         "owner": "app",
-        "sortIndex": 101,
+        "sortIndex": 102,
         "parentId": "facility-management",
         "permissions": [
           {
@@ -2473,7 +2473,7 @@
         "name": "配置管理",
         "url": "/facility/configuration",
         "owner": "app",
-        "sortIndex": 9,
+        "sortIndex": 11,
         "parentId": "facility-management",
         "permissions": [],
         "buttons": [],
@@ -2576,7 +2576,7 @@
               "facilityDevice",
               "facilityMapping",
               "space",
-              "org"
+              "organization"
             ]
           },
           {
@@ -2646,7 +2646,7 @@
               "facilityDevice",
               "facilityMapping",
               "space",
-              "org"
+              "organization"
             ]
           }
         ]
@@ -2657,7 +2657,7 @@
         "name": "计费出账",
         "url": "/facility/billing",
         "owner": "app",
-        "sortIndex": 10,
+        "sortIndex": 6,
         "parentId": "facility-management",
         "permissions": [
           {
@@ -2799,7 +2799,7 @@
           "facilityDevice",
           "facilityMapping",
           "space",
-          "org"
+          "organization"
         ],
         "icon": "AccountBookOutlined"
       }
