@@ -56,7 +56,7 @@ const legacyColumns = computed(() => [
 const open = (row: Entity) => {
   if (props.resource === 'devices') device.value = row as Device
   else if (props.resource === 'tasks') taskId.value = row.id
-  else if (['faults', 'readings'].includes(props.resource)) vm.detail = row
+  else if (['faults', 'readings', 'replacements'].includes(props.resource)) vm.detail = row
   else vm.edit(row)
 }
 const closeDevice = () => {
@@ -71,7 +71,7 @@ const changes = (v: { current?: number }) => {
   vm.page = v.current || 1
 }
 const setTable = (value: unknown) => { vm.table = value ? value as TableHandle : undefined }
-const cellText = (key: string, row: Entity) => resourceCellText(config.value, key, row, vm.options.projects)
+const cellText = (key: string, row: Entity) => resourceCellText(config.value, key, row, vm.options.projects, vm.options.devices)
 </script>
 
 <template>
@@ -155,7 +155,7 @@ const cellText = (key: string, row: Entity) => resourceCellText(config.value, ke
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'actions'">
-          <ResourceActions
+          <ResourceActions :current-user-id="vm.currentUserId"
             :resource="resource"
             :record="record as Entity"
             :saving="vm.saving"
@@ -193,7 +193,7 @@ const cellText = (key: string, row: Entity) => resourceCellText(config.value, ke
         <DeviceAssetCard :device="record" @open="open(record)" />
       </template>
       <template v-for="column in columns" :key="column.key" #[column.key]="record">
-        <ResourceActions v-if="column.key === 'actions'" :resource="resource" :record="record" :kind="kind"
+        <ResourceActions :current-user-id="vm.currentUserId" v-if="column.key === 'actions'" :resource="resource" :record="record" :kind="kind"
           :saving="vm.saving" @open="open(record)" @dispatch="dispatchId = record.id" @qr="group = record"
           @command="vm.command(record, $event)" @remove="vm.remove(record)" />
         <StatusTag v-else-if="resource === 'devices' && column.dataIndex === 'sourceState'"
@@ -214,6 +214,9 @@ const cellText = (key: string, row: Entity) => resourceCellText(config.value, ke
         <a-descriptions-item v-for="column in config.columns" :key="column.key" :label="column.title">
           {{ timeColumns.has(column.key) ? time(vm.detail[column.key]) : cellText(column.key, vm.detail) }}
         </a-descriptions-item>
+        <a-descriptions-item v-if="resource === 'replacements'" :label="feText('finalReadingOfOriginalMeter')">{{ vm.detail.finalReading ?? '—' }}</a-descriptions-item>
+        <a-descriptions-item v-if="resource === 'replacements'" :label="feText('initialReadingOfNewMeter')">{{ vm.detail.initialReading ?? '—' }}</a-descriptions-item>
+        <a-descriptions-item v-if="resource === 'replacements'" :label="feText('reason')">{{ vm.detail.reason || '—' }}</a-descriptions-item>
         <a-descriptions-item v-if="resource === 'readings'" :label="feText('reasonForManualReading')">{{ vm.detail.reason || '—' }}</a-descriptions-item>
       </a-descriptions>
     </a-modal>
@@ -255,14 +258,15 @@ const cellText = (key: string, row: Entity) => resourceCellText(config.value, ke
           v-if="vm.previewRows.length"
           :data-source="vm.previewRows"
           :pagination="false"
-          row-key="propertyId"
+          :row-key="(row: { propertyId: string; time: number }) => `${row.propertyId}:${row.time}`"
           :columns="[
             { title: feText('property'), dataIndex: 'propertyId' },
+            { title: feText('time'), dataIndex: 'time' },
             { title: feText('rawReading'), dataIndex: 'raw' },
             { title: feText('convertedReading'), dataIndex: 'normalized' },
             { title: feText('unit'), dataIndex: 'unit' }
           ]"
-        />
+        ><template #bodyCell="{ column, record }">{{ column.key === 'time' ? time(record.time) : display(record[column.key]) }}</template></FacilityDataTable>
         <a-empty
           v-else
           :description="feText('noSamplesYetPreviewAndVerifyBeforeSaving')"

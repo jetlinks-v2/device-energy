@@ -26,6 +26,15 @@ test('历史设备组缺项目名称时按当前授权项目目录展示，不�
 })
 const { display } = load('shared/types.ts')
 
+test('换表记录展示设备名称，已不可查询的设备保留原标识供核对', () => {
+  const devices = [{ value: 'old', label: '一栋总水表' }, { value: 'new', label: '一栋新水表' }]
+  const row = { id: 'change', oldDeviceId: 'old', newDeviceId: 'new' }
+  assert.equal(resourceCellText(resources.replacements, 'oldDeviceId', row, [], devices), '一栋总水表')
+  assert.equal(resourceCellText(resources.replacements, 'newDeviceId', row, [], devices), '一栋新水表')
+  assert.equal(resourceCellText(resources.replacements, 'oldDeviceId', row), 'old')
+  assert.equal(resourceCellText(resources.replacements, 'state', { ...row, state: 'pending' }), '待审核')
+})
+
 test('抄表展示设备和仪表类型，搜索提交真实设备ID及指标类型', () => {
   const resource = resources.readings
   const row = { id: 'r', deviceId: 'd1', deviceName: '201水表', energyType: 'water', metricKind: 'counter' }

@@ -16,7 +16,7 @@ export const metricOptions = options([
   ['state', feText('status')]
 ])
 /** 指标代码不参与通用状态翻译；按每条采集记录保存的指标语义展示。 */
-export function resourceCellText(resource: Resource, key: string, row: Entity, projects: Option[] = []): string {
+export function resourceCellText(resource: Resource, key: string, row: Entity, projects: Option[] = [], devices: Option[] = []): string {
   if (key === 'projectName' && !row.projectName) {
     return projects.find(project => project.value === row.projectId)?.label || '—'
   }
@@ -26,6 +26,8 @@ export function resourceCellText(resource: Resource, key: string, row: Entity, p
   if (resource.path === 'energy/readings' && key === 'propertyId') {
     return metricOptions.find(option => option.value === row.metricKind)?.label || String(row.propertyId ?? '—')
   }
+  if (resource.path === 'energy/replacements' && ['oldDeviceId', 'newDeviceId'].includes(key)) return devices.find(device => device.value === row[key])?.label || String(row[key] || '—')
+  if (resource.path === 'energy/replacements' && key === 'state' && row.state === 'pending') return feText('awaitingReview')
   return display(row[key], resource.fields.find(field => field.key === key)?.options)
 }
 const f = (key: string, label: string, type: Field['type'] = 'text', source?: string): Field => ({
@@ -151,22 +153,22 @@ export const resources: Record<string, Resource> = {
     path: 'energy/mappings',
     title: feText('waterElectricityAndGasMeters'),
     fields: [
-      f('deviceId', feText('device'), 'select', 'devices'),
-      { ...f('energyType', feText('energyType'), 'select'), options: energyOptions },
+      { ...f('deviceId', feText('device'), 'select', 'devices'), required: true },
+      { ...f('energyType', feText('energyType'), 'select'), options: energyOptions, required: true },
       select('usageType', feText('meteringPurpose'), [
         ['private', feText('householdUse')],
         ['public', feText('publicUse')]
       ]),
       f('usagePropertyId', feText('usageMetricForAggregation'), 'select', 'properties'),
-      select('meterLevel', feText('aggregationLevel'), [
+      { ...select('meterLevel', feText('aggregationLevel'), [
         ['master', feText('masterMeter')],
         ['submeter', feText('submeter')],
         ['branch', feText('branch')],
         ['other', feText('other')]
-      ]),
+      ]), required: true },
       f('parentDeviceId', feText('parentMeter'), 'select', 'devices'),
-      f('staleAfterSeconds', feText('dataFreshnessSeconds'), 'number'),
-      f('metrics', feText('meteringMetrics'), 'metrics'),
+      { ...f('staleAfterSeconds', feText('dataFreshnessSeconds'), 'number'), required: true },
+      { ...f('metrics', feText('meteringMetrics'), 'metrics'), required: true },
       enabled
     ],
     columns: columns([
@@ -308,12 +310,12 @@ export const resources: Record<string, Resource> = {
     path: 'energy/replacements',
     title: feText('meterReplacementAndReset'),
     fields: [
-      f('oldDeviceId', feText('originalDevice'), 'select', 'devices'),
-      f('newDeviceId', feText('newOriginalDevice'), 'select', 'devices'),
-      f('effectiveTime', feText('effectiveTime'), 'datetime'),
-      f('finalReading', feText('finalReadingOfOriginalMeter'), 'number'),
-      f('initialReading', feText('initialReadingOfNewMeter'), 'number'),
-      f('reason', feText('reason'), 'textarea')
+      { ...f('oldDeviceId', feText('originalDevice'), 'select', 'devices'), required: true },
+      { ...f('newDeviceId', feText('newOriginalDevice'), 'select', 'devices'), required: true },
+      { ...f('effectiveTime', feText('effectiveTime'), 'datetime'), required: true },
+      { ...f('finalReading', feText('finalReadingOfOriginalMeter'), 'number'), required: true },
+      { ...f('initialReading', feText('initialReadingOfNewMeter'), 'number'), required: true },
+      { ...f('reason', feText('reason'), 'textarea'), required: true }
     ],
     columns: columns([
       ['oldDeviceId', feText('originalDevice')],
@@ -321,7 +323,7 @@ export const resources: Record<string, Resource> = {
       ['effectiveTime', feText('effectiveTime')],
       ['state', feText('reviewStatus')]
     ]),
-    defaults: { effectiveTime: Date.now() }
+    defaults: {}
   },
   jobs: {
     path: 'devices/sync',

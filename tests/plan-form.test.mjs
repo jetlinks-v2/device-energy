@@ -183,3 +183,33 @@ test('设备组切换项目清空原设备选择，入口类型不写入设备�
   vm.change('projectId', 'project-b')
   assert.deepEqual(vm.form.deviceIds, [])
 })
+
+test('仪表空配置及无效指标不发送保存请求，有效累计读数可保存', async () => {
+  const { vm, calls } = setup('energy/mappings')
+  vm.edit(); await vm.save()
+  assert.equal(calls.length, 0); assert.ok(vm.error.value.includes('设备'))
+  const valid = { deviceId: 'meter', energyType: 'water', meterLevel: 'master', staleAfterSeconds: 60,
+    metrics: [{ propertyId: 'total', kind: 'counter', unit: 'm³', multiplier: 1, scale: 2 }] }
+  for (const patch of [{ metrics: [] }, { staleAfterSeconds: 0 }, { staleAfterSeconds: 1.5 },
+    { metrics: [{ ...valid.metrics[0], unit: ' ' }] }, { metrics: [{ ...valid.metrics[0], multiplier: 0 }] },
+    { metrics: [{ ...valid.metrics[0], scale: 1.5 }] }, { metrics: [valid.metrics[0], valid.metrics[0]] },
+    { usagePropertyId: 'pressure' }, { parentDeviceId: 'meter' }]) {
+    Object.assign(vm.form, valid, { usagePropertyId: undefined, parentDeviceId: undefined }, patch)
+    await vm.save(); assert.ok(vm.error.value); assert.equal(calls.length, 0)
+  }
+  Object.assign(vm.form, valid, { usagePropertyId: 'total', parentDeviceId: undefined })
+  await vm.save(); assert.equal(calls.length, 1); assert.equal(calls[0].payload.metrics[0].scale, 2)
+})
+
+test('换表时间留空且必填，归零的0读数可以保存，未来时间和负数不能保存', async () => {
+  const { vm, calls } = setup('replacements')
+  vm.edit(); assert.equal(vm.form.effectiveTime, undefined)
+  await vm.save(); assert.equal(calls.length, 0)
+  Object.assign(vm.form, { oldDeviceId: 'meter', newDeviceId: 'meter', effectiveTime: Date.now() - 60000,
+    finalReading: 0, initialReading: 0, reason: '归零测试' })
+  await vm.save(); assert.equal(calls.length, 1); assert.equal(calls[0].payload.initialReading, 0)
+  for (const patch of [{ effectiveTime: Date.now() + 60000 }, { finalReading: -1 }, { initialReading: -0.01 }, { reason: '  ' }]) {
+    Object.assign(vm.form, { effectiveTime: Date.now() - 60000, finalReading: 0, initialReading: 0, reason: '归零测试' }, patch)
+    await vm.save(); assert.ok(vm.error.value); assert.equal(calls.length, 1)
+  }
+})

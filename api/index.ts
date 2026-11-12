@@ -9,7 +9,7 @@ interface Response<T> {
 }
 interface Http {
   get<T>(url: string): Promise<Response<T>>
-  post<T>(url: string, data?: unknown, options?: { signal?: AbortSignal }): Promise<Response<T>>
+  post<T>(url: string, data?: unknown, options?: { signal?: AbortSignal; timeout?: number }): Promise<Response<T>>
   remove<T>(url: string): Promise<Response<T>>
 }
 const http = request as Http
@@ -19,7 +19,9 @@ const unwrap = <T>(r: Response<T>): T => {
 }
 export const facility = facilityClient({
   get: async <T>(url: string) => unwrap(await http.get<T>(url)),
-  post: async <T>(url: string, body?: unknown) => unwrap(await http.post<T>(url, body)),
+  // 历史补采包含云端分页；只延长该操作，普通列表继续使用宿主默认超时。
+  post: async <T>(url: string, body?: unknown) => unwrap(await http.post<T>(url, body,
+    url.startsWith('/property/facility-energy/energy/collect/') ? { timeout: 60_000 } : undefined)),
   remove: async <T>(url: string) => unwrap(await http.remove<T>(url)),
   upload: async (file: File, projectId: string) => {
     const body = new FormData()

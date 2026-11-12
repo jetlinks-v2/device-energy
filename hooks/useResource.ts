@@ -1,5 +1,6 @@
 import { feText } from '../shared/i18n'
-import { clone } from '../shared/types'
+import { clone, display } from '../shared/types'
+import { validateEnergyForm } from '../shared/energyValidation'
 import { computed, ref, reactive, watch, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { facility } from '../api'
@@ -18,6 +19,7 @@ const organizationOptions = (nodes: Organization[]): Option[] => nodes.flatMap(n
 export function useResource(resource: () => Resource, kind?: string, managed = false) {
   const query = useResourceQuery(resource, kind, managed)
   const { projectId, busy, error, refresh } = query
+  const currentUserId = ref('')
   const saving = ref(false),
     opened = ref(false),
     detail = ref<Entity>(),
@@ -33,6 +35,7 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
       ? { ...field, disabled: true } : field))
   const loadOptions = async () => {
     try {
+      if (resource().path === 'energy/replacements') currentUserId.value = (await facility.context()).userId
       const sources = new Set([
         'projects',
         ...resource()
@@ -99,7 +102,7 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
       const result = await facility.query('energy/mappings', { pageSize: 200 })
       options.templates = result.data.map((row) => ({
         value: row.id,
-        label: (row.name || row.id) + ' · ' + String(row.energyType)
+        label: (row.name || row.id) + ' · ' + display(row.energyType)
       }))
       mappingTemplates.value = result.data
     } catch (e) {
@@ -144,10 +147,12 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     saving.value = true
     error.value = ''
     try {
-      for (const field of formFields.value) if (field.required && (!form[field.key] || (Array.isArray(form[field.key]) && !(form[field.key] as unknown[]).length))) throw Error(feText('pleaseEnter') + field.label)
+      for (const field of formFields.value) if (field.required && (form[field.key] == null || (typeof form[field.key] === 'string' && !String(form[field.key]).trim()) || (Array.isArray(form[field.key]) && !(form[field.key] as unknown[]).length))) throw Error(feText('pleaseEnter') + field.label)
       if (resource().path === 'rules' && ['usage', 'balance', 'instant', 'stale', 'reading-anomaly', 'state'].includes(String(form.ruleType)) && !form.propertyId) {
         throw Error(feText('pleaseEnter') + resource().fields.find(field => field.key === 'propertyId')?.label)
       }
+      const energyFailure = validateEnergyForm(resource().path, form)
+      if (energyFailure) throw Error(energyFailure)
       const payload = { ...form }
       if (kind && ['standards', 'cycles', 'plans'].includes(resource().path)) payload.kind = kind
       if (resource().path === 'standards') {
@@ -249,6 +254,7 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
   })
   return {
     ...query,
+    currentUserId,
     ...references,
     saving,
     opened,

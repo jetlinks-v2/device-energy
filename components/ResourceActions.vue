@@ -6,8 +6,9 @@ import { canTransfer, canWithdraw } from '../shared/taskActions'
 import type { Task } from '../shared/types'
 import { resources } from '../shared/resources'
 import { resourcePermission } from '../shared/permissions'
-const props = defineProps<{ resource: string; record: Entity; saving: boolean; kind?: string }>()
+const props = defineProps<{ resource: string; record: Entity; saving: boolean; kind?: string; currentUserId?: string }>()
 const config = computed(() => resources[props.resource])
+const detailOnly = computed(() => config.value.readonly || ['faults', 'replacements'].includes(props.resource))
 const emit = defineEmits<{ open: []; dispatch: []; qr: []; command: [action: string]; remove: [] }>()
 const faultActionNames: Record<string, string> = {
   start: feText('startProcessing'),
@@ -18,12 +19,12 @@ const faultActionNames: Record<string, string> = {
 </script>
 <template>
   <a-space wrap>
-    <j-permission-button :hasPermission="config.readonly || resource === 'faults' ? true : resourcePermission(resource, String(record.kind || kind || ''))"
+    <j-permission-button :hasPermission="detailOnly ? true : resourcePermission(resource, String(record.kind || kind || ''))"
       v-if="!config.readonly || resource === 'devices' || resource === 'tasks'"
       type="link"
       @click="emit('open')"
     >
-      {{ config.readonly || resource === 'faults' ? feText('details') : feText('edit') }}
+      {{ detailOnly ? feText('details') : feText('edit') }}
     </j-permission-button>
     <j-permission-button v-if="resource === 'tasks' && canTransfer(record as Task)"
       :hasPermission="resourcePermission('tasks', String(record.kind || kind || ''), 'dispatch')"
@@ -94,7 +95,7 @@ const faultActionNames: Record<string, string> = {
     </j-permission-button>
     <template
       v-if="
-        (resource === 'replacements' && record.state === 'pending')
+        (resource === 'replacements' && record.state === 'pending' && currentUserId && record.creatorId !== currentUserId)
       "
     >
       <j-permission-button :hasPermission="resourcePermission(resource, String(record.kind || kind || ''))"
