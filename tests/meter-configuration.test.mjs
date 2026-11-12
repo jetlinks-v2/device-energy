@@ -27,46 +27,41 @@ function load(name, api, facility = {}, dialogs = [], notices = []) {
   }, module, module.exports)
   return module.exports
 }
-test('单设备空间加载中或失败时不保存，加载后保留原安装空间', async () => {
-  let resolve, reject; const saved = []
-  const facility = { options: () => new Promise((ok, fail) => { resolve = ok; reject = fail }) }
-  const { useDeviceConfiguration } = load('useDeviceConfiguration', { allocate: async rows => { saved.push(rows) } }, facility)
-  const scope = vue.effectScope(), vm = scope.run(() => useDeviceConfiguration())
-  const row = { id: 'meter', version: 2, projectId: 'p', meterType: 'water', spaceId: 'room' }
-  vm.edit([row]); await tick()
-  assert.equal(vm.spaceId.value, 'room'); assert.equal(vm.spacesLoading.value, true)
-  await vm.save(); assert.equal(saved.length, 0)
-  reject(Error('space service failed')); await tick(); await vm.save(); assert.equal(saved.length, 0)
-  vm.edit([row]); await tick(); resolve([{ id: 'room', name: '101', fullName: '园区/1栋/101' }]); await tick()
-  assert.equal(vm.spacesReady.value, true); assert.equal(vm.spaceId.value, 'room')
-  await vm.save(); assert.equal(saved[0][0].spaceId, 'room'); assert.equal(saved[0][0].updateSpace, true)
-  scope.stop()
-})
-
-test('燃气表配置保存项目、类型和安装空间，不回退成水表或电表', async () => {
-  const saved = []
-  const { useDeviceConfiguration } = load('useDeviceConfiguration', { allocate: async rows => { saved.push(rows) } },
-    { options: async () => [{ id: 'room', name: '101' }] })
+test('项目分配不查询安装空间，只提交项目和版本', async () => {
+  const saved = [], queried = []
+  const { useDeviceConfiguration } = load('useDeviceConfiguration', { allocate: async rows => saved.push(rows) },
+    { options: async path => { queried.push(path); throw Error('空间服务不可用') } })
   const scope = vue.effectScope(), vm = scope.run(() => useDeviceConfiguration())
   vm.edit([{ id: 'gas', version: 2, projectId: 'p', meterType: 'gas', spaceId: 'room' }]); await tick()
   await vm.save()
-  assert.equal(saved.length, 1)
-  assert.equal(saved[0][0].meterType, 'gas')
-  assert.equal(saved[0][0].projectId, 'p')
-  assert.equal(saved[0][0].spaceId, 'room')
+  assert.deepEqual(queried, [])
+  assert.deepEqual(saved, [[{ id: 'gas', version: 2, projectId: 'p' }]])
   scope.stop()
 })
-test('切换项目后旧空间请求不能覆盖新项目候选或恢复旧空间', async () => {
-  const requests = new Map()
-  const { useDeviceConfiguration } = load('useDeviceConfiguration', {}, { options: path => new Promise(resolve => requests.set(path, resolve)) })
+
+test('混合表计批量分配不会统一覆盖设备类型和安装空间', async () => {
+  const saved = []
+  const { useDeviceConfiguration } = load('useDeviceConfiguration', { allocate: async rows => saved.push(rows) })
   const scope = vue.effectScope(), vm = scope.run(() => useDeviceConfiguration())
-  vm.edit([{ id: 'meter', version: 0, projectId: 'a', spaceId: 'old' }]); await tick()
-  vm.targetProject.value = 'b'; await tick()
-  requests.get('spaces/b')([{ id: 'new', name: '新空间' }]); await tick()
-  requests.get('spaces/a')([{ id: 'old', name: '旧空间' }]); await tick()
-  assert.equal(vm.spaceId.value, undefined); assert.deepEqual(vm.spaces.value.map(row => row.value), ['new'])
+  vm.edit([{ id: 'water', version: 1, projectId: 'a', meterType: 'water' },
+    { id: 'gas', version: 3, projectId: 'b', meterType: 'gas', spaceId: 'room' }]); await tick()
+  await vm.save(); assert.equal(saved.length, 0)
+  vm.targetProject.value = 'c'; await vm.save()
+  assert.deepEqual(saved[0], [{ id: 'water', version: 1, projectId: 'c' }, { id: 'gas', version: 3, projectId: 'c' }])
   scope.stop()
 })
+
+test('项目分配完成状态只按项目确认判断，不要求重复配置类型', async () => {
+  const requests = []
+  const { useDeviceConfiguration } = load('useDeviceConfiguration', { devices: async query => { requests.push(query); return { data: [], total: 0 } } })
+  const scope = vue.effectScope(), vm = scope.run(() => useDeviceConfiguration())
+  vm.state.value = 'ready'; await vm.request({})
+  assert.deepEqual(requests[0].terms[0].terms, [{ column: 'projectConfirmed', value: true }])
+  vm.state.value = 'pending'; await vm.request({})
+  assert.deepEqual(requests[1].terms[0].terms, [{ column: 'projectConfirmed', value: false }])
+  scope.stop()
+})
+
 test('审核只提交版本和意见，批量部分失败保留原因', async () => {
   const submitted = [], changed = []
   const { useMeterBillReview } = load('useMeterBillReview', { review: async (action, rows) => {

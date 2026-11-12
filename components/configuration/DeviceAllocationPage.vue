@@ -3,31 +3,23 @@ import { reactive, ref, computed } from 'vue'
 import ConditionFilter, { type ConditionFilterTerm, type ConditionFilterField } from '@jetlinks-web-core/components/ConditionFilter'
 import { useDeviceConfiguration } from '../../hooks/useDeviceConfiguration'
 import { feText } from '../../shared/i18n'
-import { time, type Option } from '../../shared/types'
+import { time } from '../../shared/types'
 import type { TableHandle } from '../../shared/tableQuery'
 import type { AllocatedDevice } from '../../shared/meterBilling'
 const vm = reactive(useDeviceConfiguration()), filters = ref<ConditionFilterTerm[]>([])
-const types: Option[] = [
-  { value: 'device', label: feText('ordinaryDevice') }, { value: 'water', label: feText('waterMeter') },
-  { value: 'electricity', label: feText('electricMeter') }, { value: 'gas', label: feText('gasMeter') }
-]
 const fields: ConditionFilterField[] = [
   { title: feText('deviceName'), dataIndex: 'name', search: { type: 'string' } },
   { title: feText('deviceCode'), dataIndex: 'cloudDeviceId', search: { type: 'string' } },
-  { title: feText('productName'), dataIndex: 'productName', search: { type: 'string' } },
-  { title: feText('deviceCategory'), dataIndex: 'meterType', search: { type: 'select', options: types } }
+  { title: feText('productName'), dataIndex: 'productName', search: { type: 'string' } }
 ]
 const columns = computed(() => [
   { title: feText('deviceName'), dataIndex: 'name', width: 180, ellipsis: true },
   { title: feText('deviceCode'), dataIndex: 'cloudDeviceId', width: 180, ellipsis: true },
   { title: feText('productName'), dataIndex: 'productName', width: 150, ellipsis: true },
   { title: feText('project'), dataIndex: 'projectName', width: 170 },
-  { title: feText('deviceCategory'), dataIndex: 'meterType', key: 'category', scopedSlots: true, width: 120 },
-  { title: feText('installationSpace'), dataIndex: 'spaceId', key: 'space', scopedSlots: true, width: 160 },
   { title: feText('allocationSince'), dataIndex: 'allocationSince', key: 'effective', scopedSlots: true, width: 180 },
   { title: feText('actions'), key: 'actions', scopedSlots: true, width: 90, fixed: 'right' }
 ])
-const spaceNames = ref<Record<string, string>>({})
 const setTable = (value: unknown) => { vm.table = value as TableHandle | undefined }
 const select = (keys: string[], rows: AllocatedDevice[]) => { vm.selected = keys; vm.selectedRows = rows }
 </script>
@@ -55,9 +47,7 @@ const select = (keys: string[], rows: AllocatedDevice[]) => { vm.selected = keys
     <j-pro-table :ref="setTable" row-key="id" mode="TABLE" type="PAGE" :columns="columns"
       :params="vm.params" :request="vm.request" :pagination="{ pageSize: 20 }" :body-style="{ padding: 0 }"
       :row-selection="{ selectedRowKeys: vm.selected, onChange: select }"
-      :alert-show="false" :scroll="{ x: 1230 }">
-      <template #category="row"><a-tag>{{ types.find(type => type.value === row.meterType)?.label || feText('notConfigured') }}</a-tag></template>
-      <template #space="row">{{ row.spaceName || row.fullName || spaceNames[row.spaceId] || (row.spaceId ? feText('configured') : '—') }}</template>
+      :alert-show="false" :scroll="{ x: 950 }">
       <template #effective="row">{{ time(row.allocationSince) }}</template>
       <template #actions="row"><j-permission-button hasPermission="facility/Configuration/Devices:save" type="link" @click="vm.edit([row])">{{ feText('allocate') }}</j-permission-button></template>
     </j-pro-table>
@@ -65,13 +55,8 @@ const select = (keys: string[], rows: AllocatedDevice[]) => { vm.selected = keys
       <a-alert v-if="vm.error" :message="vm.error" type="error" show-icon class="meter-form-error" />
       <a-form layout="vertical">
         <a-form-item :label="feText('project')" required><a-select v-model:value="vm.targetProject" :options="vm.projects" show-search option-filter-prop="label" /></a-form-item>
-        <a-form-item :label="feText('deviceCategory')" required><a-radio-group v-model:value="vm.meterType" :options="types" /></a-form-item>
-        <a-form-item v-if="vm.editing.length === 1" :label="feText('installationSpace')">
-          <a-tree-select v-model:value="vm.spaceId" :tree-data="vm.spaces" :tree-data-simple-mode="{ id: 'value', pId: 'parentId' }"
-            :field-names="{ label: 'label', value: 'value' }" allow-clear show-search tree-node-filter-prop="label" />
-        </a-form-item>
       </a-form>
-      <template #footer><a-space><j-permission-button hasPermission="facility/Configuration/Devices:save" type="primary" :loading="vm.saving" :disabled="vm.spacesLoading || vm.editing.length === 1 && !vm.spacesReady" @click="vm.save">{{ feText('save') }}</j-permission-button><a-button @click="vm.opened = false">{{ feText('cancel') }}</a-button></a-space></template>
+      <template #footer><a-space><j-permission-button hasPermission="facility/Configuration/Devices:save" type="primary" :loading="vm.saving" @click="vm.save">{{ feText('save') }}</j-permission-button><a-button @click="vm.opened = false">{{ feText('cancel') }}</a-button></a-space></template>
     </a-drawer>
   </section>
 </template>
