@@ -45,7 +45,7 @@ if (!props.legacy && initialTerms.length) {
   vm.projectId = selectedProject(initialTerms)
 }
 const fields = computed(() => resourceSearchFields(config.value, vm.options, props.kind))
-const showActions = computed(() => !['collection', 'readings'].includes(props.resource))
+const showActions = computed(() => !['collection', 'readings', 'jobs'].includes(props.resource))
 const columns = computed(() => [
   ...config.value.columns.map((c) => ({ title: c.title, dataIndex: c.key, key: 'cell-' + c.key, scopedSlots: true, ellipsis: props.resource === 'operations' && ['targetId', 'comment'].includes(c.key), width: timeColumns.has(c.key) ? 185 : props.resource === 'operations' && c.key === 'comment' ? 260 : 160 })),
   ...(showActions.value ? [{ title: feText('actions'), key: 'actions', dataIndex: 'actions', scopedSlots: true, width: ['devices', 'operations'].includes(props.resource) ? 100 : 280, fixed: 'right' }] : [])
