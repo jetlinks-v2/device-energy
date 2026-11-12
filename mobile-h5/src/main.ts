@@ -19,6 +19,7 @@ const router = createRouter({
     { path: '/', component: routePages.home },
     { path: '/faults', component: routePages.faults },
     { path: '/faults/:id', component: routePages.fault },
+    { path: '/faults/:id/repair', component: routePages.faultRepair },
     { path: '/tasks', component: routePages.tasks },
     { path: '/scan', component: routePages.scan },
     { path: '/sync', component: routePages.sync },

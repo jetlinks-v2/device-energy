@@ -20,6 +20,7 @@ const nav = computed(() => [
 const title = computed(() => {
   if (route.path === '/') return '工作台'
   if (route.path === '/faults') return '维修任务'
+  if (/^\/faults\/[^/]+\/repair$/.test(route.path)) return '维修处理'
   if (route.path.startsWith('/faults/')) return '维修详情'
   if (route.path === '/profile') return '我的'
   if (route.path.startsWith('/alerts/')) return '告警详情'

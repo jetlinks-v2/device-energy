@@ -3,6 +3,7 @@ export const routePages = {
   home: () => import('./views/HomePage.vue'),
   faults: () => import('./views/FaultListPage.vue'),
   fault: () => import('./views/FaultPage.vue'),
+  faultRepair: () => import('./views/FaultRepairPage.vue'),
   tasks: () => import('./views/TaskListPage.vue'),
   scan: () => import('./views/ScanPage.vue'),
   sync: () => import('./views/SyncPage.vue'),

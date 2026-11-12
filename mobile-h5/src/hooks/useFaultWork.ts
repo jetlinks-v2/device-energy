@@ -11,14 +11,14 @@ export function useFaultWork() {
   const route = useRoute(), online = useConnection(), rows = ref<Fault[]>([]), selected = ref<Fault>()
   const historyTotal = ref(0), historyBusy = ref(false)
   const history = ref<TaskProcess[]>([]), total = ref(0), status = ref('active'), search = ref(''), busy = ref(false), error = ref('')
-  const action = ref(''), comment = ref(''), photos = ref<string[]>([]), submitting = ref(false)
+  const comment = ref(''), photos = ref<string[]>([]), submitting = ref(false)
   let generation = 0, historyGeneration = 0, historyPage = 0, page = 0
   const actions = computed(() => selected.value ? faultActions(selected.value, state.context?.userId || '').filter(value => {
     if (['dispatch', 'transfer', 'reviewer', 'close'].includes(value)) return false
     return canFault(['approve', 'reject'].includes(value) ? 'review' : 'save')
   }) : [])
   async function load(more = false) {
-    const ticket = ++generation; if (!more) { rows.value = []; total.value = 0; page = 0; selected.value = undefined; history.value = []; historyTotal.value = 0; historyBusy.value = false; historyGeneration++ }
+    const ticket = ++generation; if (!more) { rows.value = []; total.value = 0; page = 0; selected.value = undefined; history.value = []; historyTotal.value = 0; historyBusy.value = false; historyGeneration++; comment.value = ''; photos.value = [] }
     if (!online.value || state.offlineMode || !state.projectId || !canFault('query')) { busy.value = false; return }
     busy.value = true; error.value = ''
     try {
@@ -52,23 +52,33 @@ export function useFaultWork() {
     } catch (cause) { if (ticket === historyGeneration) error.value = messageOf(cause) }
     finally { if (ticket === historyGeneration) historyBusy.value = false }
   }
-  function open(value: string) { if (!actions.value.includes(value)) return; action.value = value; comment.value = ''; photos.value = []; error.value = '' }
   async function photo(file: File) {
-    if (!state.projectId || submitting.value) return
+    const row = selected.value, ticket = generation
+    if (!row || !row.projectId || !actions.value.includes('resolve') || !online.value || state.offlineMode || !state.projectId || submitting.value) return
     if (photos.value.length >= 20 || file.size > 20 * 1024 * 1024 || !file.type.startsWith('image/')) { error.value = '最多20张照片，单张不超过20MB'; return }
     submitting.value = true
-    try { const result = await facility.upload(file, state.projectId); photos.value.push(result.id) }
-    catch (cause) { error.value = messageOf(cause) } finally { submitting.value = false }
+    try { const result = await facility.upload(file, row.projectId); if (ticket === generation) photos.value.push(result.id) }
+    catch (cause) { if (ticket === generation) error.value = messageOf(cause) } finally { submitting.value = false }
   }
-  async function confirm() {
+  async function confirm(value: string) {
     const row = selected.value
-    if (!row || !online.value || submitting.value || !actions.value.includes(action.value)) return
-    if (['resolve', 'reject'].includes(action.value) && !comment.value.trim()) { error.value = '请填写处理结果或驳回原因'; return }
+    if (!row || !online.value || state.offlineMode || submitting.value || !actions.value.includes(value)) return false
+    if (['resolve', 'reject'].includes(value) && !comment.value.trim()) { error.value = value === 'resolve' ? '请填写维修结果' : '请填写退回原因'; return false }
+    const ticket = generation
     submitting.value = true; error.value = ''
-    try { await facility.faultAction(row.id, action.value, { version: row.version, comment: comment.value.trim(), attachments: photos.value }); action.value = ''; await load() }
-    catch (cause) { error.value = messageOf(cause) } finally { submitting.value = false }
+    try {
+      const updated = await facility.faultAction(row.id, value, { version: row.version, comment: comment.value.trim(), attachments: value === 'resolve' ? [...photos.value] : [] })
+      // 使用操作响应推进状态，避免提交成功后刷新失败让用户误以为没提交而重复操作。
+      if (ticket !== generation || selected.value?.id !== row.id) return false
+      selected.value = updated; comment.value = ''; photos.value = []
+      await loadHistory()
+      return true
+    } catch (cause) { if (ticket === generation) error.value = messageOf(cause); return false }
+    finally { submitting.value = false }
   }
-  watch(() => [route.params.id, state.context?.tenantId, state.context?.applicationId, state.context?.userId, state.projectId, online.value, state.offlineMode, status.value], () => void load(), { immediate: true })
+  watch(() => [route.params.id, state.context?.tenantId, state.context?.applicationId, state.context?.userId, state.projectId, state.offlineMode, status.value], () => void load(), { immediate: true })
+  // 网络波动不重置正在填写的维修结果；尚未载入详情时才在恢复连接后重试。
+  watch(online, value => { if (value && !selected.value) void load() })
   onBeforeUnmount(() => { generation++; historyGeneration++ })
-  return { rows, selected, history, historyTotal, historyBusy, loadHistory, total, status, search, busy, error, online, actions, action, comment, photos, submitting, load, open, confirm, photo }
+  return { rows, selected, history, historyTotal, historyBusy, loadHistory, total, status, search, busy, error, online, actions, comment, photos, submitting, load, confirm, photo }
 }

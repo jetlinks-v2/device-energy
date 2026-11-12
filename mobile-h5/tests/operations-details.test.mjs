@@ -50,3 +50,57 @@ test('repair actions expose only executable staff and reviewer actions, never in
  vm.selected.value={id:'fault',state:'review',assigneeId:'other',reviewerId:'worker'}
  assert.deepEqual(vm.actions.value,['approve','reject'])
 })
+
+test('repair claim and start execute directly with the latest returned version, without reopening a form or re-reading the fault', async()=>{
+ let row={id:'detail',projectId:'project',state:'assigned',assigneeId:'worker',version:2},reads=0
+ const calls=[],{exports}=fault({fault:async()=>{reads++;return {...row}},faultHistory:async()=>({data:[],total:0}),faultAction:async(id,action,body)=>{
+  calls.push({id,action,body});assert.equal(body.version,row.version)
+  row={...row,state:action==='claim'?'claimed':'processing',version:row.version+1};return {...row}
+ }},[{id:'facility-fault',actions:['query','save']}])
+ const vm=exports.useFaultWork();await vm.load()
+ assert.equal(await vm.confirm('claim'),true);assert.deepEqual(vm.actions.value,['start'])
+ assert.equal(await vm.confirm('start'),true);assert.deepEqual(vm.actions.value,['resolve'])
+ assert.deepEqual(calls.map(c=>c.action),['claim','start']);assert.equal(reads,1)
+})
+
+test('repair submission requires a result, preserves inputs on failure, prevents duplicate sends and advances to review on success',async()=>{
+ let finish,calls=0,fail=true
+ const row={id:'detail',projectId:'project',state:'processing',assigneeId:'worker',version:4}
+ const {exports}=fault({fault:async()=>({...row}),faultHistory:async()=>({data:[],total:0}),faultAction:async(id,action,body)=>{
+  calls++;assert.equal(action,'resolve');assert.equal(body.comment,'更换接头，复测无渗漏');assert.deepEqual(body.attachments,['photo'])
+  if(fail)throw Error('网络异常');await new Promise(done=>finish=done);return {...row,state:'review',version:5}
+ }},[{id:'facility-fault',actions:['query','save']}])
+ const vm=exports.useFaultWork();await vm.load();assert.equal(await vm.confirm('resolve'),false);assert.equal(calls,0)
+ vm.comment.value=' 更换接头，复测无渗漏 ';vm.photos.value=['photo']
+ assert.equal(await vm.confirm('resolve'),false);assert.equal(vm.error.value,'网络异常');assert.deepEqual(vm.photos.value,['photo']);assert.ok(vm.comment.value)
+ fail=false;const pending=vm.confirm('resolve');assert.equal(await vm.confirm('resolve'),false);assert.equal(calls,2)
+ finish();assert.equal(await pending,true);assert.equal(vm.selected.value.state,'review');assert.deepEqual(vm.actions.value,[]);assert.equal(vm.comment.value,'');assert.deepEqual(vm.photos.value,[])
+})
+
+test('successful repair does not become an apparent failed submission when history is unavailable',async()=>{
+ let fail=false
+ const row={id:'detail',projectId:'project',state:'processing',assigneeId:'worker',version:1}
+ const {exports}=fault({fault:async()=>row,faultHistory:async()=>{if(fail)throw Error('记录加载失败');return {data:[],total:0}},faultAction:async()=>({...row,state:'review',version:2})},[{id:'facility-fault',actions:['query','save']}])
+ const vm=exports.useFaultWork();await vm.load();vm.comment.value='完成维修';fail=true
+ assert.equal(await vm.confirm('resolve'),true);assert.equal(vm.selected.value.state,'review');assert.equal(vm.error.value,'记录加载失败');assert.equal(await vm.confirm('resolve'),false)
+})
+
+test('review rejection requires a reason, passes no repair photos and respects the responsible reviewer',async()=>{
+ const calls=[],row={id:'detail',state:'review',assigneeId:'other',reviewerId:'worker',version:3}
+ const {exports}=fault({fault:async()=>row,faultHistory:async()=>({data:[],total:0}),faultAction:async(id,action,body)=>{calls.push(body);return {...row,state:'processing',version:4}}},[{id:'facility-fault',actions:['query','review']}])
+ const vm=exports.useFaultWork();await vm.load();assert.equal(await vm.confirm('reject'),false);assert.equal(calls.length,0)
+ vm.comment.value='请补充复测结果';vm.photos.value=['not-a-review-photo'];assert.equal(await vm.confirm('reject'),true)
+ assert.deepEqual(calls,[{version:3,comment:'请补充复测结果',attachments:[]}])
+ vm.selected.value={...row,reviewerId:'another'};assert.equal(await vm.confirm('approve'),false)
+})
+
+test('offline, missing permission and another assignee cannot mutate repairs or upload photos',async()=>{
+ let calls=0
+ const {ports,exports}=fault({faultAction:async()=>calls++,upload:async()=>calls++},[{id:'facility-fault',actions:['query','save']}])
+ const vm=exports.useFaultWork();vm.selected.value={id:'detail',projectId:'project',state:'processing',assigneeId:'other'}
+ assert.equal(await vm.confirm('resolve'),false);await vm.photo({});assert.equal(calls,0)
+ vm.selected.value.assigneeId='worker';ports.online.value=false;vm.comment.value='维修结果'
+ assert.equal(await vm.confirm('resolve'),false);await vm.photo({});assert.equal(calls,0)
+ ports.online.value=true;ports.state.authorization.permissions=[]
+ assert.equal(await vm.confirm('resolve'),false);await vm.photo({});assert.equal(calls,0)
+})
