@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { DownOutlined, CheckOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
 import { projects, selectProject, projectError, loadProjects } from '../hooks/useProjects'
 import { state } from '../services/session'
 import { m } from '../services/mobileText'
@@ -10,13 +9,13 @@ const filtered = computed(() => projects.value.filter(p => p.name?.toLowerCase()
 function choose(id: string) { selectProject(id); open.value = false }
 </script>
 <template>
-  <button class="project-picker" :aria-label="'选择项目，当前：' + label" @click="open = true"><EnvironmentOutlined /><span>{{ label }}</span><DownOutlined /></button>
-  <a-drawer v-model:open="open" :title="m('选择项目', 'Select project')" placement="bottom" height="70dvh" class="mobile-drawer">
-    <a-input-search v-model:value="search" :placeholder="m('搜索项目', 'Search projects')" allow-clear />
-    <a-alert v-if="projectError" type="error" :message="projectError"><template #action><a-button @click="loadProjects">{{ m('重试', 'Retry') }}</a-button></template></a-alert>
+  <button class="project-picker" :aria-label="'选择项目，当前：' + label" @click="open = true"><van-icon name="location-o" /><span>{{ label }}</span><van-icon name="arrow-down" /></button>
+  <MobileSheet v-model:show="open" title="选择项目">
+    <van-search v-model="search" :placeholder="m('搜索项目', 'Search projects')" clearable />
+    <MobileNotice v-if="projectError" type="error" :message="projectError"><template #action><van-button @click="loadProjects">{{ m('重试', 'Retry') }}</van-button></template></MobileNotice>
     <div class="choice-list" role="group" aria-label="单选项目">
-      <button v-for="p in filtered" :key="p.id" :class="{ selected: state.projectId === p.id }" :aria-pressed="state.projectId === p.id" @click="choose(p.id)"><span>{{ p.name }}</span><CheckOutlined v-if="state.projectId === p.id" /></button>
-      <a-empty v-if="!filtered.length" :description="m('暂无项目', 'No projects')" />
+      <button v-for="p in filtered" :key="p.id" :class="{ selected: state.projectId === p.id }" :aria-pressed="state.projectId === p.id" @click="choose(p.id)"><span>{{ p.name }}</span><van-icon name="success" v-if="state.projectId === p.id" /></button>
+      <van-empty v-if="!filtered.length" :description="m('暂无项目', 'No projects')" />
     </div>
-  </a-drawer>
+  </MobileSheet>
 </template>

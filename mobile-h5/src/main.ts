@@ -1,28 +1,36 @@
 import { feText } from '../../shared/i18n'
 import { createApp } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
-import Antd from 'ant-design-vue'
-import 'ant-design-vue/dist/reset.css'
+import Vant from 'vant'
+import 'vant/lib/index.css'
+import MobileNotice from './components/MobileNotice.vue'
+import MobileSheet from './components/MobileSheet.vue'
+import MobileSelect from './components/MobileSelect.vue'
 import './style.css'
 import App from './App.vue'
 import { initializeConfig, state, clearSession, attachHostBridge } from './services/session'
 import { verifySession } from './hooks/useSession'
+import { routePages } from './routes'
+import { ensureOfflineAssets } from './services/offlineAssets'
 const router = createRouter({
   history: createWebHashHistory(),
   scrollBehavior: (_to, _from, saved) => saved || { left: 0, top: 0 },
   routes: [
-    { path: '/', component: () => import('./views/HomePage.vue') },
-    { path: '/tasks', component: () => import('./views/TaskListPage.vue') },
-    { path: '/scan', component: () => import('./views/ScanPage.vue') },
-    { path: '/sync', component: () => import('./views/SyncPage.vue') },
-    { path: '/profile', component: () => import('./views/ProfilePage.vue') },
-    { path: '/messages', component: () => import('./views/MessagesPage.vue') },
+    { path: '/', component: routePages.home },
+    { path: '/faults', component: routePages.faults },
+    { path: '/faults/:id', component: routePages.fault },
+    { path: '/tasks', component: routePages.tasks },
+    { path: '/scan', component: routePages.scan },
+    { path: '/sync', component: routePages.sync },
+    { path: '/profile', component: routePages.profile },
+    { path: '/alerts/:id', component: routePages.alert },
+    { path: '/messages', component: routePages.messages },
     { path: '/owner', redirect: '/messages' },
-    { path: '/login', component: () => import('./views/LoginPage.vue') },
-    { path: '/tasks/:id', component: () => import('./views/TaskPage.vue') },
-    { path: '/groups/:id', component: () => import('./views/GroupPage.vue') },
-    { path: '/device/:id', component: () => import('./views/DevicePage.vue') },
-    { path: '/meters/:id', component: () => import('./views/OwnerMeterPage.vue') },
+    { path: '/login', component: routePages.login },
+    { path: '/tasks/:id', component: routePages.task },
+    { path: '/groups/:id', component: routePages.group },
+    { path: '/device/:id', component: routePages.device },
+    { path: '/meters/:id', redirect: '/messages' },
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ]
 })
@@ -50,11 +58,11 @@ async function bootstrap() {
     }
   })
   window.addEventListener('facility:session-expired', () => void router.replace('/login'))
-  createApp(App).use(Antd).use(router).mount('#app')
+  createApp(App).use(Vant).component('MobileNotice', MobileNotice).component('MobileSheet', MobileSheet).component('MobileSelect', MobileSelect).use(router).mount('#app')
 }
 void bootstrap().catch(() => {
   document.getElementById('app')!.textContent = feText('failedToLoadApplicationConfigurationRefreshToRetry')
 })
 
-if (import.meta.env.PROD && 'serviceWorker' in navigator)
-  void navigator.serviceWorker.register('./sw.js').catch(() => {})
+// 提前安装静态资源；失败明确记录，开启离线时会重新核验并显示失败原因。
+if (import.meta.env.PROD) void ensureOfflineAssets().catch(error => console.error('离线页面缓存未就绪', error))

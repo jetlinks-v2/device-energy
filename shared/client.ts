@@ -50,7 +50,17 @@ export function facilityClient(http: Transport) {
       http.post<Task>(prefix + '/tasks/' + id(key) + '/' + id(action), command),
     downloadTask: (key: string) => http.get<Task>(prefix + '/tasks/' + id(key) + '/offline'),
     context: () => http.get<Context>(prefix + '/context/me'),
+    fault: (key: string) => http.get<import('./faults').Fault>(prefix + '/faults/' + id(key)),
+    faultAction: (key: string, action: string, command: import('./faults').FaultCommand) =>
+      http.post<import('./faults').Fault>(prefix + '/faults/' + id(key) + '/' + id(action), command),
+    faultHistory: (key: string, pageIndex = 0) => http.get<Pager<TaskProcess>>(prefix + '/faults/' + id(key) + '/history?pageIndex=' + pageIndex),
     options: <T = Entity>(kind: string) => http.get<T[]>(prefix + '/context/' + kind),
+    manualReading: (deviceId: string, input: { propertyId: string; value: string; observedTime: number; reason: string }) =>
+      http.post<Reading>(prefix + '/energy/readings/' + id(deviceId), input),
+    reviewReading: (row: Reading, approve: boolean) =>
+      http.post<Reading>(prefix + '/energy/readings/' + id(row.id) + '/review', { version: row.version, approve }),
+    resubmitReading: (row: Reading, input: { propertyId: string; value: string; observedTime: number; reason: string }) =>
+      http.post<Reading>(prefix + '/energy/readings/' + id(row.id) + '/resubmit?version=' + row.version, input),
     series: (key: string, property: string, from: number, to: number) =>
       http.get<Reading[]>(
         prefix + '/energy/series/' + id(key) + '?property=' + id(property) + '&from=' + from + '&to=' + to

@@ -103,6 +103,7 @@ export interface Task extends Entity {
   instructionAttachments: string[]
 }
 export interface TaskProcess extends Entity {
+  attachments?: string[]
   action: string
   fromState?: string
   toState: string
@@ -126,6 +127,16 @@ export interface Usage {
   lastTime?: number
 }
 export interface Reading extends Entity {
+  deviceId: string
+  deviceName?: string
+  energyType: string
+  source: string
+  creatorId?: string
+  creatorName?: string
+  reason?: string
+  rawValue?: number | string
+  resubmitsId?: string
+  mappingId?: string
   propertyId: string
   observedTime: number
   value?: number
@@ -237,6 +248,7 @@ export const states: Record<string, string> = {
   rejected: feText('notApproved'),
   invalid: feText('invalid'),
   superseded: feText('corrected'),
+  resubmitted: feText('readingResubmitted'),
   processing: feText('processing'),
   acknowledged: feText('acknowledged'),
   closed: feText('closed'),
@@ -272,19 +284,19 @@ export const states: Record<string, string> = {
   task: feText('inspectionMaintenanceTask'),
   alert: feText('energyAlert')
 }
-export const display = (v: unknown): string =>
-  v == null
+export const display = (v: unknown, options?: Option[]): string =>
+  options?.find(option => option.value === String(v))?.label ?? (v == null
     ? '—'
     : typeof v === 'boolean'
       ? v
         ? feText('enabled')
         : feText('disabled')
-      : states[String(v)] || energyNames[String(v)] || String(v)
+      : states[String(v)] || energyNames[String(v)] || String(v))
 
 export const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
 export interface TaskMessage extends Entity {
-  taskId: string; messageType: 'new' | 'warning' | 'overdue'; title: string
+  taskId: string; faultId?: string; alertId?: string; userId?: string; failureReason?: string; message?: string; messageType: string; title: string
   taskName: string; taskKind: string; deviceCount: number; submittedDeviceCount: number
   scheduledTime: number; deadline: number; readTime?: number | null; createTime: number
 }

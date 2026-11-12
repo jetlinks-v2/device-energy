@@ -9,8 +9,8 @@ type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'all'
 interface Outcome { id: string; name: string; success: boolean; error?: string }
 
 /** Every selected task uses the existing versioned review transaction; partial failures stay visible. */
-export function useTaskReview(kind: string | undefined, changed: () => void) {
-  const table = ref<TableHandle>(), selected = ref<Task[]>([]), terms = ref<Term[]>([]), status = ref<ReviewStatus>('pending'),
+export function useTaskReview(kind: string | undefined, changed: () => void, projectId?: string) {
+  const table = ref<TableHandle>(), selected = ref<Task[]>([]), terms = ref<Term[]>(projectId ? [{ column: 'projectId', termType: 'eq', value: projectId }] : []), status = ref<ReviewStatus>('pending'),
     busy = ref(false), error = ref(''), decision = ref<Decision>(), targets = ref<Task[]>([]),
     comment = ref(''), outcomes = ref<Outcome[]>([]), progress = ref(0)
   const params = computed(() => ({ terms: terms.value }))

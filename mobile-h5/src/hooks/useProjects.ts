@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { facility } from '../api/facility'
-import { state } from '../services/session'
+import { state, canWorkspace } from '../services/session'
 import type { Entity } from '../../../shared/types'
 import { messageOf } from '../../../shared/types'
 
@@ -12,7 +12,7 @@ export async function loadProjects() {
   projects.value = []
   state.projectId = undefined
   try {
-    if (!state.authorization?.permissions.some(p => p.id === 'facility-task' && p.actions.includes('query'))) return
+    if (!canWorkspace()) return
     if (navigator.onLine && !state.offlineMode) {
       projects.value = await facility.options('projects')
       sessionStorage.setItem(key(), JSON.stringify(projects.value))

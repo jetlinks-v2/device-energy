@@ -254,6 +254,12 @@
                 "actions": [
                   "query"
                 ]
+              },
+              {
+                "permission": "facility-message",
+                "actions": [
+                  "query"
+                ]
               }
             ],
             "buttons": [
@@ -891,6 +897,12 @@
                 "actions": [
                   "query"
                 ]
+              },
+              {
+                "permission": "facility-message",
+                "actions": [
+                  "query"
+                ]
               }
             ],
             "buttons": [
@@ -1494,22 +1506,101 @@
             "actions": [
               "query"
             ]
+          },
+          {
+            "permission": "file",
+            "actions": [
+              "query"
+            ]
           }
         ],
         "buttons": [
           {
             "id": "save",
-            "name": "故障处理与复核",
+            "name": "登记与维修",
             "permissions": [
               {
                 "permission": "facility-fault",
                 "actions": [
                   "save"
                 ]
+              },
+              {
+                "permission": "file",
+                "actions": [
+                  "query",
+                  "save"
+                ]
               }
             ],
             "enabled": true,
-            "granted": true
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "登记与维修",
+              "zh": "登记与维修",
+              "en_US": "Register and repair",
+              "en": "Register and repair"
+            }
+          },
+          {
+            "id": "dispatch",
+            "name": "派单与转单",
+            "permissions": [
+              {
+                "permission": "facility-fault",
+                "actions": [
+                  "dispatch"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "派单与转单",
+              "zh": "派单与转单",
+              "en_US": "Dispatch and transfer",
+              "en": "Dispatch and transfer"
+            }
+          },
+          {
+            "id": "review",
+            "name": "维修验收",
+            "permissions": [
+              {
+                "permission": "facility-fault",
+                "actions": [
+                  "review"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "维修验收",
+              "zh": "维修验收",
+              "en_US": "Accept repairs",
+              "en": "Accept repairs"
+            }
+          },
+          {
+            "id": "close",
+            "name": "关闭故障",
+            "permissions": [
+              {
+                "permission": "facility-fault",
+                "actions": [
+                  "close"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "关闭故障",
+              "zh": "关闭故障",
+              "en_US": "Close fault",
+              "en": "Close fault"
+            }
           }
         ],
         "assetTypes": [
@@ -1584,6 +1675,46 @@
             "granted": true
           },
           {
+            "id": "manual-reading",
+            "name": "人工补录",
+            "permissions": [
+              {
+                "permission": "facility-mapping",
+                "actions": [
+                  "save"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "人工补录",
+              "zh": "人工补录",
+              "en_US": "Manual reading",
+              "en": "Manual reading"
+            }
+          },
+          {
+            "id": "reading-review",
+            "name": "补录审核",
+            "permissions": [
+              {
+                "permission": "facility-mapping",
+                "actions": [
+                  "save"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "补录审核",
+              "zh": "补录审核",
+              "en_US": "Review manual readings",
+              "en": "Review manual readings"
+            }
+          },
+          {
             "id": "toggle",
             "name": "启用／禁用",
             "permissions": [
@@ -1601,6 +1732,46 @@
               "zh": "启用／禁用",
               "en_US": "Enable / disable",
               "en": "Enable / disable"
+            }
+          },
+          {
+            "id": "reading-records",
+            "name": "补录记录",
+            "permissions": [
+              {
+                "permission": "facility-mapping",
+                "actions": [
+                  "query"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "补录记录",
+              "zh": "补录记录",
+              "en_US": "My manual readings",
+              "en": "My manual readings"
+            }
+          },
+          {
+            "id": "reading-resubmit",
+            "name": "重新编辑补录",
+            "permissions": [
+              {
+                "permission": "facility-mapping",
+                "actions": [
+                  "save"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "重新编辑补录",
+              "zh": "重新编辑补录",
+              "en_US": "Edit and resubmit reading",
+              "en": "Edit and resubmit reading"
             }
           }
         ],
@@ -1666,6 +1837,18 @@
             "actions": [
               "query"
             ]
+          },
+          {
+            "permission": "facility-fault",
+            "actions": [
+              "query"
+            ]
+          },
+          {
+            "permission": "facility-mapping",
+            "actions": [
+              "query"
+            ]
           }
         ],
         "buttons": [
@@ -1681,26 +1864,17 @@
               }
             ],
             "enabled": true,
-            "granted": true
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "处理预警",
+              "zh": "处理预警",
+              "en_US": "Handle alerts",
+              "en": "Handle alerts"
+            }
           },
           {
             "id": "rules",
-            "name": "配置规则",
-            "permissions": [
-              {
-                "permission": "facility-rule",
-                "actions": [
-                  "save",
-                  "delete"
-                ]
-              }
-            ],
-            "enabled": true,
-            "granted": true
-          },
-          {
-            "id": "toggle",
-            "name": "启用／禁用",
+            "name": "配置预警规则",
             "permissions": [
               {
                 "permission": "facility-rule",
@@ -1712,10 +1886,51 @@
             "enabled": true,
             "granted": true,
             "i18nMessages": {
-              "zh_CN": "启用／禁用",
-              "zh": "启用／禁用",
-              "en_US": "Enable / disable",
-              "en": "Enable / disable"
+              "zh_CN": "配置预警规则",
+              "zh": "配置预警规则",
+              "en_US": "Configure rules",
+              "en": "Configure rules"
+            }
+          },
+          {
+            "id": "toggle",
+            "name": "启用／停用规则",
+            "permissions": [
+              {
+                "permission": "facility-rule",
+                "actions": [
+                  "save"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "启用／停用规则",
+              "zh": "启用／停用规则",
+              "en_US": "Enable or disable rules",
+              "en": "Enable or disable rules"
+            }
+          },
+          {
+            "id": "fault",
+            "name": "预警登记故障",
+            "permissions": [
+              {
+                "permission": "facility-fault",
+                "actions": [
+                  "query",
+                  "save"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "预警登记故障",
+              "zh": "预警登记故障",
+              "en_US": "Register fault from alert",
+              "en": "Register fault from alert"
             }
           }
         ],
@@ -1755,15 +1970,16 @@
       {
         "id": "facility-Notifications",
         "code": "facility/Notifications",
-        "name": "客户与通知",
+        "name": "消息通知",
         "url": "/facility/notifications",
         "owner": "app",
         "sortIndex": 8,
         "permissions": [
           {
-            "permission": "facility-alert",
+            "permission": "facility-message",
             "actions": [
-              "query"
+              "query",
+              "records"
             ]
           },
           {
@@ -1775,23 +1991,31 @@
         ],
         "buttons": [
           {
-            "id": "retry",
-            "name": "重试失败通知",
+            "id": "settings",
+            "name": "通知设置",
             "permissions": [
               {
-                "permission": "facility-alert",
+                "permission": "facility-message",
                 "actions": [
-                  "save"
+                  "settings"
                 ]
               }
             ],
             "enabled": true,
-            "granted": true
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "通知设置",
+              "zh": "通知设置",
+              "en_US": "Notification settings",
+              "en": "Notification settings"
+            }
           }
         ],
         "assetTypes": [
           "facilityDevice",
-          "facilityTarget"
+          "facilityTarget",
+          "facilityTask",
+          "facilityFault"
         ],
         "parentId": "facility-management",
         "status": 1,
@@ -1807,14 +2031,14 @@
         },
         "i18nMessages": {
           "name": {
-            "en": "Customers and notifications",
-            "zh": "客户与通知",
-            "en_US": "Customers and notifications",
-            "zh_CN": "客户与通知"
+            "zh_CN": "消息通知",
+            "zh": "消息通知",
+            "en_US": "Employee messages",
+            "en": "Employee messages"
           }
         },
         "showPage": [
-          "facility-alert",
+          "facility-message",
           "facility-device"
         ]
       },
@@ -1853,6 +2077,26 @@
             ],
             "enabled": true,
             "granted": true
+          },
+          {
+            "id": "export",
+            "name": "导出当前报表",
+            "permissions": [
+              {
+                "permission": "facility-report",
+                "actions": [
+                  "query"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "导出当前报表",
+              "zh": "导出当前报表",
+              "en_US": "Export report",
+              "en": "Export report"
+            }
           }
         ],
         "assetTypes": [
@@ -2005,6 +2249,24 @@
             "actions": [
               "query"
             ]
+          },
+          {
+            "permission": "facility-fault",
+            "actions": [
+              "query"
+            ]
+          },
+          {
+            "permission": "facility-alert",
+            "actions": [
+              "query"
+            ]
+          },
+          {
+            "permission": "facility-message",
+            "actions": [
+              "query"
+            ]
           }
         ],
         "buttons": [
@@ -2085,6 +2347,53 @@
             ],
             "enabled": true,
             "granted": true
+          },
+          {
+            "id": "repair",
+            "name": "接单与维修",
+            "permissions": [
+              {
+                "permission": "facility-fault",
+                "actions": [
+                  "save"
+                ]
+              },
+              {
+                "permission": "file",
+                "actions": [
+                  "query",
+                  "save"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "接单与维修",
+              "zh": "接单与维修",
+              "en_US": "Claim and repair",
+              "en": "Claim and repair"
+            }
+          },
+          {
+            "id": "repair-review",
+            "name": "维修验收",
+            "permissions": [
+              {
+                "permission": "facility-fault",
+                "actions": [
+                  "review"
+                ]
+              }
+            ],
+            "enabled": true,
+            "granted": true,
+            "i18nMessages": {
+              "zh_CN": "维修验收",
+              "zh": "维修验收",
+              "en_US": "Accept repairs",
+              "en": "Accept repairs"
+            }
           }
         ],
         "assetTypes": [

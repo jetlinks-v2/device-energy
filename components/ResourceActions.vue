@@ -94,7 +94,6 @@ const faultActionNames: Record<string, string> = {
     </j-permission-button>
     <template
       v-if="
-        (resource === 'readings' && record.status === 'pending') ||
         (resource === 'replacements' && record.state === 'pending')
       "
     >

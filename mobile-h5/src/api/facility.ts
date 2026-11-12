@@ -1,5 +1,6 @@
 import { feText } from '../../../shared/i18n'
 import { request } from './http'
+import { state } from '../services/session'
 import { facilityClient } from '../../../shared/client'
 import type { Authorization, FileInfo } from '../../../shared/types'
 export const authorize = () => request<Authorization>('/authorize/me')
@@ -16,7 +17,6 @@ export const facility = facilityClient({
 
 /** Authenticated file reads bypass the public service-worker cache. */
 export async function downloadFile(id: string): Promise<Blob> {
-  const { state } = await import('../services/session')
   const session = state.session
   if (!session) throw Error(feText('signInFirst'))
   const response = await fetch(state.config.apiBase + '/file/' + encodeURIComponent(id), {

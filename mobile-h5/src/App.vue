@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { HomeOutlined, UnorderedListOutlined, CloudSyncOutlined, UserOutlined, BellOutlined, LeftOutlined } from '@ant-design/icons-vue'
-import zhCN from 'ant-design-vue/es/locale/zh_CN'
-import { state, can } from './services/session'
+import { state, can, canMessage, canWorkspace } from './services/session'
 import { loadProjects, projectError, projectsReady } from './hooks/useProjects'
 import { m } from './services/mobileText'
 import ProjectPicker from './components/ProjectPicker.vue'
@@ -13,15 +11,18 @@ const route = useRoute(), router = useRouter()
 const login = computed(() => route.path === '/login')
 const root = computed(() => ['/', '/tasks', '/sync', '/messages', '/profile'].includes(route.path))
 const nav = computed(() => [
-  { to: '/', name: m('工作台', 'Home'), icon: HomeOutlined, show: true },
-  { to: '/tasks', name: m('任务', 'Tasks'), icon: UnorderedListOutlined, show: can('query') },
-  { to: '/sync', name: m('同步', 'Sync'), icon: CloudSyncOutlined, show: can('query') },
-  { to: '/messages', name: '消息', icon: BellOutlined, show: can('query') },
-  { to: '/profile', name: m('我的', 'Me'), icon: UserOutlined, show: true }
+  { to: '/', name: m('工作台', 'Home'), icon: 'home-o', show: true },
+  { to: '/tasks', name: m('任务', 'Tasks'), icon: 'orders-o', show: can('query') },
+  { to: '/sync', name: m('同步', 'Sync'), icon: 'exchange', show: can('query') },
+  { to: '/messages', name: '消息', icon: 'bell', show: canMessage() },
+  { to: '/profile', name: m('我的', 'Me'), icon: 'user-o', show: true }
 ].filter(item => item.show))
 const title = computed(() => {
   if (route.path === '/') return '工作台'
+  if (route.path === '/faults') return '维修任务'
+  if (route.path.startsWith('/faults/')) return '维修详情'
   if (route.path === '/profile') return '我的'
+  if (route.path.startsWith('/alerts/')) return '告警详情'
   if (route.path === '/messages') return '消息'
   if (route.path === '/sync') return '同步中心'
   if (route.path === '/tasks') {
@@ -36,16 +37,16 @@ watch(() => state.context, context => { if (context) void loadProjects() }, { im
 function back() { if (window.history.state?.back) router.back(); else void router.replace('/') }
 </script>
 <template>
-  <a-config-provider :locale="zhCN" :theme="{ token: { colorPrimary: '#0874bb', colorText: '#203448', colorTextSecondary: '#5a6f83', colorTextPlaceholder: '#65798a', borderRadius: 10, controlHeight: 42, fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Microsoft YaHei, sans-serif' } }">
+  <van-config-provider :theme-vars="{ primaryColor: '#0874bb', textColor: '#203448', borderRadiusLg: '12px', buttonDefaultHeight: '44px', fieldLabelColor: '#4d6275' }">
     <div class="app" :class="{ 'has-nav': root && !login }">
-      <header v-if="!login" class="topbar">
-        <div class="topbar-side"><button v-if="!root" class="icon-button" :aria-label="m('返回', 'Back')" @click="back"><LeftOutlined /></button></div>
-        <strong>{{ title }}</strong>
-        <div class="topbar-side topbar-end"><ProjectPicker v-if="root && can('query')" /></div>
-      </header>
-      <div v-if="root && !login && can('query') && projectsReady && !state.projectId" class="project-notice"><a-alert :type="projectError ? 'error' : 'info'" :message="projectError || '暂无可用项目，请联系管理员配置项目权限'"><template v-if="projectError" #action><a-button type="link" @click="loadProjects">重试</a-button></template></a-alert></div>
+      <van-nav-bar v-if="!login" :title="title" :left-arrow="!root" fixed placeholder safe-area-inset-top @click-left="back">
+        <template v-if="root && canWorkspace()" #right><ProjectPicker /></template>
+      </van-nav-bar>
+      <div v-if="root && !login && canWorkspace() && projectsReady && !state.projectId" class="project-notice"><MobileNotice :type="projectError ? 'error' : 'info'" :message="projectError || '暂无可用项目，请联系管理员配置项目权限'"><template v-if="projectError" #action><van-button size="small" plain @click="loadProjects">重试</van-button></template></MobileNotice></div>
       <router-view :key="route.path" />
-      <nav v-if="root && !login" class="bottom-nav" :aria-label="m('主导航', 'Main navigation')"><router-link v-for="item in nav" :key="item.to" :to="item.to" :class="{ current: route.path === item.to }" :aria-current="route.path === item.to ? 'page' : undefined"><a-badge :dot="item.to === '/messages' && unread > 0"><component :is="item.icon" /></a-badge><span>{{ item.name }}</span></router-link></nav>
+      <van-tabbar v-if="root && !login" route safe-area-inset-bottom>
+        <van-tabbar-item v-for="item in nav" :key="item.to" :to="item.to" :dot="item.to === '/messages' && unread > 0"><template #icon><van-icon :name="item.icon" /></template>{{ item.name }}</van-tabbar-item>
+      </van-tabbar>
     </div>
-  </a-config-provider>
+  </van-config-provider>
 </template>

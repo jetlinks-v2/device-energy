@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { feText } from '../shared/i18n'
-import { reactive, computed } from 'vue'
+import { reactive } from 'vue'
 import type { Device } from '../shared/types'
 import { time, display } from '../shared/types'
 import { useDevice } from '../hooks/useDevice'
 import RecordForm from './RecordForm.vue'
-import DeviceRelations from './DeviceRelations.vue'
-import SeriesChart from './SeriesChart.vue'
 const props = defineProps<{ device: Device }>(),
   emit = defineEmits<{ close: [] }>(),
   vm = reactive(useDevice(props.device))
-const points = computed(() => vm.series.map((v) => ({ time: v.observedTime, value: v.value ?? v.textValue ?? '' })))
 </script>
 
 <template>
@@ -37,10 +34,11 @@ const points = computed(() => vm.series.map((v) => ({ time: v.observedTime, valu
             bordered
             size="small"
           >
-            <a-descriptions-item :label="feText('cloudDevice')">{{ vm.device.cloudDeviceId }}</a-descriptions-item>
+            <a-descriptions-item :label="feText('cloudName')">{{ vm.device.sourceName || '—' }}</a-descriptions-item>
             <a-descriptions-item :label="feText('sourceStatus')">{{ display(vm.device.sourceState) }}</a-descriptions-item>
-            <a-descriptions-item :label="feText('businessProject')">{{ vm.device.projectName }}</a-descriptions-item>
+            <a-descriptions-item :label="feText('cloudDeviceId')">{{ vm.device.cloudDeviceId }}</a-descriptions-item>
             <a-descriptions-item :label="feText('syncStatus')">{{ display(vm.device.syncState) }}</a-descriptions-item>
+            <a-descriptions-item :label="feText('businessProject')">{{ vm.device.projectName }}</a-descriptions-item>
           </a-descriptions>
           <a-space
             v-if="vm.device.syncState === 'pending-project'"
@@ -71,163 +69,6 @@ const points = computed(() => vm.series.map((v) => ({ time: v.observedTime, valu
           <a-divider>{{ feText('deviceQrCode') }}</a-divider>
           <a-qrcode :value="vm.qr" />
           <p>{{ feText('staffCanScanToViewTheProfileAndRelatedTasks') }}</p>
-        </a-tab-pane>
-        <a-tab-pane
-          key="energy"
-          :tab="feText('liveAndHistoricalData')"
-        >
-          <a-empty
-            v-if="!vm.mapping"
-            :description="feText('configureMeteringMetricsInEnergyManagementFirst')"
-          />
-          <template v-else>
-            <a-space wrap>
-              <a-select
-                v-model:value="vm.property"
-                :options="vm.options.properties"
-                style="min-width: 200px"
-              />
-              <a-date-picker
-                show-time
-                :value="undefined"
-                :placeholder="feText('selectStartTime')"
-                @change="(value) => (vm.from = Number(value?.valueOf()) || vm.from)"
-              />
-              <a-date-picker
-                show-time
-                :value="undefined"
-                :placeholder="feText('selectEndTime')"
-                @change="(value) => (vm.to = Number(value?.valueOf()) || vm.to)"
-              />
-              <a-button @click="vm.loadSeries">{{ feText('search') }}</a-button>
-            </a-space>
-            <p v-if="vm.usage">
-              {{ feText('usageForPeriod') }}{{ vm.usage.value }}
-              <a-tag :color="vm.usage.complete ? 'green' : 'orange'">
-                {{ vm.usage.complete ? feText('completeData') : feText('boundaryReadingsOrCollectedDataAreIncomplete') }}
-              </a-tag>
-            </p>
-            <SeriesChart :values="points" />
-            <a-table
-              :data-source="vm.series"
-              row-key="id"
-              size="small"
-              :columns="[
-                { title: feText('time'), key: 'time' },
-                { title: feText('reading'), dataIndex: 'value' },
-                { title: feText('unit'), dataIndex: 'unit' },
-                { title: feText('source'), dataIndex: 'source' }
-              ]"
-            >
-              <template #bodyCell="{ column, record }">
-                <template v-if="column.key === 'time'">{{ time(record.observedTime) }}</template>
-              </template>
-            </a-table>
-            <a-divider>{{ feText('manualReadingRequest') }}</a-divider>
-            <a-space wrap>
-              <a-date-picker
-                show-time
-                :placeholder="feText('readingTimestamp')"
-                @change="(value) => (vm.manual.observedTime = Number(value?.valueOf()) || Date.now())"
-              />
-              <a-input-number
-                v-model:value="vm.manual.value"
-                :placeholder="feText('reading')"
-              />
-              <a-input
-                v-model:value="vm.manual.reason"
-                :placeholder="feText('reasonForManualReading')"
-              />
-              <j-permission-button :hasPermission="'facility/Energy:save'" @click="vm.supplement">{{ feText('submitForReview') }}</j-permission-button>
-            </a-space>
-          </template>
-        </a-tab-pane>
-        <a-tab-pane
-          key="binding"
-          :tab="feText('responsibleCustomerAndContacts')"
-        >
-          <a-table
-            row-key="id"
-            :data-source="vm.bindings"
-            size="small"
-            :columns="[
-              { title: feText('responsibleCustomer'), dataIndex: 'customerName' },
-              { title: feText('start'), key: 'start' },
-              { title: feText('end'), key: 'end' }
-            ]"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'start'">{{ time(record.startTime) }}</template>
-              <template v-if="column.key === 'end'">{{ record.endTime ? time(record.endTime) : feText('currentlyActive') }}</template>
-            </template>
-          </a-table>
-          <a-form layout="vertical">
-            <a-form-item :label="feText('propertySpace')">
-              <a-tree-select
-                v-model:value="vm.binding.spaceId"
-                :tree-data="vm.options.spaces"
-                :tree-data-simple-mode="{ id: 'value', pId: 'parentId' }"
-                :field-names="{ label: 'label', value: 'value', children: 'children' }"
-                :aria-label="feText('propertySpace')"
-                tree-node-filter-prop="label"
-                show-search
-                allow-clear
-              />
-            </a-form-item>
-            <a-form-item :label="feText('responsibleCustomer')">
-              <a-select
-                v-model:value="vm.binding.customerId"
-                :options="vm.options.customers"
-              />
-            </a-form-item>
-            <a-space
-              v-for="(contact, index) in vm.binding.contacts"
-              :key="index"
-              wrap
-            >
-              <a-input
-                v-model:value="contact.name"
-                :placeholder="feText('additionalContacts')"
-              />
-              <a-input
-                v-model:value="contact.telephone"
-                :placeholder="feText('smsPhoneNumber')"
-              />
-              <a-button
-                danger
-                @click="vm.binding.contacts.splice(index, 1)"
-              >
-                {{ feText('remove') }}
-              </a-button>
-            </a-space>
-            <p>
-              <a-button
-                @click="vm.binding.contacts.push({ name: '', telephone: '', smsEnabled: true, portalEnabled: false })"
-              >
-                {{ feText('addSmsContact') }}
-              </a-button>
-            </p>
-            <a-space>
-              <j-permission-button :hasPermission="'facility/Devices:save'"
-                type="primary"
-                @click="vm.bind"
-              >
-                {{ feText('confirmBindingChange') }}
-              </j-permission-button>
-              <a-popconfirm
-                :title="feText('endTheCurrentCustomerBinding')"
-                @confirm="vm.endBinding"
-              >
-                <j-permission-button :hasPermission="'facility/Devices:save'" danger>{{ feText('endBinding') }}</j-permission-button>
-              </a-popconfirm>
-            </a-space>
-          </a-form>
-        </a-tab-pane>
-        <a-tab-pane
-          key="work"
-          :tab="feText('inspectionsMaintenanceAndFaults')"
-        >
-          <DeviceRelations :device-id="vm.device.id" />
         </a-tab-pane>
         <a-tab-pane
           key="history"

@@ -1,23 +1,26 @@
 <script setup lang="ts">
+import { reactive, ref } from 'vue'
+import ConditionFilter, { type ConditionFilterTerm } from '@jetlinks-web-core/components/ConditionFilter'
 import FacilityWorkspace from '../../../components/FacilityWorkspace.vue'
+import FacilityDataTable from '../../../components/FacilityDataTable.vue'
+import { useEmployeeNotifications } from '../../../hooks/useEmployeeNotifications'
+import { taskTime } from '../../../shared/types'
 import { feText } from '../../../shared/i18n'
-import ResourcePage from '../../../components/ResourcePage.vue'
+import { alertMessage } from '../../../shared/alerts'
+import '../../../styles/operations.css'
+const vm = reactive(useEmployeeNotifications()), filters = ref<ConditionFilterTerm[]>([])
+const fields = [{ title: feText('notification'), dataIndex: 'title', search: { type: 'string' as const } }, { title: feText('faultName'), dataIndex: 'taskName', search: { type: 'string' as const } }, { title: feText('date'), dataIndex: 'createTime', search: { type: 'date' as const } }]
+function category(row: { taskId?: string; faultId?: string }) { return feText(row.faultId ? 'messageFault' : row.taskId ? 'messageTask' : 'messageAlert') }
+function failure(reason?: string) { return feText(reason === 'employee_not_configured' ? 'messageFailureEmployee' : reason === 'recipient_not_project_employee' ? 'messageFailureProject' : 'messageFailurePermission') }
 </script>
-<template>
-  <FacilityWorkspace>
-    <a-tabs class="facility-tabs" destroy-inactive-tab-pane>
-      <a-tab-pane
-        key="device"
-        :tab="feText('deviceNotifications')"
-      >
-        <ResourcePage resource="notifications" />
-      </a-tab-pane>
-      <a-tab-pane
-        key="plan"
-        :tab="feText('energyPlanNotifications')"
-      >
-        <ResourcePage resource="planNotifications" />
-      </a-tab-pane>
-    </a-tabs>
-  </FacilityWorkspace>
-</template>
+<template><FacilityWorkspace><section class="facility-page operations-workspace">
+  <div class="operations-search"><a-select v-model:value="vm.projectId" class="operations-project" :options="vm.projects" :loading="vm.loading" :placeholder="feText('businessProject')" /><ConditionFilter v-model="filters" :fields="fields" @change="vm.terms = $event.filter.terms" /><j-permission-button hasPermission="facility/Notifications:settings" :loading="vm.saving" :disabled="!vm.projectId" @click="vm.openSettings"><AIcon type="SettingOutlined" />{{ feText('messageSettings') }}</j-permission-button></div>
+  <a-alert v-if="vm.error" type="error" show-icon :message="vm.error" />
+  <div class="operations-status"><a-radio-group v-model:value="vm.category"><a-radio-button value="all">{{ feText('all') }}</a-radio-button><a-radio-button value="task">{{ feText('messageTask') }}</a-radio-button><a-radio-button value="fault">{{ feText('messageFault') }}</a-radio-button><a-radio-button value="alert">{{ feText('messageAlert') }}</a-radio-button></a-radio-group><a-select v-model:value="vm.read" style="width:140px" :options="[{ value: 'all', label: feText('all') }, { value: 'unread', label: feText('messageUnread') }, { value: 'read', label: feText('messageRead') }, { value: 'failed', label: feText('messageFailed') }]" /></div>
+  <FacilityDataTable :data-source="vm.rows" :pagination="false" :loading="vm.busy" :columns="[{ title: feText('notification'), dataIndex: 'title', width: 220 }, { title: feText('messageType'), key: 'category' }, { title: feText('messageRecipient'), dataIndex: 'userId' }, { title: feText('project'), dataIndex: 'projectName' }, { title: feText('status'), key: 'state' }, { title: feText('date'), key: 'time' }, { title: feText('actions'), key: 'actions', width: 90 }]">
+    <template #bodyCell="{ column, record }"><template v-if="column.key === 'userId'">{{ record.userId ? vm.names[record.userId] || feText('messageRecipient') : feText('messageFailureEmployee') }}</template><template v-else-if="column.key === 'category'">{{ category(record) }}</template><template v-else-if="column.key === 'state'"><a-tag :color="record.state === 'failed' ? 'red' : record.readTime ? 'default' : 'blue'">{{ feText(record.state === 'failed' ? 'messageFailed' : record.readTime ? 'messageRead' : 'messageUnread') }}</a-tag></template><template v-else-if="column.key === 'time'">{{ taskTime(record.createTime) }}</template><template v-else-if="column.key === 'actions'"><a-button type="link" @click="vm.selected = record">{{ feText('detail') }}</a-button></template></template>
+  </FacilityDataTable><a-pagination v-if="vm.total > 12" v-model:current="vm.page" :page-size="12" :total="vm.total" :show-size-changer="false" size="small" />
+  <a-drawer :open="!!vm.selected" :title="feText('notification')" width="min(520px,100vw)" @close="vm.selected = undefined"><template v-if="vm.selected"><h2 class="notice-title">{{ vm.selected.title }}</h2><p class="notice-message">{{ vm.selected.alertId ? alertMessage(vm.selected.message) : vm.selected.message }}</p><a-descriptions :column="1"><a-descriptions-item :label="feText('project')">{{ vm.selected.projectName }}</a-descriptions-item><a-descriptions-item :label="feText('messageRecipient')">{{ vm.selected.userId ? vm.names[vm.selected.userId] || feText('messageRecipient') : feText('messageFailureEmployee') }}</a-descriptions-item><a-descriptions-item :label="feText('date')">{{ taskTime(vm.selected.createTime) }}</a-descriptions-item><a-descriptions-item :label="feText('messageRead')">{{ taskTime(vm.selected.readTime) }}</a-descriptions-item></a-descriptions><a-alert v-if="vm.selected.state === 'failed'" type="warning" :message="failure(vm.selected.failureReason)" show-icon /></template></a-drawer>
+  <a-drawer :open="vm.settingsOpen" :title="feText('messageSettings')" width="min(480px,100vw)" :mask-closable="!vm.saving" @close="vm.settingsOpen = false"><a-form layout="vertical"><a-form-item :label="feText('messageTask')"><a-switch v-model:checked="vm.policy.taskEnabled" /></a-form-item><a-form-item :label="feText('messageFault')"><a-switch v-model:checked="vm.policy.faultEnabled" /></a-form-item><a-form-item :label="feText('messageAlert')"><a-switch v-model:checked="vm.policy.alertEnabled" /></a-form-item></a-form><template #footer><a-button type="primary" :loading="vm.saving" @click="vm.saveSettings">{{ feText('save') }}</a-button></template></a-drawer>
+</section></FacilityWorkspace></template>
+<style scoped>.notice-title{font-size:20px;line-height:1.5;margin:0 0 24px}.notice-message{font-size:15px;line-height:1.8;white-space:pre-wrap;margin-bottom:28px}</style>

@@ -9,9 +9,10 @@ import { display, taskTime, type Option } from '../shared/types'
 import type { TableHandle } from '../shared/tableQuery'
 import { useTaskReview } from '../hooks/useTaskReview'
 import TaskDetail from './TaskDetail.vue'
-const props = defineProps<{ kind?: string; options: Record<string, Option[]> }>()
+const props = defineProps<{ kind?: string; options: Record<string, Option[]>; projectId?: string }>()
 const emit = defineEmits<{ close: []; changed: [] }>()
-const vm = reactive(useTaskReview(props.kind, () => emit('changed'))), detailId = ref<string>(), filters = ref<ConditionFilterTerm[]>([])
+const vm = reactive(useTaskReview(props.kind, () => emit('changed'), props.projectId)), detailId = ref<string>(),
+  filters = ref<ConditionFilterTerm[]>(props.projectId ? [{ column: 'projectId', termType: 'eq', value: props.projectId }] : [])
 const fields = computed(() => resourceSearchFields(resources.tasks, props.options, props.kind).filter(field => field.dataIndex !== 'state'))
 const columns = computed(() => [
   ...resources.tasks.columns.filter(column => column.key !== 'kind').map(column => ({

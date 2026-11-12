@@ -13,7 +13,7 @@ const statusValues: Record<string, string[]> = {
   faults: ['open', 'processing', 'closed'],
   alerts: ['open', 'acknowledged', 'closed', 'recovered'],
   'alerts/plans': ['open', 'acknowledged', 'closed', 'recovered'],
-  'energy/readings': ['pending', 'accepted', 'rejected', 'invalid', 'superseded'],
+  'energy/readings': ['pending', 'accepted', 'rejected', 'invalid', 'superseded', 'resubmitted'],
   'energy/replacements': ['pending', 'approved', 'rejected'],
   'devices/sync': ['idle', 'running', 'success', 'failed']
 }
@@ -29,7 +29,7 @@ export function resourceSearchFields(resource: Resource, options: Record<string,
     if (['projectId', 'projectName', 'collectionLag'].includes(key) || (key === 'kind' && kind)) continue
     const field = resource.fields.find(item => item.key === key)
     let choices = field?.options || (field?.source ? options[field.source] : undefined)
-    if (key === 'energyType') choices = energyOptions
+    if (key === 'energyType') choices = field?.options || energyOptions
     if (resource.path === 'devices' && key === 'sourceState') choices = optionsFor(['online', 'offline', 'notActive'])
     if (resource.path === 'devices' && key === 'syncState') choices = optionsFor(['active', 'inactive', 'pending-project', 'source-unavailable'])
     if (key === 'meterLevel') choices = resources['energy/mappings'].fields.find(item => item.key === key)?.options

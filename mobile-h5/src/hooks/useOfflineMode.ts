@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { state } from '../services/session'
 import { facility, downloadFile } from '../api/facility'
+import { prepareOfflineResources } from '../services/offlineAssets'
 import { prepareOfflineMode } from '../services/offlineMode'
 import { cacheSummary, clearOfflineData } from '../services/offline'
 import { clearTaskScanAccess } from '../services/taskScanAccess'
@@ -19,8 +20,10 @@ export function useOfflineMode() {
     }
     if (!navigator.onLine) { error.value = '请先连接网络，再开启离线模式缓存任务'; return }
     const scope = clone(state.context)
-    state.offlineBusy = true; progress.value = '正在缓存已接单任务'
+    state.offlineBusy = true; progress.value = '正在缓存离线页面'
     try {
+      await prepareOfflineResources()
+      progress.value = '正在缓存已接单任务'
       await prepareOfflineMode(scope, facility, downloadFile, value => { progress.value = value })
       if (state.context?.userId !== scope.userId || state.context?.applicationId !== scope.applicationId || state.context?.tenantId !== scope.tenantId) throw Error('账号已切换，请重新开启离线模式')
       state.offlineMode = true; notice.value = '离线模式已开启'

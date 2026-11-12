@@ -14,6 +14,16 @@ colors:
   danger: "#bf3535"
   success: "#19845e"
 typography:
+  login-title:
+    fontSize: "28px"
+  login-brand:
+    fontSize: "18px"
+  field-control:
+    fontSize: "16px"
+  icon-small:
+    fontSize: "21px"
+  icon-brand:
+    fontSize: "22px"
   headline:
     fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Microsoft YaHei, sans-serif"
     fontSize: "23px"
@@ -36,6 +46,7 @@ typography:
   label:
     fontSize: "12px"
 rounded:
+  captcha: "4px"
   tag: "5px"
   photo: "8px"
   choice: "9px"
@@ -53,21 +64,25 @@ components:
   button-primary:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.surface}"
-    rounded: "{rounded.control}"
+    rounded:
+  captcha: "4px" "{rounded.control}"
     height: "44px"
   input:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.control}"
+    rounded:
+  captcha: "4px" "{rounded.control}"
     height: "42px"
   task-row:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.panel}"
+    rounded:
+  captcha: "4px" "{rounded.panel}"
     padding: "14px 16px"
   check-item:
     backgroundColor: "{colors.surface}"
-    rounded: "{rounded.panel}"
+    rounded:
+  captcha: "4px" "{rounded.panel}"
     padding: "18px 16px"
 ---
 
@@ -146,3 +161,5 @@ components:
 - **Don't** 将移动作业列表扩展为后台表格或嵌套大卡片。
 - **Don't** 用营销插图挤占任务和检查内容。
 - **Don't** 将单设备单次执行拆成外协双工单界面。
+
+登录页沿用天蓝色与 Vant 4：紧凑横排标识、单列顶置字段名、浅底输入框与独立主按钮，不使用嵌套卡片。验证码保留在表单内，密码可切换显示；登录校验、加载和错误状态不遮挡输入。

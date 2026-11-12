@@ -43,7 +43,7 @@ export async function verifySession() {
     throw Error(feText('theCurrentAccountDoesNotMatchTheApplicationSession'))
   if (
     !authorization.permissions.some(
-      (p) => ['facility-task', 'facility-owner'].includes(p.id) && p.actions.includes('query')
+      (p) => ['facility-task', 'facility-fault', 'facility-message'].includes(p.id) && p.actions.includes('query')
     )
   )
     throw Error(feText('thisAccountCannotAccessFacilityAndEnergyManagement'))

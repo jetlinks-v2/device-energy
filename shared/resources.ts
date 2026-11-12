@@ -1,6 +1,7 @@
 import { defaultRule } from './cycle/editor'
 import { feText } from './i18n'
 import type { Resource, Field, Option } from './types'
+import { display, type Entity } from './types'
 const options = (values: string[][]): Option[] => values.map(([value, label]) => ({ value, label }))
 export const energyOptions = options([
   ['water', feText('water')],
@@ -14,6 +15,19 @@ export const metricOptions = options([
   ['balance', feText('actualBalanceRemainingQuantity')],
   ['state', feText('status')]
 ])
+/** 指标代码不参与通用状态翻译；按每条采集记录保存的指标语义展示。 */
+export function resourceCellText(resource: Resource, key: string, row: Entity, projects: Option[] = []): string {
+  if (key === 'projectName' && !row.projectName) {
+    return projects.find(project => project.value === row.projectId)?.label || '—'
+  }
+  if (resource.path === 'energy/readings' && key === 'deviceId') {
+    return String(row.deviceName || row.deviceId || '—')
+  }
+  if (resource.path === 'energy/readings' && key === 'propertyId') {
+    return metricOptions.find(option => option.value === row.metricKind)?.label || String(row.propertyId ?? '—')
+  }
+  return display(row[key], resource.fields.find(field => field.key === key)?.options)
+}
 const f = (key: string, label: string, type: Field['type'] = 'text', source?: string): Field => ({
   key,
   label,
@@ -139,7 +153,10 @@ export const resources: Record<string, Resource> = {
     fields: [
       f('deviceId', feText('device'), 'select', 'devices'),
       { ...f('energyType', feText('energyType'), 'select'), options: energyOptions },
-      f('usageType', feText('meteringPurpose')),
+      select('usageType', feText('meteringPurpose'), [
+        ['private', feText('householdUse')],
+        ['public', feText('publicUse')]
+      ]),
       f('usagePropertyId', feText('usageMetricForAggregation'), 'select', 'properties'),
       select('meterLevel', feText('aggregationLevel'), [
         ['master', feText('masterMeter')],
@@ -266,9 +283,20 @@ export const resources: Record<string, Resource> = {
     path: 'energy/readings',
     title: feText('readingsAndManualEntryReview'),
     readonly: true,
-    fields: [],
+    fields: [f('deviceId', feText('deviceName'), 'select', 'devices'),
+      select('energyType', feText('meterType'), [
+        ['water', feText('waterMeter')], ['electricity', feText('electricMeter')], ['gas', feText('gasMeter')]
+      ]), select('metricKind', feText('metric'), [
+        ['counter', feText('cumulativeReading')], ['increment', feText('periodIncrement')]
+      ]), select('source', feText('source'), [
+      ['cloud', feText('cloudCollection')],
+      ['manual', feText('manualReadingEntry')]
+    ])],
     columns: columns([
-      ['propertyId', feText('metric')],
+      ['deviceId', feText('deviceName')],
+      ['projectName', feText('businessProject')],
+      ['energyType', feText('meterType')],
+      ['metricKind', feText('metric')],
       ['value', feText('reading')],
       ['unit', feText('unit')],
       ['source', feText('source')],

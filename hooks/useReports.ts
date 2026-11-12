@@ -3,6 +3,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { facility } from '../api'
 import type { Entity, Option, Usage } from '../shared/types'
 import { messageOf } from '../shared/types'
+import { loadOverviewEnergy } from '../shared/overview'
 export interface EnergyRow {
   deviceId: string
   name: string
@@ -11,7 +12,7 @@ export interface EnergyRow {
   unit: string
   usage: Usage
 }
-export function useReports(detailed = false) {
+export function useReports(detailed = false, autoLevel = false) {
   const projects = ref<Option[]>([]),
     projectId = ref<string>(),
     overview = ref<Record<string, unknown>>({}),
@@ -21,7 +22,7 @@ export function useReports(detailed = false) {
     error = ref(''),
     from = ref(Date.now() - 86400000),
     to = ref(Date.now()),
-    level = ref('master'),
+    level = ref(autoLevel ? 'auto' : 'master'),
     operations = ref<{
       tasks: {
         kind: string
@@ -62,14 +63,15 @@ export function useReports(detailed = false) {
       const aggregation = '&level=' + level.value
       const [summary, energy, operationResult, comparisonResult, targetResult] = await Promise.all([
         facility.get<Record<string, unknown>>('reports/overview?' + query),
-        facility.get<EnergyRow[]>('reports/energy?' + query + range + aggregation),
+        loadOverviewEnergy(candidate => facility.get<EnergyRow[]>('reports/energy?' + query + range + '&level=' + candidate), level.value),
         detailed ? facility.get<typeof operations.value>('reports/operations?' + query + range) : undefined,
         detailed ? facility.get<typeof comparison.value>('reports/comparison?' + query + range + aggregation) : [],
         detailed ? facility.get<Record<string, unknown>[]>('reports/targets/execution?' + query + 'year=' + year.value + '&month=' + month.value) : []
       ])
       if (current !== generation) return
       overview.value = summary
-      rows.value = energy
+      rows.value = energy.rows
+      level.value = energy.level
       operations.value = operationResult
       comparison.value = comparisonResult
       targets.value = targetResult

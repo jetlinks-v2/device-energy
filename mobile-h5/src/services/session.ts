@@ -59,6 +59,9 @@ export function clearSession() {
 export const can = (action: string) =>
   !!state.authorization?.permissions.find((p) => p.id === 'facility-task')?.actions.includes(action)
 
+export const canMessage = () => !!state.authorization?.permissions.find(p => p.id === 'facility-message')?.actions.includes('query')
+export const canWorkspace = () => !!state.authorization?.permissions.some(p => ['facility-task', 'facility-fault', 'facility-message'].includes(p.id) && p.actions.includes('query'))
+
 /** 仅受信宿主可交接会话；业务身份和应用授权随后必须通过真实后端核验。 */
 export function attachHostBridge(onSession: () => Promise<void>) {
   const nonce = randomId()

@@ -29,7 +29,7 @@ function setup(projectId, fail = false, flags = {}) {
       if (fail) throw new Error('无权查询项目人员')
       return [{ id: 'employee', name: '项目员工' }]
     },
-    get: async path => path.endsWith('/history') ? { data: [] } : undefined
+    get: async path => { calls.push(path); return path.endsWith('/history') ? { data: [] } : undefined }
   }
   new Function('transport', 'module', 'exports', bundled.outputFiles[0].text)(transport, module, module.exports)
   return { calls, vm: module.exports.useDevice({ id: 'device', projectId: 'stale-project' }) }
@@ -41,6 +41,15 @@ test('负责人依据重新读取的设备所属项目查询，编码项目ID，
   assert.ok(calls.includes('employees/project%2Fa'))
   assert.equal(calls.includes('employees'), false)
   assert.deepEqual(vm.options.employees, [{ value: 'employee', label: '项目员工' }])
+})
+
+test('设备详情只加载档案所需目录和操作历史，不加载已移除页签的数据', async () => {
+  const { vm, calls } = setup('project')
+  await vm.refresh()
+  assert.deepEqual(calls, ['employees/project', 'spaces/project', 'devices/device/history'])
+  assert.deepEqual(vm.history.value, [])
+  assert.equal(vm.error.value, '')
+  assert.equal(vm.busy.value, false)
 })
 
 test('合并开关兼容旧单侧启用，保存时同步两字段，关闭时全部关闭', async () => {

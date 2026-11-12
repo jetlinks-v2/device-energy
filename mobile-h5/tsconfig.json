@@ -14,8 +14,7 @@
     "resolveJsonModule": true,
     "types": [
       "vite/client",
-      "node",
-      "ant-design-vue/typings/global"
+      "node"
     ],
     "noEmit": true,
     "allowImportingTsExtensions": true
@@ -23,8 +22,6 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.vue",
-    "../components/ExecutionForm.vue",
-    "../components/SeriesChart.vue",
     "vite.config.ts"
   ]
 }

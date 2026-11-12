@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { feText } from '../shared/i18n'
 import { computed, reactive, ref } from 'vue'
-import { resources } from '../shared/resources'
+import { useRoute } from 'vue-router'
+import { overviewTerms } from '../shared/overview'
+import { selectedProject } from '../shared/tableQuery'
+import { resources, resourceCellText } from '../shared/resources'
 import { resourcePermission } from '../shared/permissions'
 import { collectionLag, display, time, taskTime, type Entity, type Device } from '../shared/types'
 import { useResource } from '../hooks/useResource'
@@ -32,20 +35,28 @@ const save = async () => {
   try { recordForm.value?.validateCycle(); await vm.save() }
   catch (cause) { vm.error = cause instanceof Error ? cause.message : String(cause) }
 }
-const filters = ref<ConditionFilterTerm[]>([])
+const route = useRoute()
+const initialTerms = overviewTerms(props.resource, route.query)
+const filters = ref<ConditionFilterTerm[]>(props.resource === 'devices' ? [] : initialTerms)
+// 工作台入口保留项目和业务快捷条件，设备页项目由独立选择器承接。
+if (!props.legacy && initialTerms.length) {
+  vm.filter(filters.value)
+  vm.projectId = selectedProject(initialTerms)
+}
 const fields = computed(() => resourceSearchFields(config.value, vm.options, props.kind))
+const showActions = computed(() => !['collection', 'readings'].includes(props.resource))
 const columns = computed(() => [
   ...config.value.columns.map((c) => ({ title: c.title, dataIndex: c.key, key: 'cell-' + c.key, scopedSlots: true, width: timeColumns.has(c.key) ? 185 : 160 })),
-  { title: feText('actions'), key: 'actions', dataIndex: 'actions', scopedSlots: true, width: props.resource === 'devices' ? 100 : 280, fixed: 'right' }
+  ...(showActions.value ? [{ title: feText('actions'), key: 'actions', dataIndex: 'actions', scopedSlots: true, width: props.resource === 'devices' ? 100 : 280, fixed: 'right' }] : [])
 ])
 const legacyColumns = computed(() => [
   ...config.value.columns.map(column => ({ title: column.title, dataIndex: column.key, key: column.key })),
-  { title: feText('actions'), key: 'actions', width: 280 }
+  ...(showActions.value ? [{ title: feText('actions'), key: 'actions', width: 280 }] : [])
 ])
 const open = (row: Entity) => {
   if (props.resource === 'devices') device.value = row as Device
   else if (props.resource === 'tasks') taskId.value = row.id
-  else if (props.resource === 'faults') vm.detail = row
+  else if (['faults', 'readings'].includes(props.resource)) vm.detail = row
   else vm.edit(row)
 }
 const closeDevice = () => {
@@ -60,6 +71,7 @@ const changes = (v: { current?: number }) => {
   vm.page = v.current || 1
 }
 const setTable = (value: unknown) => { vm.table = value ? value as TableHandle : undefined }
+const cellText = (key: string, row: Entity) => resourceCellText(config.value, key, row, vm.options.projects)
 </script>
 
 <template>
@@ -122,6 +134,7 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
         name="tools"
         :rows="vm.rows"
         :project-id="vm.projectId"
+        :options="vm.options"
         :refresh="vm.refresh"
       />
       <template v-if="legacy && config.collection">
@@ -166,7 +179,7 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
         <template v-else-if="column.key === 'collectionLag'">
           {{ collectionLag(record as Entity) }}
         </template>
-        <template v-else>{{ display(record[String(column.key)]) }}</template>
+        <template v-else>{{ cellText(String(column.key), record as Entity) }}</template>
       </template>
       <template #emptyText><a-empty :description="feText('noRecords')" /></template>
     </a-table>
@@ -188,7 +201,7 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
           :status="connectionStatusTones[String(record[column.dataIndex])] || 'default'" />
         <template v-else-if="timeColumns.has(column.dataIndex)">{{ record[column.dataIndex] === 9223372036854775807 ? '—' : (resource === 'tasks' ? taskTime(record[column.dataIndex]) : time(record[column.dataIndex])) }}</template>
         <template v-else-if="column.dataIndex === 'collectionLag'">{{ collectionLag(record) }}</template>
-        <template v-else>{{ display(record[column.dataIndex]) }}</template>
+        <template v-else>{{ cellText(column.dataIndex, record) }}</template>
       </template>
     </j-pro-table>
     <a-modal
@@ -199,8 +212,9 @@ const setTable = (value: unknown) => { vm.table = value ? value as TableHandle :
     >
       <a-descriptions v-if="vm.detail" :column="1" bordered>
         <a-descriptions-item v-for="column in config.columns" :key="column.key" :label="column.title">
-          {{ display(vm.detail[column.key]) }}
+          {{ timeColumns.has(column.key) ? time(vm.detail[column.key]) : cellText(column.key, vm.detail) }}
         </a-descriptions-item>
+        <a-descriptions-item v-if="resource === 'readings'" :label="feText('reasonForManualReading')">{{ vm.detail.reason || '—' }}</a-descriptions-item>
       </a-descriptions>
     </a-modal>
     <a-modal

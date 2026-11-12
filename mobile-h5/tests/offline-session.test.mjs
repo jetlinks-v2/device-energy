@@ -37,3 +37,13 @@ test('server refusal, expired identity or disabled mode never falls back to cach
   await assert.rejects(verify);assert.equal(ports.state.context,undefined)
  }
 })
+
+
+test('employee entry accepts task, fault or message query permission and rejects owner-only access',async()=>{
+ for(const id of ['facility-task','facility-fault','facility-message']){
+  const {ports,verify}=setup();ports.cached.authorization.permissions=[{id,actions:['query']}]
+  await verify();assert.equal(ports.state.context.userId,'worker')
+ }
+ const {ports,verify}=setup();ports.cached.authorization.permissions=[{id:'facility-owner',actions:['query']}]
+ await assert.rejects(verify)
+})

@@ -1,174 +1,82 @@
 <script setup lang="ts">
-import FacilityWorkspace from '../../../components/FacilityWorkspace.vue'
-import { feText } from '../../../shared/i18n'
 import { reactive } from 'vue'
 import ConditionFilter from '@jetlinks-web-core/components/ConditionFilter'
-import FacilityDataTable from '../../../components/FacilityDataTable.vue'
-import { useReportSearch } from '../../../hooks/useReportSearch'
-import { useReports } from '../../../hooks/useReports'
+import FacilityWorkspace from '../../../components/FacilityWorkspace.vue'
 import ResourcePage from '../../../components/ResourcePage.vue'
-import { display, energyNames } from '../../../shared/types'
-const reports = useReports(true)
-const vm = reactive(reports)
-const search = reactive(useReportSearch(reports, true))
+import TaskDetail from '../../../components/TaskDetail.vue'
+import ReportOperationsPanel from '../../../components/reports/ReportOperationsPanel.vue'
+import ReportDrillDrawer from '../../../components/reports/ReportDrillDrawer.vue'
+import ReportChart from '../../../components/reports/ReportChart.vue'
+import { useReportAnalysis } from '../../../hooks/useReportAnalysis'
+import { feText } from '../../../shared/i18n'
+import { energyNames } from '../../../shared/types'
+const vm = reactive(useReportAnalysis())
+const shortcuts = [
+  { value: 'month', label: feText('reportThisMonth') }, { value: 'last', label: feText('reportLastMonth') }, { value: 'custom', label: feText('reportCustom') }
+]
+const levels = [
+  { value: 'master', label: feText('masterMeter') }, { value: 'submeter', label: feText('submeter') },
+  { value: 'branch', label: feText('branch') }, { value: 'other', label: feText('other') }
+]
 </script>
-
 <template>
   <FacilityWorkspace>
-    <section class="facility-page">
-      <a-alert
-        v-if="vm.error"
-        type="error"
-        :message="vm.error"
-        show-icon
-      />
-      <ConditionFilter v-model="search.terms" :fields="search.fields" class="facility-search" @change="search.change" />
-      <div class="facility-toolbar facility-actions">
-        <a-button :disabled="!search.valid || !vm.rows.length || vm.busy" @click="vm.exportCsv">{{ feText('exportCurrentResults') }}</a-button>
+    <section class="facility-page reports-workspace">
+      <div class="reports-filters">
+        <ConditionFilter v-model="vm.terms" :fields="vm.fields" @change="vm.change" />
+        <a-segmented :value="vm.shortcut" :options="shortcuts" :aria-label="feText('reportPeriod')" @change="vm.setShortcut" />
+        <a-button :disabled="!vm.valid || !vm.panel.data || vm.panel.loading || !!vm.panel.error" @click="vm.exportCsv"><AIcon type="DownloadOutlined" />{{ feText('exportCurrentResults') }}</a-button>
       </div>
-      <a-descriptions
-        bordered
-        style="margin-bottom: 20px"
-      >
-        <a-descriptions-item :label="feText('inspectionAndMaintenanceCompletionRate')">{{ vm.overview.completionRate ?? '—' }}%</a-descriptions-item>
-        <a-descriptions-item :label="feText('overdueTasks')">{{ vm.overview.overdue }}</a-descriptions-item>
-        <a-descriptions-item :label="feText('pendingAlerts')">{{ vm.overview.alerts }}</a-descriptions-item>
-      </a-descriptions>
-      <FacilityDataTable
-        :data-source="vm.rows"
-        :loading="vm.busy"
-        :row-key="(r) => r.deviceId + r.propertyId"
-        :columns="[
-          { title: feText('meter'), dataIndex: 'name' },
-          { title: feText('energy'), key: 'energy' },
-          { title: feText('metric'), dataIndex: 'propertyId' },
-          { title: feText('usage'), key: 'usage' },
-          { title: feText('unit'), dataIndex: 'unit' },
-          { title: feText('completeness'), key: 'complete' }
-        ]"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'energy'">{{ energyNames[record.energyType] }}</template>
-          <template v-else-if="column.key === 'usage'">{{ record.usage.value }}</template>
-          <template v-else-if="column.key === 'complete'">
-            <a-tag :color="record.usage.complete ? 'green' : 'orange'">
-              {{ record.usage.complete ? feText('complete') : feText('incomplete') }}
-            </a-tag>
-          </template>
-          <template v-else>{{ display(record[column.dataIndex]) }}</template>
+      <a-alert v-if="vm.error" type="error" :message="vm.error" show-icon />
+      <a-tabs v-model:active-key="vm.tab" @change="vm.changeTab">
+        <a-tab-pane key="work" :tab="feText('reportOperations')" />
+        <a-tab-pane key="faults" :tab="feText('reportFaultAlerts')" />
+        <a-tab-pane key="energy" :tab="feText('reportEnergy')" />
+      </a-tabs>
+      <div class="reports-controls">
+        <a-segmented v-if="vm.tab === 'work'" v-model:value="vm.kind" :options="[{ value: 'inspection', label: feText('inspection') }, { value: 'maintenance', label: feText('maintenance') }]" @change="vm.invalidate" />
+        <a-segmented v-else-if="vm.tab === 'faults'" v-model:value="vm.faultMode" :options="[{ value: 'faults', label: feText('overviewFaultRecords') }, { value: 'alerts', label: feText('alertEvents') }]" @change="vm.invalidate" />
+        <template v-else>
+          <a-radio-group v-model:value="vm.energyType" button-style="solid" :class="['reports-energy', vm.energyType]" @change="vm.invalidate"><a-radio-button v-for="(name, type) in energyNames" :key="type" :value="type">{{ name }}</a-radio-button></a-radio-group>
+          <a-select v-model:value="vm.level" :options="levels" :aria-label="feText('aggregationLevel')" style="width: 120px" @change="vm.invalidate" />
+          <a-segmented v-model:value="vm.period" :options="[{ value: 'day', label: feText('reportDaily') }, { value: 'month', label: feText('reportMonthly') }]" @change="vm.invalidate" />
+          <j-permission-button hasPermission="facility/Reports:save" @click="vm.planOpen = true">{{ feText('reportPlanSettings') }}</j-permission-button>
         </template>
-      </FacilityDataTable>
-      <a-divider>{{ feText('completedAndOverdueWork') }}</a-divider>
-      <FacilityDataTable
-        :data-source="vm.operations?.tasks || []"
-        row-key="kind"
-        :pagination="false"
-        :columns="[
-          { title: feText('type'), dataIndex: 'kind' },
-          { title: feText('tasks'), dataIndex: 'total' },
-          { title: feText('completedTasks'), dataIndex: 'completed' },
-          { title: feText('completionRate'), dataIndex: 'completionRate' },
-          { title: feText('overdueCount'), dataIndex: 'overdue' },
-          { title: feText('overdueRate'), dataIndex: 'overdueRate' }
-        ]"
-      />
-      <a-divider>{{ feText('faultTrendsAndNotificationStatistics') }}</a-divider>
-      <a-descriptions bordered>
-        <a-descriptions-item
-          v-for="(count, state) in vm.operations?.notifications"
-          :key="state"
-          :label="String(state)"
-        >
-          {{ count }}
-        </a-descriptions-item>
-      </a-descriptions>
-      <FacilityDataTable
-        :data-source="Object.entries(vm.operations?.faultTrend || {}).map(([date, count]) => ({ date, count }))"
-        row-key="date"
-        :columns="[
-          { title: feText('date'), dataIndex: 'date' },
-          { title: feText('newFaults'), dataIndex: 'count' }
-        ]"
-      />
-      <a-divider>{{ feText('periodAndYearComparisons') }}</a-divider>
-      <p>{{ feText('growthRatesAreHiddenWhenDataIsIncompleteOrTheBaselineIs') }}</p>
-      <FacilityDataTable
-        :data-source="vm.comparison"
-        :row-key="(row) => row.deviceId + row.propertyId"
-        :columns="[
-          { title: feText('meter'), dataIndex: 'name' },
-          { title: feText('unit'), dataIndex: 'unit' },
-          { title: feText('changeFromPreviousPeriod'), dataIndex: 'previousRate' },
-          { title: feText('changeFromPreviousYear'), dataIndex: 'lastYearRate' }
-        ]"
-      />
-      <a-divider>{{ feText('dailyMonthlyAnnualReports') }}</a-divider>
-      <ConditionFilter v-model="search.periodTerms" :fields="search.periodFields" class="facility-search" @change="search.changePeriod" />
-      <div class="facility-toolbar facility-actions">
-        <a-button :disabled="!search.valid || !search.periodValid" :loading="vm.busy" @click="vm.loadPeriods">{{ feText('generatePeriodReport') }}</a-button>
+        <a-button :loading="vm.panel.loading" @click="vm.refresh"><AIcon type="ReloadOutlined" />{{ feText('refresh') }}</a-button>
+        <a-button :disabled="!vm.valid || !vm.panel.data" @click="vm.openDrill()">{{ feText('reportDetails') }}</a-button>
       </div>
-      <a-collapse v-if="vm.periodRows.length" style="margin-top: 16px">
-        <a-collapse-panel
-          v-for="row in vm.periodRows"
-          :key="row.period"
-          :header="row.period"
-        >
-          <FacilityDataTable
-            :data-source="row.meters"
-            :row-key="(r) => r.deviceId + r.propertyId"
-            :pagination="false"
-            :columns="[
-              { title: feText('meter'), dataIndex: 'name' },
-              { title: feText('energy'), dataIndex: 'energyType' },
-              { title: feText('usage'), key: 'usage' },
-              { title: feText('unit'), dataIndex: 'unit' }
-            ]"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'usage'">
-                {{ record.usage.value }}
-                <a-tag
-                  v-if="!record.usage.complete"
-                  color="orange"
-                >
-                  {{ feText('incomplete') }}
-                </a-tag>
-              </template>
-              <template v-else>{{ display(record[column.dataIndex]) }}</template>
-            </template>
-          </FacilityDataTable>
-        </a-collapse-panel>
-      </a-collapse>
-      <a-divider>{{ feText('monthlyEnergyPlanProgress') }}</a-divider>
-      <FacilityDataTable
-        :data-source="vm.targets"
-        row-key="id"
-        :columns="[
-          { title: feText('project'), dataIndex: 'projectId' },
-          { title: feText('energy'), dataIndex: 'energyType' },
-          { title: feText('target'), dataIndex: 'target' },
-          { title: feText('actual'), dataIndex: 'actual' },
-          { title: feText('unit'), dataIndex: 'unit' },
-          { title: feText('progress'), dataIndex: 'executionRate' },
-          { title: feText('completeness'), key: 'complete' }
-        ]"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'complete'">
-            <a-tag :color="record.complete ? 'green' : 'orange'">
-              {{ record.complete ? feText('complete') : feText('incompleteDataOrInconsistentUnits') }}
-            </a-tag>
-            <a-tag
-              v-if="record.exceeded"
-              color="red"
-            >
-              {{ feText('planTargetReachedOrExceeded') }}
-            </a-tag>
+      <a-alert v-if="vm.panel.error" type="error" :message="vm.panel.error" show-icon><template #action><a-button size="small" @click="vm.refresh">{{ feText('retry') }}</a-button></template></a-alert>
+      <a-spin :spinning="vm.panel.loading">
+        <template v-if="vm.tab !== 'energy'"><ReportOperationsPanel :view="vm.view" @drill="vm.chartClick" /></template>
+        <template v-else>
+          <p class="reports-note">{{ vm.view.note }}</p>
+          <a-alert v-if="vm.panels.energy.data?.summary.meterCount === 0" type="info" :message="feText('reportNoMeters')" show-icon><template #action><a-button @click="vm.configureMeters">{{ feText('reportConfigureMeters') }}</a-button></template></a-alert>
+          <template v-else>
+            <div class="reports-metrics"><div v-for="metric in vm.view.metrics" :key="metric.title"><span>{{ metric.title }}</span><strong>{{ metric.value }}</strong></div></div>
+            <a-alert v-if="vm.panels.energy.data && !vm.panels.energy.data.summary.accepted" type="info" :message="feText('reportNoValidReadings')" show-icon />
+            <a-alert v-else-if="vm.panels.energy.data && !vm.panels.energy.data.summary.complete" type="warning" :message="feText('reportIncompleteUsage')" show-icon />
+            <ReportChart :chart="vm.view.main" @click="vm.chartClick($event)" />
+            <p v-if="vm.panels.energy.data?.summary.previousRate == null" class="reports-note">{{ feText('reportNoHistory') }}</p>
+            <div class="reports-support"><ReportChart :chart="vm.view.left" @click="vm.openDrill()" /><a-spin :spinning="vm.panels.targets.loading"><a-alert v-if="vm.panels.targets.error" type="error" :message="vm.panels.targets.error" show-icon><template #action><a-button @click="vm.refresh">{{ feText('retry') }}</a-button></template></a-alert><ReportChart v-if="vm.view.right" :chart="vm.view.right" @click="vm.planOpen = true" /><p v-if="vm.panels.targets.data?.count === 0" class="reports-note">{{ feText('reportNoPlan') }}</p></a-spin></div>
           </template>
-          <template v-else>{{ display(record[column.dataIndex]) }}</template>
         </template>
-      </FacilityDataTable>
-      <ResourcePage resource="targets" />
+      </a-spin>
+      <ReportDrillDrawer v-if="vm.drill" :drill="vm.drill" :request="vm.requestDetails" @close="vm.drill = undefined" @original="vm.original" />
+      <TaskDetail v-if="vm.taskId" :id="vm.taskId" @close="vm.taskId = undefined" @changed="vm.refresh" />
+      <a-drawer :open="vm.planOpen" :title="feText('reportPlanSettings')" width="min(1000px, 100vw)" destroy-on-close @close="vm.planOpen = false; vm.refresh()"><ResourcePage resource="targets" /></a-drawer>
     </section>
   </FacilityWorkspace>
 </template>
+<style scoped>
+.reports-filters, .reports-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px; }
+.reports-filters > :first-child { flex: 1; min-width: 320px; }
+.reports-controls > :last-child { margin-left: auto; }
+.reports-note { color: var(--ant-color-text-secondary); margin: 12px 0; }
+.reports-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+.reports-metrics > div { padding: 12px 14px; border-radius: 8px; background: var(--ant-color-fill-quaternary); }
+.reports-metrics span { display: block; color: var(--ant-color-text-secondary); font-size: 12px; }
+.reports-metrics strong { display: block; margin-top: 5px; font-size: 22px; }
+.reports-support { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.reports-energy.water { --ant-color-primary: #0891d2; }.reports-energy.electricity { --ant-color-primary: #7c5ce7; }.reports-energy.gas { --ant-color-primary: #e28a2d; }
+@media (max-width: 900px) { .reports-metrics { grid-template-columns: 1fr 1fr; }.reports-support { grid-template-columns: 1fr; } }
+</style>

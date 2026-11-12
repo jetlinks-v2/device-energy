@@ -1,13 +1,13 @@
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { facility } from '../api/facility'
-import { state, can } from '../services/session'
+import { state, canMessage } from '../services/session'
 
 export const unreadMessages = ref(0)
 const identity = () => [state.context?.tenantId, state.context?.applicationId, state.context?.userId, state.projectId].join(':')
 let generation = 0
 export async function refreshMessageBadge() {
   const ticket = ++generation, key = identity(), project = state.projectId
-  if (!state.context || !project || !can('query')) { unreadMessages.value = 0; return }
+  if (!state.context || !project || !canMessage()) { unreadMessages.value = 0; return }
   if (!navigator.onLine) return
   const count = await facility.unreadMessages(project)
   // 切换账号、项目或更晚请求返回后，旧响应不得覆盖当前人的未读数。

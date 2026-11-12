@@ -6,6 +6,20 @@ import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
+
+test('员工移动端可独立授权维修与消息，照片查询和上传随业务权限配置', async () => {
+  const menu = JSON.parse(await readFile(resolve(root, 'baseMenu.json'), 'utf8'))[0].children
+  const employee = menu.find(item => item.code === 'facility/Employee')
+  for (const id of ['facility-task', 'facility-fault', 'facility-alert', 'facility-message', 'file']) {
+    assert.ok(employee.permissions.some(entry => entry.permission === id && entry.actions.includes('query')))
+  }
+  assert.ok(employee.buttons.find(button => button.id === 'repair').permissions.some(entry => entry.permission === 'facility-fault' && entry.actions.includes('save')))
+  assert.ok(employee.buttons.find(button => button.id === 'repair-review').permissions.some(entry => entry.permission === 'facility-fault' && entry.actions.includes('review')))
+  const faults = menu.find(item => item.code === 'facility/Faults')
+  assert.ok(faults.permissions.some(entry => entry.permission === 'file' && entry.actions.includes('query')))
+  assert.ok(faults.buttons.find(button => button.id === 'save').permissions.some(entry => entry.permission === 'file' && entry.actions.includes('save')))
+  assert.equal(employee.permissions.some(entry => entry.actions.includes('dispatch') || entry.actions.includes('review')), false)
+})
 test('巡检维保各五个真实菜单可单独初始化、授权且具有对应的固定类型路由', async () => {
   const menu = JSON.parse(await readFile(resolve(root, 'baseMenu.json'), 'utf8'))[0].children
   const suffixes = ['Tasks', 'Standards', 'Cycles', 'Plans', 'Groups']

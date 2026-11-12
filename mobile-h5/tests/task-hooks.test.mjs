@@ -11,7 +11,7 @@ async function bundle(file) {
     builder.onLoad({ filter: /.*/, namespace: 'port' }, args => ({ contents: {
       vue,
       '../api/facility': 'export const facility = ports.api',
-      '../services/session': 'export const state = ports.state;export const can = action=>ports.permissions.includes(action)',
+      '../services/session': 'export const state = ports.state;export const can = action=>ports.permissions.includes(action);export const canWorkspace=()=>ports.state.authorization?.permissions.some(p=>["facility-task","facility-fault","facility-message"].includes(p.id)&&p.actions.includes("query"))',
       './useProjects': 'export const projectsReady={value:true}',
       './useConnection': 'export const useConnection=()=>({value:true})',
       '../services/offline': 'export const cachedTasks=()=>Promise.resolve([]);export const entries=()=>Promise.resolve([])'
@@ -151,4 +151,14 @@ test('history is shown only for the whole task; device details never request a s
   await vm.loadHistory(); assert.equal(calls, 0)
   delete task.parentTaskId; task.id = 'task'
   await vm.loadHistory(); assert.equal(calls, 1); assert.equal(vm.history.value[0].id, 'log')
+})
+
+
+test('message-only and repair-only employees can select their authorized project', async () => {
+ globalThis.sessionStorage={getItem:()=>null,setItem:()=>{}}
+ for(const id of ['facility-fault','facility-message']){
+  const account={context:{userId:id},authorization:{permissions:[{id,actions:['query']}]}}
+  const vm=projectHooks({state:account,api:{options:async()=>[{id:'project'}]}})
+  await vm.loadProjects();assert.equal(account.projectId,'project')
+ }
 })

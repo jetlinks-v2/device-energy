@@ -16,7 +16,75 @@ const load = (file) => {
 const { resourceQuery, selectedProject, localTablePage } = load('shared/tableQuery.ts')
 const { reportFilterValues } = load('shared/reportSearch.ts')
 const { resourceSearchFields } = load('shared/resourceSearch.ts')
-const { resources } = load('shared/resources.ts')
+const { resources, resourceCellText } = load('shared/resources.ts')
+
+test('历史设备组缺项目名称时按当前授权项目目录展示，不泄露不可见项目ID', () => {
+  const projects = [{ value: 'p1', label: '5G园区' }]
+  assert.equal(resourceCellText(resources.groups, 'projectName', { id: 'g', projectId: 'p1' }, projects), '5G园区')
+  assert.equal(resourceCellText(resources.groups, 'projectName', { id: 'g', projectId: 'other' }, projects), '—')
+  assert.equal(resourceCellText(resources.groups, 'projectName', { id: 'g', projectId: 'p1', projectName: '历史项目' }, projects), '历史项目')
+})
+const { display } = load('shared/types.ts')
+
+test('抄表展示设备和仪表类型，搜索提交真实设备ID及指标类型', () => {
+  const resource = resources.readings
+  const row = { id: 'r', deviceId: 'd1', deviceName: '201水表', energyType: 'water', metricKind: 'counter' }
+  assert.equal(resourceCellText(resource, 'deviceId', row), '201水表')
+  assert.equal(resourceCellText(resource, 'deviceId', { id: 'r', deviceId: 'd1' }), 'd1')
+  assert.equal(resourceCellText(resource, 'energyType', row), '水表')
+  assert.equal(resourceCellText(resource, 'energyType', { id: 'r', energyType: 'electricity' }), '电表')
+  assert.equal(resourceCellText(resource, 'energyType', { id: 'r', energyType: 'gas' }), '燃气表')
+  assert.equal(resourceCellText(resource, 'metricKind', row), '累计读数')
+  assert.ok(resource.columns.some(column => column.key === 'projectName'))
+  const fields = resourceSearchFields(resource, { devices: [{ value: 'd1', label: '201水表' }] })
+  assert.deepEqual(fields.find(field => field.dataIndex === 'deviceId').search.options, [{ value: 'd1', label: '201水表' }])
+  assert.deepEqual(fields.find(field => field.dataIndex === 'metricKind').search.options.map(option => option.value), ['counter', 'increment'])
+  assert.equal(fields.find(field => field.dataIndex === 'energyType').search.options[0].label, '水表')
+  assert.ok(fields.some(field => field.dataIndex === 'projectId'))
+  assert.equal(fields.some(field => ['deviceName', 'propertyId', 'projectName'].includes(field.dataIndex)), false)
+})
+
+test('读数指标按记录的指标类型展示，同名属性不会被通用状态翻译误判', () => {
+  const readings = resources.readings
+  for (const propertyId of ['total', 'meter_total', '累计用量']) {
+    assert.equal(resourceCellText(readings, 'propertyId', { id: 'r', propertyId, metricKind: 'counter' }), '累计读数')
+  }
+  assert.equal(resourceCellText(readings, 'propertyId', { id: 'r', propertyId: 'increment', metricKind: 'increment' }), '周期增量')
+  assert.equal(resourceCellText(readings, 'propertyId', { id: 'r', propertyId: 'increment', metricKind: 'instant' }), '瞬时指标')
+  assert.equal(resourceCellText(readings, 'propertyId', { id: 'r', propertyId: 'increment' }), 'increment')
+  assert.equal(resourceCellText(readings, 'propertyId', { id: 'r' }), '—')
+})
+
+test('读数来源用中文选项展示，搜索仍提交来源代码，不改写原始读数', () => {
+  const row = { id: 'r', source: 'cloud', propertyId: 'total', metricKind: 'counter', value: 1220.6095 }
+  const before = structuredClone(row)
+  assert.equal(resourceCellText(resources.readings, 'source', row), 'Cloud采集')
+  assert.equal(resourceCellText(resources.readings, 'source', { id: 'r', source: 'manual' }), '人工补录')
+  assert.equal(resourceCellText(resources.readings, 'source', { id: 'r', source: 'legacy' }), 'legacy')
+  assert.deepEqual(row, before)
+  const source = resourceSearchFields(resources.readings, {}).find(field => field.dataIndex === 'source')
+  assert.ok(source.search.options.some(option => option.value === 'cloud' && option.label === 'Cloud采集'))
+})
+
+test('仪表用途和统计层级复用中文选项，筛选提交原始代码且兼容旧自定义用途', () => {
+  const mapping = resources['energy/mappings']
+  for (const [key, values] of [
+    ['usageType', { private: '户用', public: '公用' }],
+    ['meterLevel', { master: '总表', submeter: '分表', branch: '支路', other: '其他' }]
+  ]) {
+    const field = mapping.fields.find(field => field.key === key)
+    assert.equal(field.type, 'select')
+    const search = resourceSearchFields(mapping, {}).find(field => field.dataIndex === key)
+    for (const [code, label] of Object.entries(values)) {
+      assert.equal(display(code, field.options), label)
+      assert.ok(search.search.options.some(option => option.value === code && option.label === label))
+    }
+  }
+  assert.equal(display('自定义历史用途', mapping.fields.find(field => field.key === 'usageType').options), '自定义历史用途')
+  assert.equal(display('private'), 'private')
+  assert.equal(display(null), '—')
+  assert.equal(display(false), '停用')
+})
 
 test('用户 OR 查询仍被限制在当前巡检或维保类型内，并保留分页排序', () => {
   const query = { pageIndex: 2, pageSize: 24, sorts: [{ name: 'createTime', order: 'desc' }], terms: [

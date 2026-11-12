@@ -18,18 +18,29 @@ const bundled = await build({
     }[args.path] }))
   } }]
 })
-function setup(kind = 'inspection') {
+function setup(kind = 'inspection', projectId) {
   const calls = [], transport = {
     taskReviews: async (...args) => { calls.push(['query', ...args]); return { data: [], total: 0 } },
     action: async (...args) => { calls.push(args) }
   }, module = { exports: {} }
   new Function('transport', 'module', 'exports', bundled.outputFiles[0].text)(transport, module, module.exports)
   let changes = 0, reloads = 0
-  const vm = module.exports.useTaskReview(kind, () => changes++)
+  const vm = module.exports.useTaskReview(kind, () => changes++, projectId)
   vm.table.value = { reload: () => reloads++ }
   return { vm, transport, calls, api: module.exports, counts: () => ({ changes, reloads }) }
 }
 const task = (id, version = 3) => ({ id, version, name: id, state: 'review', kind: 'inspection' })
+
+test('工作台打开审批沿用当前项目和作业类型，普通入口保留原默认范围', async () => {
+  const { vm, calls } = setup('maintenance', 'project/a')
+  assert.deepEqual(vm.params.value.terms, [{ column: 'projectId', termType: 'eq', value: 'project/a' }])
+  await vm.request({ terms: vm.params.value.terms, pageSize: 12 })
+  assert.deepEqual(calls[0][1].terms, [
+    { column: 'kind', value: 'maintenance' },
+    { type: 'and', terms: [{ column: 'projectId', termType: 'eq', value: 'project/a' }] }
+  ])
+  assert.deepEqual(setup().vm.params.value.terms, [])
+})
 
 test('审批列表使用专用接口，查询类型取交集，翻页与搜索清空选择', async () => {
   const { vm, calls } = setup()
