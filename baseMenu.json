@@ -2427,47 +2427,6 @@
         ]
       },
       {
-        "id": "facility-Owner",
-        "code": "facility/Owner",
-        "name": "业主移动端",
-        "url": "/facility/owner",
-        "owner": "app",
-        "sortIndex": 102,
-        "parentId": "facility-management",
-        "permissions": [
-          {
-            "permission": "facility-owner",
-            "actions": [
-              "query"
-            ]
-          }
-        ],
-        "buttons": [],
-        "assetTypes": [],
-        "options": {
-          "show": false,
-          "meta": {
-            "componentCode": "facility/Owner"
-          }
-        },
-        "status": 1,
-        "runtime": true,
-        "accessSupport": "support",
-        "granted": true,
-        "icon": "SettingOutlined",
-        "i18nMessages": {
-          "name": {
-            "en": "Owner mobile",
-            "zh": "业主移动端",
-            "en_US": "Owner mobile",
-            "zh_CN": "业主移动端"
-          }
-        },
-        "showPage": [
-          "facility-owner"
-        ]
-      },
-      {
         "id": "facility-Configuration",
         "code": "facility/Configuration",
         "name": "配置管理",
