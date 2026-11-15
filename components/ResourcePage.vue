@@ -87,8 +87,8 @@ const cellText = (key: string, row: Entity) => resourceCellText(config.value, ke
     />
     <div :class="{ 'facility-resource-controls--inline': resource === 'devices' && !legacy }">
     <a-select v-if="resource === 'devices' && !legacy"
-      v-model:value="vm.projectId" :placeholder="feText('allBusinessProjects')"
-      allow-clear show-search option-filter-prop="label"
+      v-model:value="vm.projectId" :placeholder="feText('chooseProject')"
+      show-search option-filter-prop="label"
       :options="vm.options.projects || []" class="facility-toolbar__project" />
     <ConditionFilter v-if="!legacy" v-model="filters" :fields="fields" class="facility-search"
       @change="vm.filter($event.filter.terms)" />
@@ -118,10 +118,11 @@ const cellText = (key: string, row: Entity) => resourceCellText(config.value, ke
       <j-permission-button :hasPermission="resourcePermission(resource, kind)"
         v-if="resource === 'devices'"
         type="primary"
-        :loading="vm.busy"
+        :loading="vm.syncing"
+        :title="feText('syncConfiguredHint')"
         @click="vm.sync"
       >
-        {{ feText('syncCloudDevices') }}
+        {{ feText('syncConfiguredDevices') }}
       </j-permission-button>
       <j-permission-button :hasPermission="resourcePermission(resource, kind)"
         v-else-if="!config.readonly"

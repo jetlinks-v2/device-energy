@@ -6,6 +6,7 @@ const billing = 'configuration/meter-billing'
 /** Only device identity and period cross the confirmation boundary; finance owns quantities and amounts. */
 export const meterApi = {
   devices: (query: Query) => facility.query<AllocatedDevice>('configuration/devices', query),
+  refreshDevices: () => facility.post<number>('configuration/devices/_refresh'),
   allocate: (rows: Allocation[]) => facility.post<AllocatedDevice[]>('configuration/devices', rows),
   standards: (project: string) => facility.get<MeterStandard[]>(`${billing}/${encodeURIComponent(project)}/standards`),
   rules: (project: string) => facility.get<MeterRule[]>(`${billing}/${encodeURIComponent(project)}/rules`),

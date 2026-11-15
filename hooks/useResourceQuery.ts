@@ -21,6 +21,7 @@ export function useResourceQuery(resource: () => Resource, kind?: string, manage
     busy.value = true
     error.value = ''
     try {
+      if (resource().path === 'devices' && !projectId.value) return { success: true, result: { data: [], total: 0 } }
       const result = await queryResource(resource().path, resourceQuery(query, resource().path === 'groups' ? undefined : kind), context?.signal)
       if (current === sequence && !context?.signal.aborted) {
         rows.value = result.data

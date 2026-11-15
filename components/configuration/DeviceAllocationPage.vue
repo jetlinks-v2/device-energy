@@ -17,6 +17,7 @@ const columns = computed(() => [
   { title: feText('deviceCode'), dataIndex: 'cloudDeviceId', width: 180, ellipsis: true },
   { title: feText('productName'), dataIndex: 'productName', width: 150, ellipsis: true },
   { title: feText('project'), dataIndex: 'projectName', width: 170 },
+  { title: feText('configurationState'), key: 'configuration', scopedSlots: true, width: 120 },
   { title: feText('allocationSince'), dataIndex: 'allocationSince', key: 'effective', scopedSlots: true, width: 180 },
   { title: feText('actions'), key: 'actions', scopedSlots: true, width: 90, fixed: 'right' }
 ])
@@ -31,7 +32,7 @@ const select = (keys: string[], rows: AllocatedDevice[]) => { vm.selected = keys
         show-search option-filter-prop="label" allow-clear class="facility-toolbar__project" />
       <ConditionFilter v-model="filters" :fields="fields" class="facility-search" @change="vm.terms = $event.filter.terms" />
       <j-permission-button hasPermission="facility/Configuration/Devices:sync" :loading="vm.syncing" @click="vm.sync">
-        {{ feText('syncCloudDevices') }}
+        {{ feText('refreshDeviceCatalog') }}
       </j-permission-button>
     </div>
     <div class="facility-toolbar">
@@ -49,6 +50,7 @@ const select = (keys: string[], rows: AllocatedDevice[]) => { vm.selected = keys
       :row-selection="{ selectedRowKeys: vm.selected, onChange: select }"
       :alert-show="false" :scroll="{ x: 950 }">
       <template #effective="row">{{ time(row.allocationSince) }}</template>
+      <template #configuration="row"><a-tag :color="!row.projectConfirmed ? 'default' : row.assetProjectId === row.projectId ? 'success' : 'processing'">{{ feText(!row.projectConfirmed ? 'allocationPending' : row.assetProjectId === row.projectId ? 'synchronized' : 'pendingSynchronization') }}</a-tag></template>
       <template #actions="row"><j-permission-button hasPermission="facility/Configuration/Devices:save" type="link" @click="vm.edit([row])">{{ feText('allocate') }}</j-permission-button></template>
     </j-pro-table>
     <a-drawer :open="vm.opened" :title="vm.editing.length === 1 ? vm.editing[0].name : feText('batchAllocate')" :width="480" @close="vm.opened = false">

@@ -1,5 +1,5 @@
 import { ref, computed, watch, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import { facility } from '../api'
 import { meterApi } from '../api/meterBilling'
 import { feText } from '../shared/i18n'
@@ -27,7 +27,7 @@ export function useDeviceConfiguration() {
     editing.value = rows; opened.value = true; error.value = ''
     targetProject.value = rows.every(row => row.projectId === rows[0].projectId) ? rows[0].projectId : undefined
   }
-  const save = async () => {
+  const persist = async () => {
     if (saving.value) return
     if (!targetProject.value) { message.warning(feText('chooseProject')); return }
     saving.value = true; error.value = ''
@@ -35,13 +35,22 @@ export function useDeviceConfiguration() {
       await meterApi.allocate(editing.value.map(row => ({ id: row.id, version: row.version,
         projectId: targetProject.value! })))
       opened.value = false; selected.value = []; selectedRows.value = []; table.value?.reload()
-      message.success(feText('allocationSaved'))
+      message.success(feText('allocationSavedPendingSync'))
     } catch (cause) { error.value = messageOf(cause) } finally { saving.value = false }
   }
+  const save = async () => {
+    if (saving.value) return
+    if (!targetProject.value) { message.warning(feText('chooseProject')); return }
+    if (editing.value.some(row => row.assetProjectId && row.assetProjectId !== targetProject.value)) {
+      Modal.confirm({ title: feText('moveProjectTitle'), content: feText('moveProjectDescription'), onOk: persist })
+      return
+    }
+    await persist()
+  }
   const sync = async () => {
-    if (!projectId.value) { message.warning(feText('chooseProject')); return }
+    if (syncing.value) return
     syncing.value = true; error.value = ''
-    try { await facility.sync(projectId.value); table.value?.reload() }
+    try { const count = await meterApi.refreshDevices(); selected.value = []; selectedRows.value = []; table.value?.reload(); message.success(feText('catalogRefreshed') + ' ' + count) }
     catch (cause) { error.value = messageOf(cause) } finally { syncing.value = false }
   }
   onMounted(async () => {

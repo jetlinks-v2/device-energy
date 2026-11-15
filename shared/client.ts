@@ -21,6 +21,7 @@ export interface Transport {
   remove<T>(url: string): Promise<T>
   upload(file: File, projectId: string): Promise<FileInfo>
 }
+export interface SyncSummary { inserted: number; updated: number; failed: number; projects: number; failures: string[] }
 const prefix = '/property/facility-energy',
   id = encodeURIComponent
 /** 所有业务请求共享当前SaaS会话和应用范围，不允许页面传入任意身份。 */
@@ -37,6 +38,7 @@ export function facilityClient(http: Transport) {
     devices: (q: Query) => http.post<Pager<Device>>(prefix + '/devices/_query', q),
     updateDevice: (row: Entity) => http.post<Device>(prefix + '/devices/' + id(row.id), row),
     sync: (project: string) => http.post<Entity>(prefix + '/devices/sync/' + id(project)),
+    syncConfigured: () => http.post<SyncSummary>(prefix + '/devices/sync/_configured'),
     tasks: (q: Query, mine = false, pool = false) => http.post<Pager<Task>>(prefix + '/tasks/_query?mine=' + mine + '&pool=' + pool, q),
     taskReviews: (q: Query, status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending') =>
       http.post<Pager<Task>>(prefix + '/tasks/review/_query?status=' + status, q),

@@ -10,8 +10,7 @@ export function useDevice(input: Device) {
     error = ref(''),
     form = reactive<FormValues>({}),
     options = reactive<Record<string, Option[]>>({}),
-    history = ref<Entity[]>([]),
-    selectedProject = ref<string>()
+    history = ref<Entity[]>([])
   const fields = deviceFields
   const refresh = async () => {
     busy.value = true
@@ -52,18 +51,6 @@ export function useDevice(input: Device) {
       busy.value = false
     }
   }
-  const confirmProject = async () => {
-    if (!selectedProject.value) return
-    try {
-      await facility.post('devices/' + input.id + '/project', {
-        projectId: selectedProject.value,
-        version: device.value.version
-      })
-      await refresh()
-    } catch (e) {
-      error.value = messageOf(e)
-    }
-  }
   const qr = computed(() =>
     JSON.stringify({ type: 'facility-device', applicationId: device.value.applicationId, id: device.value.id })
   )
@@ -76,11 +63,9 @@ export function useDevice(input: Device) {
     history,
     busy,
     error,
-    selectedProject,
     qr,
     refresh,
     change,
-    save,
-    confirmProject
+    save
   }
 }

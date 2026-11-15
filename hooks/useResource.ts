@@ -18,7 +18,8 @@ const organizationOptions = (nodes: Organization[]): Option[] => nodes.flatMap(n
 /** 请求、选项联动和提交集中于hook，过期列表响应不会覆盖新筛选。 */
 export function useResource(resource: () => Resource, kind?: string, managed = false) {
   const query = useResourceQuery(resource, kind, managed)
-  const { projectId, busy, error, refresh } = query
+  const { projectId, error, refresh } = query
+  const syncing = ref(false)
   const currentUserId = ref('')
   const saving = ref(false),
     opened = ref(false),
@@ -54,6 +55,9 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
             ? await facility.options(source)
             : (await facility.query(source, { pageSize: 200 })).data
           options[source] = items.map((row) => ({ value: row.id, label: row.name || row.id }))
+          if (source === 'projects' && resource().path === 'devices' && !options.projects.some(row => row.value === projectId.value)) {
+            projectId.value = options.projects[0]?.value
+          }
         })
       )
     } catch (e) {
@@ -177,18 +181,21 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     }
   }
   const sync = async () => {
-    if (!projectId.value) {
-      error.value = feText('selectABusinessProjectFirst')
-      return
-    }
-    busy.value = true
+    if (syncing.value) return
+    syncing.value = true
+    error.value = ''
     try {
-      await facility.sync(projectId.value)
+      const result = await facility.syncConfigured()
       await refresh()
+      if (!result.projects) message.info(feText('syncNoConfigurations'))
+      else {
+        const summary = `${feText('syncInserted')} ${result.inserted}，${feText('syncUpdated')} ${result.updated}，${feText('syncFailed')} ${result.failed}`
+        if (result.failed) error.value = [summary, ...result.failures].join('；')
+        else message.success(summary)
+      }
     } catch (e) {
       error.value = messageOf(e)
-      busy.value = false
-    }
+    } finally { syncing.value = false }
   }
   const command = async (row: Entity, action: string) => {
     if (saving.value) return
@@ -271,6 +278,7 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     change,
     save,
     sync,
+    syncing,
     command,
     remove
   }

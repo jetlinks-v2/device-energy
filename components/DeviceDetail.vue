@@ -40,18 +40,6 @@ const props = defineProps<{ device: Device }>(),
             <a-descriptions-item :label="feText('syncStatus')">{{ display(vm.device.syncState) }}</a-descriptions-item>
             <a-descriptions-item :label="feText('businessProject')">{{ vm.device.projectName }}</a-descriptions-item>
           </a-descriptions>
-          <a-space
-            v-if="vm.device.syncState === 'pending-project'"
-            style="margin: 16px 0"
-          >
-            <a-select
-              v-model:value="vm.selectedProject"
-              :options="vm.device.candidateProjectIds.map((v) => ({ value: v, label: v }))"
-              :placeholder="feText('selectOperatingProject')"
-              style="width: 240px"
-            />
-            <j-permission-button :hasPermission="'facility/Devices:save'" @click="vm.confirmProject">{{ feText('confirmProject') }}</j-permission-button>
-          </a-space>
           <RecordForm
             :fields="vm.fields"
             :model="vm.form"

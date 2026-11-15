@@ -21,7 +21,9 @@ export const facility = facilityClient({
   get: async <T>(url: string) => unwrap(await http.get<T>(url)),
   // 历史补采包含云端分页；只延长该操作，普通列表继续使用宿主默认超时。
   post: async <T>(url: string, body?: unknown) => unwrap(await http.post<T>(url, body,
-    url.startsWith('/property/facility-energy/energy/collect/') ? { timeout: 60_000 } : undefined)),
+    url.startsWith('/property/facility-energy/devices/sync/') || url === '/property/facility-energy/configuration/devices/_refresh'
+      ? { timeout: 600_000 }
+      : url.startsWith('/property/facility-energy/energy/collect/') ? { timeout: 60_000 } : undefined)),
   remove: async <T>(url: string) => unwrap(await http.remove<T>(url)),
   upload: async (file: File, projectId: string) => {
     const body = new FormData()

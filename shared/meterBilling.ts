@@ -1,6 +1,6 @@
 import type { Device, Entity } from './types'
 export type MeterType = 'device' | 'water' | 'electricity' | 'gas'
-export interface AllocatedDevice extends Device { meterType?: MeterType; spaceId?: string; allocationSince?: number; productName?: string }
+export interface AllocatedDevice extends Device { meterType?: MeterType; spaceId?: string; allocationSince?: number; productName?: string; assetProjectId?: string }
 export interface Allocation { id: string; version: number; projectId: string }
 export interface MeterVariable { code: string; name: string; system: boolean }
 export interface MeterStandard {
