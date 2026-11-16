@@ -26,12 +26,12 @@ export function useOverview() {
     counts: Object.fromEntries(['pendingClaim', 'inProgress', 'pendingReview', 'overdue', 'todayinspection', 'todaymaintenance', 'alerts', 'notificationFailures'].map(key => [key, count(key)])),
     access: { inspection: can('inspection'), maintenance: can('maintenance'), alerts: can('alerts'), notifications: can('notifications') },
     reviewAccess: { inspection: can('inspection') && auth.hasPermission('facility/Inspection/Tasks:review'), maintenance: can('maintenance') && auth.hasPermission('facility/Maintenance/Tasks:review') },
-    projectId: energy.projectId.value, projects: energy.projects.value
+    projectId: energy.projectId.value, projectIds: energy.projectIds.value, projects: energy.projects.value
   }))
   const go = (target: OverviewDestination, focus?: string, tab?: string) => {
     if (!can(target)) return
     return menu.jumpPage(menus[target], { query: {
-      ...(energy.projectId.value ? { projectId: energy.projectId.value } : {}),
+      ...energy.projectQuery(),
       ...(focus ? { overview: focus } : {}), ...(tab ? { tab } : {})
     } })
   }

@@ -38,7 +38,7 @@ const save = async () => {
 }
 const route = useRoute()
 const initialTerms = overviewTerms(props.resource, route.query)
-const filters = ref<ConditionFilterTerm[]>(props.resource === 'devices' ? [] : initialTerms)
+const filters = ref<ConditionFilterTerm[]>(initialTerms.filter(term => props.resource !== 'devices' || term.termType === 'in'))
 // 工作台入口保留项目和业务快捷条件，设备页项目由独立选择器承接。
 if (!props.legacy && initialTerms.length) {
   vm.filter(filters.value)
@@ -87,7 +87,7 @@ const cellText = (key: string, row: Entity) => resourceCellText(config.value, ke
     />
     <div :class="{ 'facility-resource-controls--inline': resource === 'devices' && !legacy }">
     <a-select v-if="resource === 'devices' && !legacy"
-      v-model:value="vm.projectId" :placeholder="feText('chooseProject')"
+      v-model:value="vm.projectId" :placeholder="feText('allBusinessProjects')" allow-clear
       show-search option-filter-prop="label"
       :options="vm.options.projects || []" class="facility-toolbar__project" />
     <ConditionFilter v-if="!legacy" v-model="filters" :fields="fields" class="facility-search"

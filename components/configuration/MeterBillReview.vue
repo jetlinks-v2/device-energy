@@ -8,8 +8,8 @@ import type { MeterDetailTarget, MeterMonthlyBill, MeterReviewAction } from '../
 import type { TableHandle } from '../../shared/tableQuery'
 import MeterBillDetail from './MeterBillDetail.vue'
 import MeterEnergyFilter from './MeterEnergyFilter.vue'
-const props = defineProps<{ projectId: string }>(), emit = defineEmits<{ close: []; changed: [] }>()
-const vm = reactive(useMeterBillReview(props.projectId, () => emit('changed')))
+const props = defineProps<{ projectId?: string; projectIds?: string[] }>(), emit = defineEmits<{ close: []; changed: [] }>()
+const vm = reactive(useMeterBillReview(props.projectId, () => emit('changed'), props.projectIds))
 const filters = ref<ConditionFilterTerm[]>([]), detail = ref<MeterDetailTarget>(), fields = meterSearchFields(true)
 const tabs = [{ key: 'pending', label: 'meterPending' }, { key: 'approved', label: 'meterApproved' },
   { key: 'rejected', label: 'meterRejected' }, { key: 'error', label: 'meterException' }, { key: 'all', label: 'reviewAll' }] as const
@@ -59,7 +59,7 @@ const detailChanged = () => { vm.table?.reload(); emit('changed') }
         <template #state="row"><a-tag :color="meterColor(row.state)">{{ meterState(row.state) }}</a-tag></template>
         <template #actions="row">
           <a-space :size="0">
-            <j-permission-button hasPermission="facility/Billing:detail" type="link" @click="detail = { id: row.id, projectId, published: false }">{{ feText('details') }}</j-permission-button>
+            <j-permission-button hasPermission="facility/Billing:detail" type="link" @click="detail = { id: row.id, projectId: row.projectId, published: false }">{{ feText('details') }}</j-permission-button>
             <j-permission-button v-if="row.state === 'pending'" hasPermission="facility/Billing:review" type="link" :disabled="vm.busy" @click="vm.start('review', [row])">{{ feText('approveTask') }}</j-permission-button>
             <j-permission-button v-if="row.state === 'pending'" hasPermission="facility/Billing:reject" type="link" :disabled="vm.busy" @click="vm.start('reject', [row])">{{ feText('rejectTask') }}</j-permission-button>
             <j-permission-button v-if="['error', 'rejected'].includes(row.state)" hasPermission="facility/Billing:recalculate" type="link" @click="vm.start('recalculate', [row])">{{ feText('meterRecalculate') }}</j-permission-button>

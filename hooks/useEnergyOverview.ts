@@ -14,7 +14,9 @@ const currentMonth = () => new Date(Date.now() + 28800000).toISOString().slice(0
 
 export function useEnergyOverview(withOperations = false) {
   const menu = useMenuStore(), auth = useAuthStore(), route = useRoute()
-  const projects = ref<Option[]>([]), projectId = ref<string>(), projectError = ref(''), projectLoading = ref(false)
+  const projectIds = ref<string[]>([])
+  const projectId = computed({ get: () => projectIds.value.length === 1 ? projectIds.value[0] : undefined, set: (value: string | undefined) => { projectIds.value = value ? [value] : [] } })
+  const projects = ref<Option[]>([]), projectError = ref(''), projectLoading = ref(false)
   const month = ref(currentMonth()), level = ref('master'), energyType = ref<EnergyType>('water')
   const readingsOpen = ref(false), billingOpen = ref(false), keyword = ref('')
   const states = reactive({ energy: panel<EnergyRow[]>(), trend: panel<EnergyPeriod[]>(),
@@ -36,10 +38,12 @@ export function useEnergyOverview(withOperations = false) {
     catch (cause) { if (alive && version === versions[key]) state.error = errorText(cause) }
     finally { if (alive && version === versions[key]) state.loading = false }
   }
-  const terms = (): Term[] => projectId.value ? [{ column: 'projectId', termType: 'eq', value: projectId.value }] : []
+  const terms = (): Term[] => projectIds.value.length ? [{ column: 'projectId', termType: projectIds.value.length === 1 ? 'eq' : 'in', value: projectId.value || [...projectIds.value] }] : []
+  const projectQuery = () => projectId.value ? { projectId: projectId.value } : projectIds.value.length ? { projectIds: [...projectIds.value] } : {}
   const params = (values: Record<string, string | number>) => {
     const query = new URLSearchParams(Object.entries(values).map(([key, value]) => [key, String(value)]))
     if (projectId.value) query.set('projectId', projectId.value)
+    else for (const id of projectIds.value) query.append('projectIds', id)
     return query
   }
   async function allPages<T extends Entity>(fetch: (query: Query) => Promise<Pager<T>>, filters: Term[]) {
@@ -93,7 +97,8 @@ export function useEnergyOverview(withOperations = false) {
     const count = async (path: string, extra: Term[]) => (await facility.query(path, { pageIndex: 0, pageSize: 1, terms: [...filters, ...extra] })).total
     await Promise.all([
       canReadings.value ? load('readings', () => count('energy/readings', [{ column: 'source', value: 'manual' }, { column: 'status', value: 'pending' }])) : undefined,
-      canBilling.value && project ? load('billing', async () => (await meterApi.reviews(project, 'pending', { pageIndex: 0, pageSize: 1 })).total) : undefined,
+      canBilling.value ? load('billing', async () => (await (project ? meterApi.reviews(project, 'pending', { pageIndex: 0, pageSize: 1 })
+        : meterApi.reviewsProjects([...projectIds.value], 'pending', { pageIndex: 0, pageSize: 1 }))).total) : undefined,
       canAlerts.value ? load('alerts', () => count('alerts', [{ terms: [
         { column: 'processingState', value: 'open' },
         { column: 'processingState', termType: 'isnull', type: 'or', value: true }
@@ -125,22 +130,22 @@ export function useEnergyOverview(withOperations = false) {
       offline: rows.filter(row => row.sourceState === 'offline').length,
       unknown: rows.filter(row => !['online', 'offline'].includes(row.sourceState || '')).length }
   })
-  const openAlerts = () => projectId.value && menu.jumpPage('facility/Alerts', { query: { projectId: projectId.value, overview: 'alerts' } })
+  const openAlerts = () => canAlerts.value && menu.jumpPage('facility/Alerts', { query: { ...projectQuery(), overview: 'pending' } })
   const initialize = async () => {
     projectLoading.value = true; projectError.value = ''
     try {
       projects.value = (await facility.options('projects')).map(row => ({ value: row.id, label: row.name || row.id }))
       if (!alive) return
-      const requested = route?.query.projectId
-      projectId.value = typeof requested === 'string' && projects.value.some(project => project.value === requested)
-        ? requested : projects.value[0]?.value
+      const requested = route?.query.projectIds ?? route?.query.projectId
+      projectIds.value = [...new Set((Array.isArray(requested) ? requested : typeof requested === 'string' ? [requested] : [])
+        .filter((id): id is string => typeof id === 'string' && projects.value.some(project => project.value === id)))]
       await refresh()
     } catch (cause) { if (alive) projectError.value = errorText(cause) }
     finally { if (alive) projectLoading.value = false }
   }
   onMounted(initialize)
   onBeforeUnmount(() => { alive = false })
-  return { projects, projectId, projectError, projectLoading, month, level, energyType, states, cards, meters, online, keyword, health, ranking,
+  return { projects, projectId, projectIds, projectQuery, projectError, projectLoading, month, level, energyType, states, cards, meters, online, keyword, health, ranking,
     busy, canReadings, canBilling, canAlerts, canCollection, readingsOpen, billingOpen, refresh, refreshEnergy, refreshMeters, refreshTodos, refreshOperations,
     changeLevel, changeProject, openAlerts, initialize }
 }

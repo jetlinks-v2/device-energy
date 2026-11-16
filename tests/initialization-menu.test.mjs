@@ -41,7 +41,7 @@ test('设施业务归入设施设备，公共基础独立初始化且没有重�
   assert.equal(actual[0].name, '设施设备')
   assert.ok(actual[0].children.some(node => node.code === 'facility/Devices'))
   assert.ok(actual[0].children.some(node => node.code === 'system-management/Sync'))
-  assert.ok(actual[0].children.filter(node => node.options?.show === false).length === 2)
+  assert.deepEqual(actual[0].children.filter(node => node.options?.show === false).map(node => node.code), ['facility/Employee'])
   assert.ok(actual[0].children.every(node => node.parentId === actual[0].id))
   const combined = walk([...menus, ...baseMenus])
   assert.equal(new Set(combined.map(node => node.id)).size, combined.length)

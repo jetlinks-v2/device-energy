@@ -6,8 +6,8 @@ const props = defineProps<{ state: { readings: Count; billing: Count; alerts: Co
 const emit = defineEmits<{ open: [key: 'readings' | 'billing' | 'alerts' | 'collection']; retry: [] }>()
 const entries = computed(() => [
   { key: 'readings' as const, label: feText('manualReadingReview'), icon: 'FormOutlined', enabled: props.state.canReadings, count: props.state.readings, requiresProject: false, tone: 'blue' },
-  { key: 'billing' as const, label: feText('eoPendingBilling'), icon: 'AuditOutlined', enabled: props.state.canBilling, count: props.state.billing, requiresProject: true, tone: 'purple' },
-  { key: 'alerts' as const, label: feText('eoDeviceAlerts'), icon: 'AlertOutlined', enabled: props.state.canAlerts, count: props.state.alerts, requiresProject: true, tone: 'rose' }
+  { key: 'billing' as const, label: feText('eoPendingBilling'), icon: 'AuditOutlined', enabled: props.state.canBilling, count: props.state.billing, requiresProject: false, tone: 'purple' },
+  { key: 'alerts' as const, label: feText('eoDeviceAlerts'), icon: 'AlertOutlined', enabled: props.state.canAlerts, count: props.state.alerts, requiresProject: false, tone: 'rose' }
 ].filter(entry => entry.enabled))
 </script>
 <template>

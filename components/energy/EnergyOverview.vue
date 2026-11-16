@@ -32,8 +32,8 @@ const openTodo = (key: 'readings' | 'billing' | 'alerts' | 'collection') => {
   <section class="energy-overview">
     <div class="eo-toolbar">
       <div class="eo-filters">
-        <a-select v-model:value="vm.projectId" :options="vm.projects" :loading="vm.projectLoading" class="eo-project"
-          :placeholder="feText('allBusinessProjects')" :aria-label="feText('businessProject')" show-search option-filter-prop="label" allow-clear @change="vm.changeProject" />
+        <a-select v-model:value="vm.projectIds" mode="multiple" :max-tag-count="1" :options="vm.projects" :loading="vm.projectLoading" class="eo-project"
+          :placeholder="feText('overviewAllAuthorizedProjects')" :aria-label="feText('businessProject')" show-search option-filter-prop="label" allow-clear @change="vm.changeProject" />
         <a-tooltip :title="feText('overviewEnergyFilters')"><a-date-picker v-model:value="vm.month" picker="month" value-format="YYYY-MM" :allow-clear="false" :disabled-date="futureMonth" :aria-label="feText('billingMonth')" @change="vm.refreshEnergy" /></a-tooltip>
         <a-tooltip :title="feText('overviewEnergyFilters')"><a-segmented v-model:value="vm.level" :options="levels" :aria-label="feText('aggregationLevel')" @change="vm.changeLevel" /></a-tooltip>
       </div>
@@ -56,7 +56,7 @@ const openTodo = (key: 'readings' | 'billing' | 'alerts' | 'collection') => {
       <a-alert v-if="vm.states.meters.data?.spaceError" type="warning" show-icon :message="vm.states.meters.data.spaceError"><template #action><a-button size="small" @click="vm.refreshMeters">{{ feText('retry') }}</a-button></template></a-alert>
       <EnergyMeterList :rows="vm.meters" :loading="vm.states.meters.loading || vm.states.energy.loading" />
     </section>
-    <ReadingReview v-if="vm.readingsOpen" :project-id="vm.projectId" :options="{ projects: vm.projects }" @close="vm.readingsOpen = false" @changed="vm.refreshTodos" />
-    <MeterBillReview v-if="vm.billingOpen && vm.projectId" :project-id="vm.projectId" @close="vm.billingOpen = false" @changed="vm.refreshTodos" />
+    <ReadingReview v-if="vm.readingsOpen" :project-id="vm.projectId" :project-ids="vm.projectIds" :options="{ projects: vm.projects }" @close="vm.readingsOpen = false" @changed="vm.refreshTodos" />
+    <MeterBillReview v-if="vm.billingOpen" :project-id="vm.projectId" :project-ids="vm.projectIds" @close="vm.billingOpen = false" @changed="vm.refreshTodos" />
   </section>
 </template>

@@ -7,7 +7,7 @@ import type { TableHandle } from '../shared/tableQuery'
 import type { MeterMonthlyBill, MeterReviewAction, MeterReviewOutcome } from '../shared/meterBilling'
 import { meterBillQuery, type MeterEnergyFilter } from '../shared/meterBillQuery'
 
-export function useMeterBillReview(project: string, changed: () => void) {
+export function useMeterBillReview(project: string | undefined, changed: () => void, projectIds: string[] = []) {
   const status = ref('pending'), terms = ref<Term[]>([]), table = ref<TableHandle>(), selected = ref<MeterMonthlyBill[]>([])
   const busy = ref(false), error = ref(''), outcomes = ref<MeterReviewOutcome[]>([]), action = ref<MeterReviewAction>()
   const targets = ref<MeterMonthlyBill[]>([]), comment = ref('')
@@ -18,7 +18,8 @@ export function useMeterBillReview(project: string, changed: () => void) {
     const current = ++sequence
     selected.value = []; error.value = ''
     try {
-      const result = await meterApi.reviews(project, status.value, meterBillQuery(query, energy.value, 'meterType'))
+      const request = meterBillQuery(query, energy.value, 'meterType')
+      const result = await (project ? meterApi.reviews(project, status.value, request) : meterApi.reviewsProjects(projectIds, status.value, request))
       return { success: true, result: current === sequence ? result : { ...result, data: [], total: 0 } }
     }
     catch (cause) { if (current === sequence) error.value = messageOf(cause); throw cause }

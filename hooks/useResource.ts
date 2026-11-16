@@ -55,9 +55,7 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
             ? await facility.options(source)
             : (await facility.query(source, { pageSize: 200 })).data
           options[source] = items.map((row) => ({ value: row.id, label: row.name || row.id }))
-          if (source === 'projects' && resource().path === 'devices' && !options.projects.some(row => row.value === projectId.value)) {
-            projectId.value = options.projects[0]?.value
-          }
+          if (source === 'projects' && resource().path === 'devices' && projectId.value && !options.projects.some(row => row.value === projectId.value)) projectId.value = undefined
         })
       )
     } catch (e) {

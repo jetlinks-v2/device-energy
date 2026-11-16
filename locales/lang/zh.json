@@ -1,6 +1,7 @@
 {
   "FacilityEnergy": {
     "text": {
+    "overviewAllAuthorizedProjects": "全部授权项目",
       "eoWaterMetering": "水计量",
       "eoElectricityMetering": "电计量",
       "eoGasMetering": "燃气计量",

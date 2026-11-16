@@ -51,12 +51,12 @@ test('资产同步不传筛选项目，显示部分失败且不改当前选择',
   await vm.sync(); assert.equal(calls, 1); assert.equal(reloads, 1); assert.equal(query.projectId.value, 'project-a')
   assert.match(query.error.value, /project-b/); assert.equal(vm.syncing.value, false)
 })
-test('资产加载默认首个项目；路由已经选择的有效项目保持不变', async () => {
+test('资产默认全部授权项目；路由已经选择的有效项目保持不变', async () => {
   for (const initial of [undefined, 'project-b', 'missing']) {
     const mounted = [], query = { projectId: vue.ref(initial), error: vue.ref('') }
     const { useResource } = load('useResource', { mounted, query, facility: { options: async () => [{ id: 'project-a' }, { id: 'project-b' }] } })
     const vm = useResource(() => ({ path: 'devices', fields: [] }), undefined, true)
     mounted[0](); await new Promise(resolve => setImmediate(resolve))
-    assert.equal(vm.projectId.value, initial === 'project-b' ? initial : 'project-a')
+    assert.equal(vm.projectId.value, initial === 'project-b' ? initial : undefined)
   }
 })

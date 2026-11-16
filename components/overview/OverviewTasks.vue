@@ -45,6 +45,6 @@ const open = (kind: 'inspection' | 'maintenance', focus: string) => {
       <span class="overview-caption">{{ feText('overviewReminders') }}</span>
       <a-button v-if="state.access.notifications" type="link" @click="emit('navigate', 'notifications', 'failed')"><AIcon type="BellOutlined" />{{ feText('failedNotifications') }}<strong>{{ number('notificationFailures') }}</strong></a-button>
     </div>
-    <TaskReview v-if="reviewKind" :kind="reviewKind" :project-id="state.projectId" :options="{ projects: state.projects }" @close="reviewKind = undefined" @changed="emit('changed')" />
+    <TaskReview v-if="reviewKind" :kind="reviewKind" :project-id="state.projectId" :project-ids="state.projectIds" :options="{ projects: state.projects }" @close="reviewKind = undefined" @changed="emit('changed')" />
   </section>
 </template>

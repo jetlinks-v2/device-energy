@@ -8,11 +8,11 @@ const root = fileURLToPath(new URL('..', import.meta.url))
 const require = createRequire(resolve(root, '../../package.json'))
 const { build } = require('esbuild')
 const ports = {
-  vue: 'export const ref=value=>({value}); export const computed=read=>({get value(){return read()}}); export const reactive=value=>value; export const onMounted=run=>mounts.push(run); export const onBeforeUnmount=run=>unmounts.push(run)',
+  vue: 'export const ref=value=>({value}); export const computed=read=>({get value(){return typeof read==="function"?read():read.get()},set value(value){read.set(value)}}); export const reactive=value=>value; export const onMounted=run=>mounts.push(run); export const onBeforeUnmount=run=>unmounts.push(run)',
   'vue-router': 'export const useRoute=()=>({query:{projectId:"project/a"}})',
   '@jetlinks-web-core/store': 'export const useMenuStore=()=>({hasMenu:()=>access,jumpPage:(...args)=>args}); export const useAuthStore=()=>({hasPermission:()=>access})',
   '../api': 'export const facility=transport',
-  '../api/meterBilling': 'export const meterApi={reviews:async()=>({total:3})}',
+  '../api/meterBilling': 'export const meterApi={reviews:async()=>({total:3}),reviewsProjects:async()=>({total:3})}',
   '../shared/i18n': 'export const feText=key=>key',
   '../shared/types': 'export const messageOf=error=>error.message'
 }
@@ -108,4 +108,25 @@ test('没有权限的审核及跳转不启用，卸载后响应不能回填作�
   pending.resolve({ devices: 5 })
   await loading
   assert.equal(vm.total.value, undefined)
+})
+
+
+test('默认聚合全部授权项目，多选同时约束报表、仪表、待办和跳转，清空恢复全部', async () => {
+  const { vm, calls } = setup()
+  vm.projectId.value = undefined
+  await vm.refresh()
+  assert.equal(new URL(overviewCalls(calls).at(-1), 'https://example.test').searchParams.has('projectId'), false)
+  vm.projectIds.value = ['project/a', 'project/b']
+  calls.length = 0
+  await vm.changeProject()
+  for (const call of calls.filter(call => typeof call === 'string' && call.startsWith('reports/'))) {
+    assert.deepEqual(new URL(call, 'https://example.test').searchParams.getAll('projectIds'), ['project/a', 'project/b'])
+  }
+  for (const call of calls.filter(call => typeof call === 'object')) {
+    assert.deepEqual(call.query.terms[0], { column: 'projectId', termType: 'in', value: ['project/a', 'project/b'] })
+  }
+  assert.deepEqual(vm.go('inspection', 'overdue')[1].query, { projectIds: ['project/a', 'project/b'], overview: 'overdue' })
+  vm.projectIds.value = []
+  await vm.changeProject()
+  assert.equal(vm.projectId.value, undefined)
 })

@@ -18,14 +18,14 @@ const bundled = await build({
     }[args.path] }))
   } }]
 })
-function setup(kind = 'inspection', projectId) {
+function setup(kind = 'inspection', projectId, projectIds) {
   const calls = [], transport = {
     taskReviews: async (...args) => { calls.push(['query', ...args]); return { data: [], total: 0 } },
     action: async (...args) => { calls.push(args) }
   }, module = { exports: {} }
   new Function('transport', 'module', 'exports', bundled.outputFiles[0].text)(transport, module, module.exports)
   let changes = 0, reloads = 0
-  const vm = module.exports.useTaskReview(kind, () => changes++, projectId)
+  const vm = module.exports.useTaskReview(kind, () => changes++, projectId, projectIds)
   vm.table.value = { reload: () => reloads++ }
   return { vm, transport, calls, api: module.exports, counts: () => ({ changes, reloads }) }
 }
@@ -134,4 +134,12 @@ test('审批队列加载失败显示真实错误，不回退全量任务', async
   await assert.rejects(vm.request({}), /审批范围无权限/)
   assert.equal(vm.error.value, '审批范围无权限')
   assert.deepEqual(counts(), { changes: 0, reloads: 0 })
+})
+
+
+test('多项目审批初始列表保持与工作台相同的项目交集', async () => {
+  const { vm, calls } = setup('inspection', undefined, ['one', 'two'])
+  assert.deepEqual(vm.params.value.terms, [{ column: 'projectId', termType: 'in', value: ['one', 'two'] }])
+  await vm.request({ terms: vm.params.value.terms })
+  assert.deepEqual(calls[0][1].terms[1].terms, vm.params.value.terms)
 })

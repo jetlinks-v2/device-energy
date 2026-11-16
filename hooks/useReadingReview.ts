@@ -6,7 +6,7 @@ import type { TableHandle } from '../shared/tableQuery'
 
 type Status = 'pending' | 'accepted' | 'rejected' | 'resubmitted' | 'all'
 /** 补录来源和快捷状态与用户搜索取交集，不将自动采集记录混入补录审核。 */
-export function useReadingReview(changed: () => void, mine = false, projectId?: string) {
+export function useReadingReview(changed: () => void, mine = false, projectId?: string, projectIds: string[] = []) {
   const status = ref<Status>(mine ? 'all' : 'pending'), terms = ref<Term[]>([]), table = ref<TableHandle>(),
     error = ref(''), contextError = ref(''), busy = ref(false), userId = ref(''), target = ref<Reading>(), approve = ref(true), success = ref('')
   const params = computed(() => ({ terms: terms.value }))
@@ -23,7 +23,7 @@ export function useReadingReview(changed: () => void, mine = false, projectId?: 
     error.value = ''
     try {
       const result = await facility.query<Reading>('energy/readings', { ...query, terms: [
-        ...(projectId ? [{ column: 'projectId', termType: 'eq', value: projectId }] : []),
+        ...(projectId ? [{ column: 'projectId', termType: 'eq', value: projectId }] : projectIds.length ? [{ column: 'projectId', termType: 'in', value: projectIds }] : []),
         { column: 'source', value: 'manual' },
         ...(status.value === 'all' ? [] : [{ column: 'status', value: status.value }]),
         ...(query.terms?.length ? [{ type: 'and', terms: query.terms }] : [])

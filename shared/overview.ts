@@ -7,6 +7,7 @@ export interface OverviewTaskState {
   access: Record<OverviewTaskDestination, boolean>
   reviewAccess: Record<'inspection' | 'maintenance', boolean>
   projectId?: string
+  projectIds?: string[]
   projects: Option[]
 }
 
@@ -46,7 +47,8 @@ export function overviewEnergy(rows: OverviewEnergyRow[], type: string) {
 /** 工作台下钻条件与服务端统计一致，今天固定按上海时区计算。 */
 export function overviewTerms(resource: string, query: Record<string, unknown>, now = Date.now()): ConditionFilterTerm[] {
   const terms: ConditionFilterTerm[] = typeof query.projectId === 'string' && query.projectId
-    ? [{ column: 'projectId', termType: 'eq', value: query.projectId }] : []
+    ? [{ column: 'projectId', termType: 'eq', value: query.projectId }]
+    : Array.isArray(query.projectIds) && query.projectIds.length ? [{ column: 'projectId', termType: 'in', value: query.projectIds }] : []
   const focus = query.overview
   if (resource === 'tasks' && focus === 'claim')
     terms.push({ column: 'state', termType: 'eq', value: 'open' })
@@ -62,6 +64,10 @@ export function overviewTerms(resource: string, query: Record<string, unknown>, 
       { column: 'scheduledTime', termType: 'lt', value: start + 86400000 },
       { column: 'state', termType: 'nin', value: ['cancelled', 'closed'] })
   }
+  if (resource === 'alerts' && focus === 'pending') terms.push({ terms: [
+    { column: 'processingState', termType: 'eq', value: 'open' },
+    { column: 'processingState', termType: 'isnull', type: 'or', value: true }
+  ] })
   if (['alerts', 'planAlerts'].includes(resource) && focus === 'alerts')
     terms.push({ column: 'state', termType: 'nin', value: ['closed', 'recovered'] })
   if (['notifications', 'planNotifications'].includes(resource) && focus === 'failed')

@@ -63,10 +63,10 @@ test('仪表明细通过设备ID连接空间和在线状态，使用配置清单
 })
 
 const ports = {
-  vue: 'export const ref=value=>({value});export const computed=read=>({get value(){return read()}});export const reactive=value=>value;export const onMounted=()=>{};export const onBeforeUnmount=()=>{}',
+  vue: 'export const ref=value=>({value});export const computed=read=>({get value(){return typeof read==="function"?read():read.get()},set value(value){read.set(value)}});export const reactive=value=>value;export const onMounted=()=>{};export const onBeforeUnmount=()=>{}',
   'vue-router': 'export const useRoute=()=>({query:{projectId:"project/second"}})',
   '@jetlinks-web-core/store': 'export const useMenuStore=()=>({hasMenu:()=>access,jumpPage:(...args)=>args});export const useAuthStore=()=>({hasPermission:()=>access})',
-  '../api': 'export const facility=transport', '../api/meterBilling': 'export const meterApi={reviews:async()=>({total:4})}',
+  '../api': 'export const facility=transport', '../api/meterBilling': 'export const meterApi={reviews:async()=>({total:4}),reviewsProjects:async()=>({total:4})}',
   '../shared/i18n': 'export const feText=key=>key', '../shared/types': 'export const messageOf=error=>error.message'
 }
 const hook = await build({ entryPoints: [resolve(root, 'hooks/useEnergyOverview.ts')], bundle: true, write: false, platform: 'node', format: 'cjs', plugins: [{ name: 'ports', setup(builder) {
@@ -112,7 +112,7 @@ test('没有相关操作权限不请求审核或预警接口，全部项目时�
   await denied.vm.refreshTodos(); assert.deepEqual(denied.calls, [])
   const { vm } = setup(); vm.projectId.value = undefined
   await vm.changeProject()
-  assert.equal(vm.states.billing.data, undefined)
+  assert.equal(vm.states.billing.data, 4)
 })
 
 test('预警待办统计未处理状态并兼容旧空状态，跳转携带同一项目和待处理条件', async () => {
@@ -122,7 +122,7 @@ test('预警待办统计未处理状态并兼容旧空状态，跳转携带同�
   assert.deepEqual(query.terms, [{ column: 'projectId', termType: 'eq', value: 'project/a' }, { terms: [
     { column: 'processingState', value: 'open' }, { column: 'processingState', termType: 'isnull', type: 'or', value: true }
   ] }])
-  assert.deepEqual(vm.openAlerts(), ['facility/Alerts', { query: { projectId: 'project/a', overview: 'alerts' } }])
+  assert.deepEqual(vm.openAlerts(), ['facility/Alerts', { query: { projectId: 'project/a', overview: 'pending' } }])
 })
 test('仪表分页继续取完；服务端空页但总数未满时明确报错', async () => {
   const { vm, transport } = setup()
@@ -164,5 +164,5 @@ test('工作台跳转保留已授权项目；无权访问的路由项目不会�
   transport.options = async () => [{ id: 'first', name: '项目一' }, { id: 'project/second', name: '项目二' }]
   await vm.initialize(); assert.equal(vm.projectId.value, 'project/second')
   transport.options = async () => [{ id: 'first', name: '项目一' }]
-  await vm.initialize(); assert.equal(vm.projectId.value, 'first')
+  await vm.initialize(); assert.equal(vm.projectId.value, undefined)
 })
