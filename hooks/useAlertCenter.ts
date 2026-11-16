@@ -8,8 +8,8 @@ import { messageOf, type TaskProcess, type Term } from '../shared/types'
 
 export function useAlertCenter() {
   const route = useRoute()
-  const project = useBillingProject(typeof route.query.projectId === 'string' ? route.query.projectId : undefined), rows = ref<FacilityAlert[]>([]), selected = ref<FacilityAlert>()
-  const scope = ref('device'), handling = ref(route.query.overview === 'alerts' ? 'open' : 'all'), historyMode = ref(false), terms = ref<Term[]>([])
+  const project = useBillingProject(undefined, true), rows = ref<FacilityAlert[]>([]), selected = ref<FacilityAlert>()
+  const scope = ref('device'), handling = ref(['alerts', 'pending'].includes(String(route.query.overview)) ? 'open' : 'all'), historyMode = ref(false), terms = ref<Term[]>([])
   const busy = ref(false), detailBusy = ref(false), actionBusy = ref(false), error = project.error, comment = ref(''), action = ref('')
   const total = ref(0), page = ref(1), history = ref<FacilityAlert[]>([]), processes = ref<TaskProcess[]>([]), historyTotal = ref(0), historyPage = ref(1)
   const processTotal = ref(0), processPage = ref(1)
@@ -17,10 +17,9 @@ export function useAlertCenter() {
   async function load() { await loadRequested() }
   async function loadRequested(requested?: FacilityAlert) {
     const ticket = ++generation; detailGeneration++; selected.value = undefined; detailBusy.value = false; rows.value = []; total.value = 0
-    if (!project.projectId.value) { busy.value = false; return }
     busy.value = true; error.value = ''
     try {
-      const filters: Term[] = [{ column: 'projectId', value: project.projectId.value }, ...terms.value]
+      const filters: Term[] = [...project.projectTerms(), ...terms.value]
       if (handling.value !== 'all') filters.push(handling.value === 'open' ? { terms: [{ column: 'processingState', value: 'open' }, { column: 'processingState', termType: 'isnull', type: 'or', value: true }] } : { column: 'processingState', value: handling.value })
       const path = historyMode.value ? 'alerts/history' : scope.value === 'plan' ? 'alerts/plans' : 'alerts'
       const result = await facility.query<FacilityAlert>(path, { pageIndex: page.value - 1, pageSize: 12, terms: filters, sorts: [{ name: 'lastTime', order: 'desc' }, { name: 'id', order: 'desc' }] })
@@ -54,7 +53,7 @@ export function useAlertCenter() {
   const routing = useOperationRoute<FacilityAlert>({ ...project, read: id => facility.read<FacilityAlert>('alerts', id),
     invalidate: () => { generation++; detailGeneration++; selected.value = undefined; rows.value = []; busy.value = false; detailBusy.value = false },
     prepare: row => { page.value = 1; scope.value = row.targetId ? 'plan' : 'device'; historyMode.value = false; handling.value = 'all'; terms.value = [] }, load: loadRequested })
-  watch(() => [project.projectId.value, scope.value, handling.value, terms.value, historyMode.value], () => { if (!routing.value) { page.value = 1; void load() } })
+  watch(() => [project.projectIds.value, scope.value, handling.value, terms.value, historyMode.value], () => { if (!routing.value) { page.value = 1; void load() } })
   watch(page, () => { if (!routing.value) void load() })
   onBeforeUnmount(() => { generation++; detailGeneration++ })
   return { ...project, rows, selected, scope, handling, historyMode, terms, busy, detailBusy, actionBusy, error, comment, action, total, page, history, processes, historyTotal, historyPage, processTotal, processPage, load, select, handle }

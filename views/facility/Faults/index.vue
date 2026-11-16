@@ -21,7 +21,7 @@ const fields = [
 </script>
 <template>
   <FacilityWorkspace><section class="facility-page operations-workspace operations-master-detail">
-    <div class="operations-search"><a-select v-model:value="vm.projectId" :options="vm.projects" :loading="vm.loading" :placeholder="feText('businessProject')" show-search option-filter-prop="label" class="operations-project" />
+    <div class="operations-search"><a-select v-model:value="vm.projectIds" mode="multiple" allow-clear :max-tag-count="1" :options="vm.projects" :loading="vm.loading" :placeholder="feText('overviewAllAuthorizedProjects')" show-search option-filter-prop="label" class="operations-project" />
       <ConditionFilter v-model="filters" :fields="fields" @change="vm.terms = $event.filter.terms" />
       <j-permission-button hasPermission="facility/Faults:save" type="primary" :disabled="!vm.projectId" @click="vm.open('create')"><AIcon type="PlusOutlined" />{{ feText('faultRegister') }}</j-permission-button></div>
     <a-alert v-if="vm.error" type="error" :message="vm.error" show-icon><template #action><a-button @click="vm.load">{{ feText('retry') }}</a-button></template></a-alert>

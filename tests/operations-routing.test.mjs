@@ -20,8 +20,10 @@ function setup(id, records = {}) {
     read: async (_, id) => { reads.push(id); if (!records[id]) throw Error('not found'); return records[id] },
     get: async () => ({ data: [], total: 0 }),
     query: async (path, query) => {
-      const project = query.terms.find(term => term.column === 'projectId').value
-      queries.push({ path, project })
+      const filter = query.terms.find(term => term.column === 'projectId')
+      const project = filter?.value
+      if (!project || Array.isArray(project)) { queries.push({ path, project, terms: query.terms }); return { data: [], total: 0 } }
+      queries.push({ path, project, terms: query.terms })
       return { data: [fault(project + '-first', project)], total: 1 }
     },
     options: async path => { employees.push(path); return [{ id: 'staff', name: 'Staff' }] },
@@ -44,7 +46,8 @@ function setup(id, records = {}) {
       if (specifier.endsWith('/i18n')) return { feText: key => key }
       if (specifier.endsWith('/types')) return { messageOf: error => error.message, taskTime: () => '' }
       if (specifier.endsWith('/useBillingProject')) return { useBillingProject: () => {
-        const project = { projectId: vue.ref(), projects: vue.ref([]), loading: vue.ref(true), error: vue.ref('') }
+        const projectIds = vue.ref([])
+        const project = { projectIds, projectTerms: () => projectIds.value.length ? [{ column: 'projectId', termType: projectIds.value.length === 1 ? 'eq' : 'in', value: projectIds.value.length === 1 ? projectIds.value[0] : projectIds.value }] : [], projectId: vue.computed({ get: () => projectIds.value.length === 1 ? projectIds.value[0] : undefined, set: value => { projectIds.value = value ? [value] : [] } }), projects: vue.ref([]), loading: vue.ref(true), error: vue.ref('') }
         directories.push(project); return project
       } }
       if (specifier.endsWith('.vue') || specifier.endsWith('.css') || specifier.startsWith('@')) return {}
@@ -157,5 +160,25 @@ test('预警处理记录可以翻到第二页，保留事件历史页码和记�
   assert.equal(vm.processes.value[0].id, 'log-21')
   assert.equal(vm.processTotal.value, 25); assert.equal(vm.processPage.value, 2)
   assert.equal(vm.historyTotal.value, 32); assert.equal(vm.historyPage.value, 2)
+  ctx.scope.stop()
+})
+
+for (const hook of ['useFaults', 'useAlertCenter']) test(hook + ' 全部及多项目查询不退回首项目，详情写入使用记录项目', async () => {
+  const ctx = setup(undefined), vm = ctx.start(hook); await ctx.ready()
+  vm.projectIds.value = []; await settle()
+  assert.equal(ctx.queries.at(-1).project, undefined)
+  vm.projectIds.value = ['b', 'c']; await settle()
+  assert.deepEqual(ctx.queries.at(-1).project, ['b', 'c'])
+  if (hook === 'useFaults') {
+    await vm.select(ctx.records['b-first']); await vm.open('reviewer')
+    assert.equal(ctx.employees.at(-1), 'employees/b')
+  }
+  ctx.scope.stop()
+})
+test('待处理预警入口承接统计口径，包含旧数据未设置处理状态的事件', async () => {
+  const ctx = setup(undefined); ctx.route.query.overview = 'pending'
+  const vm = ctx.start('useAlertCenter'); await ctx.ready()
+  assert.equal(vm.handling.value, 'open')
+  assert.deepEqual(ctx.queries.at(-1).terms.at(-1).terms.map(term => term.termType || term.value), ['open', 'isnull'])
   ctx.scope.stop()
 })

@@ -19,7 +19,7 @@ const fields = [{ title: feText('ruleName'), dataIndex: 'name', search: { type: 
 async function registerFault() {
   const row = vm.selected
   if (!row?.deviceId) return
-  faults.projectId = vm.projectId
+  faults.projectId = row.projectId
   await nextTick()
   void faults.open('create', { deviceId: row.deviceId, sourceType: 'alert', sourceId: row.id,
     description: `${row.name} · ${taskTime(row.firstTime)} · ${alertValue(row.value, row.unit)}` })
@@ -30,7 +30,7 @@ async function registerFault() {
     <a-tabs v-model:active-key="tab"><a-tab-pane key="events" :tab="feText('alertEvents')" /><a-tab-pane key="rules" :tab="feText('alertRules')" /></a-tabs>
     <AlertRules v-if="tab === 'rules'" />
     <template v-else>
-      <div class="operations-search"><a-select v-model:value="vm.projectId" :options="vm.projects" :loading="vm.loading" class="operations-project" :placeholder="feText('businessProject')" /><ConditionFilter v-model="filters" :fields="fields" @change="vm.terms = $event.filter.terms" /></div>
+      <div class="operations-search"><a-select v-model:value="vm.projectIds" mode="multiple" allow-clear :max-tag-count="1" :options="vm.projects" :loading="vm.loading" class="operations-project" :placeholder="feText('overviewAllAuthorizedProjects')" /><ConditionFilter v-model="filters" :fields="fields" @change="vm.terms = $event.filter.terms" /></div>
       <a-alert v-if="vm.error" type="error" :message="vm.error" show-icon><template #action><a-button @click="vm.load">{{ feText('retry') }}</a-button></template></a-alert>
       <div class="operations-status"><a-radio-group v-model:value="vm.scope"><a-radio-button value="device">{{ feText('alertDeviceScope') }}</a-radio-button><a-radio-button value="plan">{{ feText('alertPlanScope') }}</a-radio-button></a-radio-group>
         <a-select v-model:value="vm.handling" style="width:140px" :options="[{ value: 'all', label: feText('all') }, { value: 'open', label: feText('alertUnhandled') }, { value: 'processing', label: feText('alertHandlingNow') }, { value: 'closed', label: feText('alertHandled') }]" /><a-checkbox v-if="vm.scope === 'device'" v-model:checked="vm.historyMode">{{ feText('alertPast') }}</a-checkbox></div>

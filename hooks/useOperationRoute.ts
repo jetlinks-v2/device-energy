@@ -5,13 +5,13 @@ import { messageOf, type Entity, type Option } from '../shared/types'
 /** Consume a detail link once, after the project directory is ready. */
 export function useOperationRoute<T extends Entity>(options: {
   enabled?: boolean
-  projectId: Ref<string | undefined>; projects: Ref<Option[]>; loading: Ref<boolean>; error: Ref<string>
+  projectIds?: Ref<string[]>; projectId: Ref<string | undefined>; projects: Ref<Option[]>; loading: Ref<boolean>; error: Ref<string>
   read: (id: string) => Promise<T>; invalidate: () => void
   prepare?: (row: T) => void; load: (row?: T) => Promise<void>
 }) {
   const route = useRoute(), routing = ref(false)
   let generation = 0, consumed: string | undefined, applyingProject = false
-  watch(options.projectId, () => {
+  watch(() => options.projectIds?.value || options.projectId.value, () => {
     if (routing.value && !applyingProject) { generation++; routing.value = false }
   }, { flush: 'sync' })
   watch(() => [route.query.id, options.loading.value, options.projects.value], async () => {

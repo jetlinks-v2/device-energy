@@ -8,7 +8,7 @@ import { messageOf, type Entity, type Option, type TaskProcess, type Term } from
 import { feText } from '../shared/i18n'
 
 export function useFaults(followRoute = true) {
-  const project = useBillingProject(), auth = useAuthStore()
+  const project = useBillingProject(undefined, true), auth = useAuthStore()
   const rows = ref<Fault[]>([]), total = ref(0), page = ref(1), busy = ref(false), error = project.error
   const status = ref('all'), mine = ref(false), overdue = ref(false), terms = ref<Term[]>([]), actor = ref('')
   const selected = ref<Fault>(), history = ref<TaskProcess[]>([]), historyTotal = ref(0), historyPage = ref(1), detailBusy = ref(false)
@@ -22,10 +22,9 @@ export function useFaults(followRoute = true) {
   async function load() { await loadRequested() }
   async function loadRequested(requested?: Fault) {
     const ticket = ++generation; rows.value = []; total.value = 0; selected.value = undefined; detailGeneration++
-    if (!project.projectId.value) { busy.value = false; detailBusy.value = false; return }
     busy.value = true; error.value = ''
     try {
-      const filters: Term[] = [{ column: 'projectId', value: project.projectId.value }, ...terms.value]
+      const filters: Term[] = [...project.projectTerms(), ...terms.value]
       if (status.value !== 'all') filters.push({ column: 'state', value: status.value })
       if (overdue.value) filters.push({ column: 'deadline', termType: 'lt', value: Date.now() }, { column: 'state', termType: 'nin', value: ['closed', 'cancelled'] })
       const result = await facility.query<Fault>('faults', { pageIndex: page.value - 1, pageSize: 12, terms: filters, sorts: [{ name: 'createTime', order: 'desc' }] }, '?mine=' + mine.value)
@@ -54,16 +53,18 @@ export function useFaults(followRoute = true) {
     } catch (cause) { if (ticket === deviceGeneration) actionError.value = messageOf(cause) }
   }
   async function open(value: string, source?: { deviceId: string; sourceType: string; sourceId: string; description?: string }) {
+    if (value === 'create' && !project.projectId.value) return
     if (actionBusy.value || value !== 'create' && !actions.value.includes(value)) return
     action.value = value; actionError.value = ''; people.value = []
     Object.assign(form, { deviceId: '', name: '', description: '', priority: 'normal', category: 'other', deadline: undefined, sourceType: 'manual', sourceId: undefined,
       reviewerId: actor.value, assigneeId: undefined, comment: '', userId: undefined, attachments: [] })
     if (source) Object.assign(form, source)
     const ticket = ++peopleGeneration
-    if (!['create', 'dispatch', 'transfer', 'reviewer'].includes(value) || !project.projectId.value) return
+    if (!['create', 'dispatch', 'transfer', 'reviewer'].includes(value) || !(value === 'create' ? project.projectId.value : selected.value?.projectId)) return
     actionBusy.value = true
     try {
-      const persons = await facility.options<Entity>('employees/' + encodeURIComponent(project.projectId.value))
+      const actionProject = value === 'create' ? project.projectId.value : selected.value?.projectId
+      const persons = await facility.options<Entity>('employees/' + encodeURIComponent(actionProject!))
       if (ticket !== peopleGeneration) return
       people.value = persons.map(person => ({ value: person.id, label: String(person.name || person.id) }))
       if (value === 'create') await searchDevices()
@@ -88,8 +89,8 @@ export function useFaults(followRoute = true) {
   const routing = useOperationRoute<Fault>({ ...project, enabled: followRoute, read: facility.fault,
     invalidate: () => { generation++; detailGeneration++; selected.value = undefined; rows.value = []; busy.value = false; detailBusy.value = false },
     prepare: () => { page.value = 1; status.value = 'all'; mine.value = false; overdue.value = false; terms.value = [] }, load: loadRequested })
-  watch(() => [project.projectId.value, status.value, mine.value, overdue.value, terms.value], () => { if (!routing.value) { page.value = 1; void load() } })
-  watch(project.projectId, () => { action.value = ''; peopleGeneration++; deviceGeneration++; people.value = []; devices.value = []; actionBusy.value = false })
+  watch(() => [project.projectIds.value, status.value, mine.value, overdue.value, terms.value], () => { if (!routing.value) { page.value = 1; void load() } })
+  watch(project.projectIds, () => { action.value = ''; peopleGeneration++; deviceGeneration++; people.value = []; devices.value = []; actionBusy.value = false })
   watch(page, () => { if (!routing.value) void load() })
   onMounted(async () => { try { actor.value = (await facility.context()).userId } catch (cause) { error.value = messageOf(cause) } })
   onBeforeUnmount(() => { generation++; detailGeneration++; peopleGeneration++; deviceGeneration++ })
