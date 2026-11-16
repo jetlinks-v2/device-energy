@@ -28,18 +28,18 @@ pnpm --filter facility-energy-ui build:with-base
 
 类型检查使用 `pnpm exec vue-tsc --noEmit -p modules/facility-energy-ui/tsconfig.json`。模块保留宿主的 `@jetlinks-web-core/*`、`@/*` 和 `@theme-config` 路径别名；主题配置与 Vite 一致，优先使用运行端 `configs/theme/index.ts`，不存在时使用 Web Core 默认配置。共享宿主源码也会参与检查，需分别核对模块及宿主诊断。
 
-`mobile-h5` 是设施员工独立移动入口，使用 Vant 4，按任务、故障及消息权限显示功能；不提供业主仪表入口。Node.js 要求 22.18 或更新版本。
+设施员工移动端统一在 `cloud.jetlinks.mobile/modules/facility-energy-wx-ui` 维护，使用 Vant 4，由统一 H5／APP 外壳提供登录和应用上下文，按任务、故障及消息权限显示功能；PC 模块不再包含独立 H5。
 
 移动端待接单详情使用任务信息、执行时间和设备清单等紧凑白色卡片，浅蓝灰背景及左右留白分隔；底部提供接单入口。不展示作业资料、未填写的结果、检查进度或空处理记录。移动端不提供关闭任务；转单仅限有分派权限的当前接单人，且任务处于已接单、执行中或整改状态，打开及提交时均检查资格。PC 管理端操作保持原有规则。
 
 ```sh
-cd mobile-h5
-npm ci
-npm test
-npm run build
+cd /path/to/cloud.jetlinks.mobile
+pnpm --filter facility-energy-wx-ui test
+pnpm --filter facility-energy-wx-ui typecheck
+pnpm build:app facility-app
 ```
 
-部署时使用实际 `config.json` 指定 Cloud 项目编码、应用 ID、同源网关和物业电话。员工在线接单下载后可离线执行巡检／维保；缓存和附件按后端确认的账号／应用隔离，联网后使用版本及幂等键提交。维修和消息需要在线使用。
+移动端统一镜像打包与更新参见 `cloud.jetlinks.mobile/docker-h5/`。员工在线接单下载后可离线执行巡检／维保；缓存和附件按后端确认的账号／应用隔离，联网后使用版本及幂等键提交。维修和消息需要在线使用。
 
 部署定义、角色说明和真实联调验收位于相邻 `property-management/deploy/facility-energy/README.md` 及 `ACCEPTANCE.md`。消息仅面向项目员工，不发送历史业主短信。构建结果不表示实际应用授权或 Cloud 设备联调已验收。
 

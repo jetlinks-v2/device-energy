@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -95,8 +95,8 @@ test('计费出账作为独立一级业务菜单初始化，配置保存不捆�
 
 test('员工移动端单独授权即可覆盖实际使用的全部任务动作，审批和关闭不捆绑执行权限', () => {
   const employee = all.find(menu => menu.code === 'facility/Employee')
-  const scan = dir => readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? scan(new URL(entry.name + '/', dir)) : /\.(ts|vue)$/.test(entry.name) ? [readFileSync(new URL(entry.name, dir), 'utf8')] : [])
-  const actions = new Set(scan(new URL('../mobile-h5/src/', import.meta.url)).flatMap(source => [...source.matchAll(/\bcan\('([^']+)'\)/g)].map(match => match[1])))
+  // 移动端实现由独立仓库维护，本仓库校验员工菜单的任务授权契约。
+  const actions = ['query', 'save', 'review', 'dispatch']
   const full = grants(employee, employee.buttons.map(b => b.id))
   for (const action of actions) assert.ok(full('facility-task', action), 'H5 缺少任务动作：' + action)
   for (const action of ['review', 'dispatch', 'close']) {

@@ -23,7 +23,6 @@
     "../../jetlinks-web-core/src/env.d.ts"
   ],
   "exclude": [
-    "mobile-h5",
     "dist",
     "node_modules"
   ]
