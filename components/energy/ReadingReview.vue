@@ -8,9 +8,9 @@ import { feText } from '../../shared/i18n'
 import { time, type Reading, type Option } from '../../shared/types'
 import type { TableHandle } from '../../shared/tableQuery'
 import ManualReading from './ManualReading.vue'
-const props = defineProps<{ options: Record<string, Option[]>; mine?: boolean }>()
+const props = defineProps<{ options: Record<string, Option[]>; mine?: boolean; projectId?: string }>()
 const emit = defineEmits<{ close: []; changed: [] }>()
-const vm = reactive(useReadingReview(() => emit('changed'), props.mine)), detail = ref<Reading>(), editing = ref<Reading>(), filters = ref<ConditionFilterTerm[]>([])
+const vm = reactive(useReadingReview(() => emit('changed'), props.mine, props.projectId)), detail = ref<Reading>(), editing = ref<Reading>(), filters = ref<ConditionFilterTerm[]>([])
 const resource = resources.readings
 const columns = [
   ...resource.columns.filter(column => !['unit', 'source'].includes(column.key)),

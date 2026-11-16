@@ -1641,6 +1641,12 @@
         "sortIndex": 5,
         "permissions": [
           {
+            "permission": "facility-report",
+            "actions": [
+              "query"
+            ]
+          },
+          {
             "permission": "facility-mapping",
             "actions": [
               "query"
@@ -1801,6 +1807,7 @@
           }
         },
         "showPage": [
+          "facility-report",
           "facility-mapping",
           "facility-device",
           "device-instance"

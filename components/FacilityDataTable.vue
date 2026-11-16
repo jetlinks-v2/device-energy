@@ -15,7 +15,8 @@ const props = withDefaults(defineProps<{
   rowKey?: string | ((row: Row) => string)
   loading?: boolean
   pagination?: boolean
-}>(), { rowKey: 'id', pagination: true })
+  pageSize?: number
+}>(), { rowKey: 'id', pagination: true, pageSize: 12 })
 const columns = computed(() => props.columns.map(column => ({
   // 列插槽加前缀，避免 title 等业务字段触发 Ant Table 的同名区域插槽。
   ...column, key: 'cell-' + (column.key || column.dataIndex), dataIndex: column.dataIndex || column.key,
@@ -38,7 +39,7 @@ const request = async (query: Query) => ({ success: true, result: localTablePage
     :data-source="pagination ? undefined : dataSource"
     :loading="loading"
     :no-pagination="!pagination"
-    :pagination="{ pageSize: 12 }"
+    :pagination="{ pageSize }"
     :scroll="{ x: columns.reduce((width, column) => width + column.width, 0), y: false }"
     :alert-show="false"
     :body-style="{ padding: 0 }"

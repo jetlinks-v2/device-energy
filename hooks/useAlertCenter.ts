@@ -1,4 +1,5 @@
 import { ref, watch, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { useBillingProject } from './useBillingProject'
 import { useOperationRoute } from './useOperationRoute'
 import { facility } from '../api'
@@ -6,8 +7,9 @@ import type { FacilityAlert } from '../shared/alerts'
 import { messageOf, type TaskProcess, type Term } from '../shared/types'
 
 export function useAlertCenter() {
-  const project = useBillingProject(), rows = ref<FacilityAlert[]>([]), selected = ref<FacilityAlert>()
-  const scope = ref('device'), handling = ref('all'), historyMode = ref(false), terms = ref<Term[]>([])
+  const route = useRoute()
+  const project = useBillingProject(typeof route.query.projectId === 'string' ? route.query.projectId : undefined), rows = ref<FacilityAlert[]>([]), selected = ref<FacilityAlert>()
+  const scope = ref('device'), handling = ref(route.query.overview === 'alerts' ? 'open' : 'all'), historyMode = ref(false), terms = ref<Term[]>([])
   const busy = ref(false), detailBusy = ref(false), actionBusy = ref(false), error = project.error, comment = ref(''), action = ref('')
   const total = ref(0), page = ref(1), history = ref<FacilityAlert[]>([]), processes = ref<TaskProcess[]>([]), historyTotal = ref(0), historyPage = ref(1)
   const processTotal = ref(0), processPage = ref(1)

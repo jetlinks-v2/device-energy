@@ -104,6 +104,18 @@ test('审核快捷筛选及搜索OR条件始终限定人工来源，并保留服
   }
 })
 
+test('能源总览打开补录审核保留当前项目，搜索OR条件不能扩大到其他项目', async () => {
+  const { api, calls } = setup()
+  const vm = api.useReadingReview(() => {}, false, 'project/a')
+  const terms = [{ column: 'projectId', type: 'or', value: 'other-project' }]
+  await vm.request({ pageIndex: 1, pageSize: 12, terms })
+  assert.deepEqual(calls.at(-1)[2].terms, [
+    { column: 'projectId', termType: 'eq', value: 'project/a' },
+    { column: 'source', value: 'manual' }, { column: 'status', value: 'pending' },
+    { type: 'and', terms }
+  ])
+})
+
 test('审核禁止本人、非人工、非待审核；通过驳回携带版本，失败保留确认窗口', async () => {
   const { review: vm, calls, transport, counts, api } = setup()
   assert.equal(vm.canReview(reading()), false)
