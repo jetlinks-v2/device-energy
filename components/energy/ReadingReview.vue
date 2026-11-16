@@ -70,7 +70,7 @@ const detailFields = computed(() => [
           <a-tag v-else-if="column.key === 'status'" :color="({ pending: 'processing', accepted: 'success', rejected: 'error' } as Record<string, string>)[row.status]">{{ cell(column.key, row) }}</a-tag>
           <template v-else>{{ cell(column.key, row) }}<template v-if="column.key === 'value' && row.unit"> {{ row.unit }}</template></template>
         </template>
-        <template #emptyText><a-empty :description="feText('noManualReadings')" /></template>
+        <template #emptyText><CloudEmpty :description="feText('noManualReadings')" /></template>
       </j-pro-table>
     </div>
     <ManualReading v-if="editing" :projects="options.projects || []" :original="editing" @close="editing = undefined" @saved="resubmitted" />

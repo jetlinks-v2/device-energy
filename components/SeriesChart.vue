@@ -56,7 +56,7 @@ const points = computed(() => {
       {{ new Date(numbers[numbers.length - 1].time).toLocaleString() }}
     </text>
   </svg>
-  <a-empty
+  <CloudEmpty
     v-else
     :description="feText('noValidNumericData')"
   />

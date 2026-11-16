@@ -45,7 +45,7 @@ const vm = reactive(
       </a-list-item>
     </template>
   </a-list>
-  <a-empty
+  <CloudEmpty
     v-else-if="readonly"
     :description="feText('noAttachments')"
     :image-style="{ height: '32px' }"

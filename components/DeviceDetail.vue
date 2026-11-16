@@ -70,7 +70,7 @@ const props = defineProps<{ device: Device }>(),
               {{ time(row.createTime) }} · {{ row.creatorName }} · {{ display(row.action) }} {{ row.comment }}
             </a-timeline-item>
           </a-timeline>
-          <a-empty
+          <CloudEmpty
             v-if="!vm.history.length"
             :description="feText('noHistory')"
           />

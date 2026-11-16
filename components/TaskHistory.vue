@@ -20,7 +20,7 @@ const emit = defineEmits<{ page: [page: number] }>()
         <p v-if="row.comment" style="white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 0">{{ row.comment }}</p>
       </a-timeline-item>
     </a-timeline>
-    <a-empty v-else-if="!busy" :description="feText('noTaskHistory')" :image-style="{ height: '48px' }" />
+    <CloudEmpty v-else-if="!busy" :description="feText('noTaskHistory')" :image-style="{ height: '48px' }" />
     <a-pagination v-if="total > 20" :current="page" :total="total" :page-size="20"
       :show-size-changer="false" size="small" @change="emit('page', $event)" />
   </a-spin>

@@ -33,6 +33,12 @@
             ]
           },
           {
+            "permission": "facility-mapping",
+            "actions": [
+              "query"
+            ]
+          },
+          {
             "permission": "facility-device",
             "actions": [
               "query"

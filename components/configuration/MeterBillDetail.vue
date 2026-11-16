@@ -44,7 +44,7 @@ const variableName = (key: string) => ({ STANDARD_PRICE: feText('meterUnitPrice'
               </div>
               <div><span>{{ feText('usageQuantity') }}</span><strong>{{ meterMoney(vm.result.quantity) }}</strong><span>{{ meterUnit(vm.result.energyType) }}</span></div>
             </div>
-            <a-empty v-else :image="undefined" :description="feText('meterNoReadoutSnapshot')" />
+            <CloudEmpty v-else :description="feText('meterNoReadoutSnapshot')" />
           </section>
           <section v-if="vm.result">
             <h4>{{ feText('meterCalculation') }}</h4>

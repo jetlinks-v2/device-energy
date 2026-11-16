@@ -9,7 +9,7 @@ const events = computed(() => ({ click: (params: unknown) => emit('click', param
 <template>
   <section class="report-chart">
     <header><h3>{{ chart.title }}</h3><a-button v-if="!chart.empty" type="link" size="small" @click="emit('click', {})">{{ feText('reportDetails') }}</a-button></header>
-    <div v-if="chart.empty" class="report-chart__empty"><a-empty :description="feText('reportNoData')" /></div>
+    <div v-if="chart.empty" class="report-chart__empty"><CloudEmpty :description="feText('reportNoData')" /></div>
     <div v-else class="report-chart__canvas"><JEcharts :option="chart.option" :events="events" /></div>
   </section>
 </template>

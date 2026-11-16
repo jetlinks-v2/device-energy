@@ -12,19 +12,20 @@ interface Panel<T> { data?: T; loading: boolean; error: string }
 const panel = <T>(): Panel<T> => ({ loading: false, error: '' })
 const currentMonth = () => new Date(Date.now() + 28800000).toISOString().slice(0, 7)
 
-export function useEnergyOverview() {
+export function useEnergyOverview(withOperations = false) {
   const menu = useMenuStore(), auth = useAuthStore(), route = useRoute()
   const projects = ref<Option[]>([]), projectId = ref<string>(), projectError = ref(''), projectLoading = ref(false)
   const month = ref(currentMonth()), level = ref('master'), energyType = ref<EnergyType>('water')
   const readingsOpen = ref(false), billingOpen = ref(false), keyword = ref('')
   const states = reactive({ energy: panel<EnergyRow[]>(), trend: panel<EnergyPeriod[]>(),
     meters: panel<{ mappings: EnergyMapping[]; devices: Device[]; spaceError?: string }>(),
-    readings: panel<number>(), billing: panel<number>(), alerts: panel<number>() })
+    readings: panel<number>(), billing: panel<number>(), alerts: panel<number>(), overview: panel<Record<string, unknown>>() })
   const versions: Record<string, number> = {}
   let alive = true
   const canReadings = computed(() => auth.hasPermission('facility/Energy:reading-review'))
   const canBilling = computed(() => menu.hasMenu('facility/Billing') && auth.hasPermission('facility/Billing:review'))
   const canAlerts = computed(() => menu.hasMenu('facility/Alerts'))
+  const canCollection = computed(() => menu.hasMenu('facility/Energy'))
   const busy = computed(() => Object.values(states).some(state => state.loading))
   const errorText = (cause: unknown) => messageOf(cause) === 'Network Error' ? feText('overviewNetworkError') : messageOf(cause)
   async function load<T>(key: keyof typeof states, run: () => Promise<T>) {
@@ -99,7 +100,9 @@ export function useEnergyOverview() {
       ] }])) : undefined
     ])
   }
-  const refresh = () => Promise.all([refreshEnergy(), refreshMeters(), refreshTodos()])
+  const refreshOperations = () => withOperations
+    ? load('overview', () => facility.get<Record<string, unknown>>('reports/overview?' + params({}))) : Promise.resolve()
+  const refresh = () => Promise.all([refreshEnergy(), refreshMeters(), refreshTodos(), refreshOperations()])
   const changeLevel = () => { keyword.value = ''; return Promise.all([refreshEnergy(), refreshMeters()]) }
   const changeProject = () => {
     keyword.value = ''; readingsOpen.value = false; billingOpen.value = false
@@ -138,6 +141,6 @@ export function useEnergyOverview() {
   onMounted(initialize)
   onBeforeUnmount(() => { alive = false })
   return { projects, projectId, projectError, projectLoading, month, level, energyType, states, cards, meters, online, keyword, health, ranking,
-    busy, canReadings, canBilling, canAlerts, readingsOpen, billingOpen, refresh, refreshEnergy, refreshMeters, refreshTodos,
+    busy, canReadings, canBilling, canAlerts, canCollection, readingsOpen, billingOpen, refresh, refreshEnergy, refreshMeters, refreshTodos, refreshOperations,
     changeLevel, changeProject, openAlerts, initialize }
 }

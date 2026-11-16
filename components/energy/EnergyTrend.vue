@@ -23,9 +23,9 @@ const option = computed(() => {
   <section class="eo-trend eo-panel">
     <header class="eo-section-head"><h3>{{ feText('eoDailyTrend') }}</h3><span>{{ feText(type === 'water' ? 'overviewWaterUsage' : type === 'electricity' ? 'overviewElectricityUsage' : 'overviewGasUsage') }} · {{ type === 'electricity' ? 'kWh' : 'm³' }}</span></header>
     <a-alert v-if="state.error" type="error" show-icon :message="state.error"><template #action><a-button size="small" @click="emit('retry')">{{ feText('retry') }}</a-button></template></a-alert>
-    <a-spin :spinning="state.loading"><div class="eo-chart"><JEcharts v-if="hasData" :option="option" /><a-empty v-else :description="feText('overviewNoUsage')" /></div></a-spin>
+    <a-spin :spinning="state.loading"><div class="eo-chart"><JEcharts v-if="hasData" :option="option" /><CloudEmpty v-else :description="feText('overviewNoUsage')" /></div></a-spin>
   </section>
 </template>
 <style scoped>
-.eo-chart { height: 140px; }.eo-chart > .ant-empty { height: 100%; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.eo-chart { height: 140px; }
 </style>

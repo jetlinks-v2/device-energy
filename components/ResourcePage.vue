@@ -183,7 +183,7 @@ const cellText = (key: string, row: Entity) => resourceCellText(config.value, ke
         </template>
         <template v-else>{{ cellText(String(column.key), record as Entity) }}</template>
       </template>
-      <template #emptyText><a-empty :description="feText('noRecords')" /></template>
+      <template #emptyText><CloudEmpty :description="feText('noRecords')" /></template>
     </a-table>
     <j-pro-table v-else :ref="setTable"
       row-key="id" :mode="resource === 'devices' ? undefined : 'TABLE'"
@@ -271,7 +271,7 @@ const cellText = (key: string, row: Entity) => resourceCellText(config.value, ke
             { title: feText('unit'), dataIndex: 'unit' }
           ]"
         ><template #bodyCell="{ column, record }">{{ column.key === 'time' ? time(record.time) : display(record[column.key]) }}</template></FacilityDataTable>
-        <a-empty
+        <CloudEmpty
           v-else
           :description="feText('noSamplesYetPreviewAndVerifyBeforeSaving')"
         />

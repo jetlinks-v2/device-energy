@@ -17,6 +17,6 @@ const option = computed(() => ({
 </script>
 <template>
   <section class="eo-panel eo-ranking"><header class="eo-section-head"><h3>{{ feText('eoUsageRanking') }}</h3><span>{{ feText('eoSameEnergy') }} · {{ type === 'electricity' ? 'kWh' : 'm³' }}</span></header>
-    <a-spin :spinning="loading"><div class="eo-chart"><JEcharts v-if="rows.length" :option="option" /><a-empty v-else :description="feText('overviewNoUsage')" /></div></a-spin>
+    <a-spin :spinning="loading"><div class="eo-chart"><JEcharts v-if="rows.length" :option="option" /><CloudEmpty v-else :description="feText('overviewNoUsage')" /></div></a-spin>
   </section>
 </template>

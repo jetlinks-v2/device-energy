@@ -67,7 +67,7 @@ const detailChanged = () => { emit('changed'); vm.refresh() }
           <template v-else-if="timeColumns.has(column.dataIndex)">{{ taskTime(row[column.dataIndex]) }}</template>
           <template v-else>{{ display(row[column.dataIndex]) }}</template>
         </template>
-        <template #emptyText><a-empty :description="feText(vm.status === 'pending' ? 'noPendingReviews' : 'noReviewTasks')" /></template>
+        <template #emptyText><CloudEmpty :description="feText(vm.status === 'pending' ? 'noPendingReviews' : 'noReviewTasks')" /></template>
       </j-pro-table>
     </div>
     <TaskDetail v-if="detailId" :id="detailId" :review="vm.status === 'pending'" @close="detailId = undefined" @changed="detailChanged" />

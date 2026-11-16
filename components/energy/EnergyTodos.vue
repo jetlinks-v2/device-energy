@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { feText } from '../../shared/i18n'
 interface Count { data?: number; loading: boolean; error: string }
-const props = defineProps<{ state: { readings: Count; billing: Count; alerts: Count; canReadings: boolean; canBilling: boolean; canAlerts: boolean; projectId?: string } }>()
+const props = defineProps<{ state: { readings: Count; billing: Count; alerts: Count; canReadings: boolean; canBilling: boolean; canAlerts: boolean; canCollection?: boolean; projectId?: string } }>()
 const emit = defineEmits<{ open: [key: 'readings' | 'billing' | 'alerts' | 'collection']; retry: [] }>()
 const entries = computed(() => [
   { key: 'readings' as const, label: feText('manualReadingReview'), icon: 'FormOutlined', enabled: props.state.canReadings, count: props.state.readings, requiresProject: false, tone: 'blue' },
@@ -22,8 +22,8 @@ const entries = computed(() => [
         </a-tooltip>
         <a-button v-if="entry.count.error" type="text" size="small" :aria-label="feText('retry')" @click="emit('retry')"><AIcon type="ReloadOutlined" /></a-button>
       </div>
-      <a-button v-if="!entries.length" type="link" @click="emit('open', 'collection')">{{ feText('collectionStatus') }}<AIcon type="RightOutlined" /></a-button>
+      <CloudEmpty v-if="!entries.length && state.canCollection === false" :description="feText('noData')" />
     </div>
-    <footer><a-button type="link" size="small" @click="emit('open', 'collection')">{{ feText('collectionStatus') }}<AIcon type="ArrowRightOutlined" /></a-button></footer>
+    <footer v-if="state.canCollection !== false"><a-button type="link" size="small" @click="emit('open', 'collection')">{{ feText('collectionStatus') }}<AIcon type="ArrowRightOutlined" /></a-button></footer>
   </section>
 </template>

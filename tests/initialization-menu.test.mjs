@@ -76,6 +76,14 @@ const grants = (menu, selected = []) => {
   return (resource, action) => permissions.some(p => p.permission === resource && p.actions.includes(action))
 }
 
+test('综合工作台可查询能源映射，汇总菜单不附带审核或修改权限', () => {
+  const overview = all.find(menu => menu.code === 'facility/Overview')
+  const permission = grants(overview)
+  for (const resource of ['facility-report', 'facility-device', 'facility-mapping']) assert.ok(permission(resource, 'query'))
+  assert.ok(overview.permissions.every(item => item.actions.every(action => action === 'query')))
+  assert.deepEqual(overview.buttons, [])
+})
+
 test('计费出账作为独立一级业务菜单初始化，配置保存不捆绑生成应收权限', () => {
   const configuration = all.find(menu => menu.code === 'facility/Configuration/MeterBilling')
   const billing = menus[0].children.find(menu => menu.code === 'facility/Billing')

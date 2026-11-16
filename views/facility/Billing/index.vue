@@ -51,7 +51,7 @@ const columns = [
         <template #actions="row"><j-permission-button hasPermission="facility/Billing:detail" type="link"
           @click="vm.detail = { id: row.id, projectId: project.projectId!, published: true }">{{ feText('details') }}</j-permission-button></template>
       </j-pro-table>
-      <a-empty v-else-if="!project.loading" :description="feText('chooseProject')" />
+      <CloudEmpty v-else-if="!project.loading" :description="feText('chooseProject')" />
       <MeterBillReview v-if="vm.reviewing && project.projectId" :project-id="project.projectId" @close="vm.reviewing = false" @changed="vm.refresh" />
       <MeterBillDetail v-if="vm.detail" :target="vm.detail" @close="vm.detail = undefined" />
     </section>
