@@ -31,9 +31,11 @@ const select = (keys: string[], rows: AllocatedDevice[]) => { vm.selected = keys
       <a-select v-model:value="vm.projectId" :options="vm.projects" :placeholder="feText('allBusinessProjects')"
         show-search option-filter-prop="label" allow-clear class="facility-toolbar__project" />
       <ConditionFilter v-model="filters" :fields="fields" class="facility-search" @change="vm.terms = $event.filter.terms" />
-      <j-permission-button hasPermission="facility/Configuration/Devices:sync" :loading="vm.syncing" @click="vm.sync">
-        {{ feText('refreshDeviceCatalog') }}
-      </j-permission-button>
+      <a-tooltip :title="feText('applicationDeviceCatalogHint')">
+        <j-permission-button hasPermission="facility/Configuration/Devices:sync" :loading="vm.syncing" @click="vm.sync">
+          {{ feText('refreshDeviceCatalog') }}
+        </j-permission-button>
+      </a-tooltip>
     </div>
     <div class="facility-toolbar">
       <a-radio-group v-model:value="vm.state" button-style="solid">
