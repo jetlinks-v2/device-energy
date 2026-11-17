@@ -7,12 +7,12 @@ import type { CycleRule } from '../shared/cycle/types'
 /** 候选均限定当前项目；切换项目清空引用，旧请求不能覆盖新项目。 */
 export function usePlanReferences(resource: () => Resource, form: FormValues, opened: Ref<boolean>,
   options: Record<string, Option[]>, error: Ref<string>) {
-  const cycles = ref<Entity[]>([]), groups = ref<Entity[]>([])
+  const cycles = ref<Entity[]>([]), groups = ref<Entity[]>([]), currentDevices = ref<string[]>([])
   let sequence = 0
   const selectedCycle = computed(() => cycles.value.find(row => row.id === form.cycleId)?.rule as CycleRule | undefined)
   const deviceCount = computed(() => new Set(groups.value
     .filter(row => (form.groupIds as string[] || []).includes(row.id))
-    .flatMap(row => row.deviceIds as string[] || [])).size)
+    .flatMap(row => row.deviceIds as string[] || []).filter(id => currentDevices.value.includes(id))).size)
   async function candidates(path: string, query: Query): Promise<Entity[]> {
     const rows: Entity[] = []
     for (let pageIndex = 0; pageIndex < 25; pageIndex++) {
@@ -41,19 +41,20 @@ export function usePlanReferences(resource: () => Resource, form: FormValues, op
       } catch (cause) { if (current === sequence) error.value = messageOf(cause) }
       return
     }
-    cycles.value = []; groups.value = []
+    cycles.value = []; groups.value = []; currentDevices.value = []
     for (const source of ['standards', 'cycles', 'groups', 'employees']) options[source] = []
     if (!opened.value || !form.projectId) return
     const terms = [{ column: 'projectId', value: form.projectId }]
     try {
-      const [standards, schedule, rooms, people] = await Promise.all([
+      const [standards, schedule, rooms, people, devices] = await Promise.all([
         candidates('standards', { terms: [...terms, { column: 'kind', value: form.kind }, { column: 'enabled', value: true }] }),
         candidates('cycles', { terms: [...terms, { column: 'kind', value: form.kind }, { column: 'enabled', value: true }] }),
         candidates('groups', { terms }),
-        facility.options<Entity>('employees/' + encodeURIComponent(String(form.projectId)))
+        facility.options<Entity>('employees/' + encodeURIComponent(String(form.projectId))),
+        candidates('devices', { terms })
       ])
       if (current !== sequence) return
-      cycles.value = schedule; groups.value = rooms
+      cycles.value = schedule; groups.value = rooms; currentDevices.value = devices.map(row => row.id)
       for (const [source, rows] of Object.entries({ standards, cycles: schedule, groups: rooms, employees: people }))
         options[source] = rows.map(row => ({ value: row.id, label: row.name || row.id }))
     } catch (cause) { if (current === sequence) error.value = messageOf(cause) }

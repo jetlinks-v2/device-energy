@@ -21,7 +21,7 @@ const faultItems = computed(() => [
       <div class="overview-grid">
         <OverviewTasks :state="vm.taskState" @navigate="vm.go" @changed="vm.refreshOperations" />
         <section class="overview-panel overview-assets">
-          <header class="overview-section-head"><h2><AIcon type="HddOutlined" />{{ feText('overviewDevices') }}</h2>
+          <header class="overview-section-head"><h2><AIcon type="HddOutlined" /><a-tooltip :title="feText('overviewBindingScope')">{{ feText('overviewDevices') }}<AIcon type="InfoCircleOutlined" /></a-tooltip></h2>
             <a-button v-if="vm.can('devices')" type="link" @click="vm.go('devices')">{{ feText('deviceRegister') }}<AIcon type="RightOutlined" /></a-button>
           </header>
           <div class="overview-asset-line">

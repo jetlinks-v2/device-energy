@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { feText } from '../shared/i18n'
 import dayjs from 'dayjs'
 import type { CycleRule } from '../shared/cycle/types'
 import CycleRuleEditor from './CycleRuleEditor.vue'
@@ -67,7 +68,13 @@ const emit = defineEmits<{ change: [key: string, value: FormValue] }>()
             option-filter-prop="label"
             :allow-clear="!field.disabled"
             @update:value="emit('change', field.key, $event as string | string[])"
-          />
+          >
+            <template v-if="field.type === 'multi' && field.source === 'devices'" #tagRender="{ label, value, closable, onClose }">
+              <a-tag :closable="closable" :title="String(value)" @close="onClose">
+                {{ (options.devices || []).some(device => device.value === value) ? label : feText('historicalGroupDevice') }}
+              </a-tag>
+            </template>
+          </a-select>
           <a-date-picker
             v-else-if="field.type === 'date'"
             :value="model[field.key] as string | undefined"

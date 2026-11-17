@@ -4,7 +4,7 @@ import { useAuthStore, useMenuStore } from '@jetlinks-web-core/store'
 import { facility } from '../api'
 import { meterApi } from '../api/meterBilling'
 import { feText } from '../shared/i18n'
-import { energyMonth, energyMeterRows, energyTotal, energyTypes, energyHealth, type EnergyMapping, type EnergyPeriod, type EnergyType } from '../shared/energyOverview'
+import { energyMonth, energyMeterRows, energyRankingRows, energyTotal, energyTypes, energyHealth, type EnergyMapping, type EnergyPeriod, type EnergyType } from '../shared/energyOverview'
 import { messageOf, type Device, type Entity, type Option, type Pager, type Query, type Term } from '../shared/types'
 import type { EnergyRow } from './useReports'
 
@@ -120,7 +120,8 @@ export function useEnergyOverview(withOperations = false) {
   }))
   const allMeters = computed(() => energyMeterRows(states.meters.data?.mappings || [], states.meters.data?.devices || [], states.energy.data || []))
   const health = computed(() => states.meters.data ? energyHealth(states.meters.data.mappings, states.meters.data.devices) : undefined)
-  const ranking = computed(() => allMeters.value.filter(row => row.energyType === energyType.value && row.value !== undefined)
+  const ranking = computed(() => energyRankingRows(states.meters.data?.mappings || [], states.meters.data?.devices || [], states.energy.data || [])
+    .filter(row => row.energyType === energyType.value && row.value !== undefined)
     .sort((left, right) => right.value! - left.value!).slice(0, 5))
   const meters = computed(() => allMeters.value.filter(row => row.energyType === energyType.value &&
     (!keyword.value.trim() || [row.name, row.spaceName].some(value => value?.toLowerCase().includes(keyword.value.trim().toLowerCase())))))

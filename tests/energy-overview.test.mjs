@@ -9,8 +9,21 @@ const { buildSync, build } = require('esbuild')
 const built = buildSync({ entryPoints: [resolve(root, 'shared/energyOverview.ts')], bundle: true, write: false, platform: 'node', format: 'cjs' })
 const module = { exports: {} }
 new Function('module', 'exports', built.outputFiles[0].text)(module, module.exports)
-const { energyTotal, energyMonth, energyMeterRows, energyHealth } = module.exports
+const { energyTotal, energyMonth, energyMeterRows, energyRankingRows, energyHealth } = module.exports
 const meter = (deviceId, type, value, unit, accepted = 2, complete = true) => ({ deviceId, energyType: type, name: deviceId, unit, propertyId: 'total', usage: { value, accepted, complete, anomalies: 0 } })
+
+test('解绑后当前仪表明细减少，历史用量与排名保留，重新绑定不重复统计', () => {
+  const current = { id: 'mapping', deviceId: 'current', name: '当前水表', energyType: 'water', enabled: true }
+  const old = { ...current, id: 'old-mapping', deviceId: 'old', name: '历史水表' }
+  const energy = [meter('current', 'water', 10, 'm³'), meter('old', 'water', 20, 'm³')]
+  assert.equal(energyMeterRows([current], [], energy).length, 1)
+  assert.equal(energyHealth([current], []).total, 1)
+  assert.equal(energyTotal(energy, 'water', ['current']).value, 30)
+  assert.deepEqual(energyRankingRows([current], [], energy).map(row => row.value), [10, 20])
+  assert.equal(energyRankingRows([], [], energy).length, 2)
+  assert.equal(energyRankingRows([current, old], [], energy).length, 2)
+  assert.equal(energyMeterRows([current, old], [], energy).length, 2)
+})
 
 test('运行和采集分类各自完整互斥，历史采集不覆盖失败，未知状态不计为在线', () => {
   const mappings = [

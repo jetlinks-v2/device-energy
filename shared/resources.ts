@@ -28,7 +28,7 @@ export function resourceCellText(resource: Resource, key: string, row: Entity, p
   if (resource.path === 'energy/readings' && key === 'propertyId') {
     return metricOptions.find(option => option.value === row.metricKind)?.label || String(row.propertyId ?? '—')
   }
-  if (resource.path === 'energy/replacements' && ['oldDeviceId', 'newDeviceId'].includes(key)) return devices.find(device => device.value === row[key])?.label || String(row[key] || '—')
+  if (resource.path === 'energy/replacements' && ['oldDeviceId', 'newDeviceId'].includes(key)) return String(row[key === 'oldDeviceId' ? 'oldDeviceName' : 'newDeviceName'] || devices.find(device => device.value === row[key])?.label || row[key] || '—')
   if (resource.path === 'energy/replacements' && key === 'state' && row.state === 'pending') return feText('awaitingReview')
   return display(row[key], resource.fields.find(field => field.key === key)?.options)
 }

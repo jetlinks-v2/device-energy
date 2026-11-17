@@ -74,4 +74,14 @@ export function energyMeterRows(mappings: EnergyMapping[], devices: Device[], en
   })
 }
 
+/** 期间排名包含已解绑仪表的历史用量，当前设备数与明细仍使用当前配置清单。 */
+export function energyRankingRows(mappings: EnergyMapping[], devices: Device[], energy: EnergyRow[]): EnergyMeterRow[] {
+  const key = (row: { deviceId: string; energyType: string }) => JSON.stringify([row.deviceId, row.energyType])
+  const directory = new Map(mappings.map(row => [key(row), row]))
+  for (const row of energy) if (!directory.has(key(row))) directory.set(key(row), {
+    id: key(row), version: 0, deviceId: row.deviceId, name: row.name, energyType: row.energyType, meterLevel: '', enabled: false
+  })
+  return energyMeterRows([...directory.values()], devices, energy)
+}
+
 export const energyNumber = (value?: number) => value === undefined ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 3 })

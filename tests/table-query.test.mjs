@@ -32,6 +32,10 @@ test('换表记录展示设备名称，已不可查询的设备保留原标识�
   assert.equal(resourceCellText(resources.replacements, 'oldDeviceId', row, [], devices), '一栋总水表')
   assert.equal(resourceCellText(resources.replacements, 'newDeviceId', row, [], devices), '一栋新水表')
   assert.equal(resourceCellText(resources.replacements, 'oldDeviceId', row), 'old')
+  const historical = { ...row, oldDeviceName: '原水表', newDeviceName: '新水表' }
+  assert.equal(resourceCellText(resources.replacements, 'oldDeviceId', historical), '原水表')
+  assert.equal(resourceCellText(resources.replacements, 'newDeviceId', historical), '新水表')
+  assert.equal(resourceCellText(resources.replacements, 'oldDeviceId', historical, [], devices), '原水表')
   assert.equal(resourceCellText(resources.replacements, 'state', { ...row, state: 'pending' }), '待审核')
 })
 

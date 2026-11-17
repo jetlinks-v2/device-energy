@@ -21,9 +21,20 @@ function setup(transport, path = 'plans') {
   const watchers = [], module = { exports: {} }, options = {}, error = { value: '' }
   new Function('transport', 'watchers', 'module', 'exports', bundled.outputFiles[0].text)(transport, watchers, module, module.exports)
   const form = { projectId: 'project-a', kind: 'inspection' }
-  module.exports.usePlanReferences(() => ({ path }), form, { value: true }, options, error)
-  return { form, options, error, refresh: () => watchers[0]() }
+  const refs = module.exports.usePlanReferences(() => ({ path }), form, { value: true }, options, error)
+  return { form, options, error, refs, refresh: () => watchers[0]() }
 }
+
+test('任务配置预估数量仅包含当前绑定设备，保留设备组历史成员', async () => {
+  let bound = [{ id: 'current' }]
+  const room = { id: 'room', deviceIds: ['current', 'unbound', 'current'] }
+  const vm = setup({ query: async path => ({ data: path === 'devices' ? bound : path === 'groups' ? [room] : [], total: path === 'devices' ? bound.length : path === 'groups' ? 1 : 0 }), options: async () => [] })
+  vm.form.groupIds = ['room']; await vm.refresh()
+  assert.equal(vm.refs.deviceCount.value, 1)
+  assert.deepEqual(room.deviceIds, ['current', 'unbound', 'current'])
+  bound = [{ id: 'current' }, { id: 'unbound' }]; await vm.refresh()
+  assert.equal(vm.refs.deviceCount.value, 2)
+})
 
 test('巡检和维保候选分别按当前项目及作业类型过滤，只加载启用标准和周期', async () => {
   const calls = []
