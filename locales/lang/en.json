@@ -1,6 +1,8 @@
 {
   "FacilityEnergy": {
     "text": {
+      "profileSaved": "Device profile saved successfully",
+      "profileSavedRefreshFailed": "Device profile saved, but refresh failed. Reopen the details. Reason: ",
       "profileImportHint": "Download the template for the current selection and fill in a responsible account. Blank optional cells keep existing values; switches accept Yes or No.",
       "profileWorkbook": "Device profiles.xlsx",
       "profileSheet": "Device profiles",

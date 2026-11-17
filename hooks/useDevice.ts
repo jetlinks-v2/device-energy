@@ -1,4 +1,5 @@
 import { ref, reactive, computed, onMounted } from 'vue'
+import { message } from 'ant-design-vue'
 import { feText } from '../shared/i18n'
 import { facility } from '../api'
 import { deviceFields } from '../shared/resources'
@@ -30,8 +31,10 @@ export function useDevice(input: Device) {
       // 空间目录已经按项目和权限裁剪；保留父级 ID，由 TreeSelect 组装层级。
       options.spaces = spaces.map((p) => ({ value: p.id, label: p.name || p.id, parentId: typeof p.parentId === 'string' ? p.parentId : undefined }))
       history.value = logs.data
+      return true
     } catch (e) {
       error.value = messageOf(e)
+      return false
     } finally {
       busy.value = false
     }
@@ -49,9 +52,13 @@ export function useDevice(input: Device) {
       // Both legacy columns now represent one switch; explicit false must clear both.
       await facility.updateDevice({ ...device.value, ...values,
         inspectionEnabled: !!workEnabled, maintenanceEnabled: !!workEnabled })
-      await refresh()
+      // 更新成功与刷新失败分开反馈，避免把已保存的数据误报成保存失败。
+      if (await refresh()) message.success(feText('profileSaved'))
+      else message.warning(feText('profileSavedRefreshFailed') + error.value)
     } catch (e) {
       error.value = messageOf(e)
+      message.error(error.value)
+    } finally {
       busy.value = false
     }
   }
