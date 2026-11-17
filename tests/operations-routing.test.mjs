@@ -18,7 +18,7 @@ function setup(id, records = {}) {
     fault: async id => { reads.push(id); if (!records[id]) throw Error('not found'); return records[id] },
     faultHistory: async () => ({ data: [], total: 0 }),
     read: async (_, id) => { reads.push(id); if (!records[id]) throw Error('not found'); return records[id] },
-    get: async () => ({ data: [], total: 0 }),
+    get: async path => path === 'alerts/levels' ? [{ level: 3, title: '严重' }] : ({ data: [], total: 0 }),
     query: async (path, query) => {
       const filter = query.terms.find(term => term.column === 'projectId')
       const project = filter?.value
@@ -69,6 +69,16 @@ function setup(id, records = {}) {
     mount: async () => { for (const callback of mounted) await callback(); await settle() },
     alertsPage: () => scope.run(() => load('views/facility/Alerts/index.vue', true)) }
 }
+
+test('预警列表读取平台等级配置，失败时清除旧配置并显示错误', async () => {
+  const ctx = setup(), vm = ctx.start('useAlertCenter'); await ctx.ready()
+  assert.deepEqual(vm.levels.value, [{ level: 3, title: '严重' }])
+  const get = ctx.facility.get
+  ctx.facility.get = async path => { if (path === 'alerts/levels') throw Error('等级不可用'); return get(path) }
+  await vm.load()
+  assert.equal(vm.error.value, '等级不可用'); assert.deepEqual(vm.levels.value, []); assert.deepEqual(vm.rows.value, [])
+  ctx.scope.stop()
+})
 
 test('故障深链根据授权详情所属项目打开，后续项目筛选不重选旧 ID', async () => {
   const ctx = setup('target', { target: fault('target', 'b') }), vm = ctx.start('useFaults')

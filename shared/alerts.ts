@@ -1,5 +1,5 @@
 import type { Entity } from './types'
-import { feText } from './i18n'
+import { feLocale, feText } from './i18n'
 import type { TaskProcess } from './types'
 export interface FacilityAlert extends Entity {
   name: string; deviceId?: string; targetId?: string; ruleType: string; energyType?: string
@@ -11,7 +11,17 @@ export interface FacilityAlert extends Entity {
 export const alertHandling = (state?: string) => state === 'closed' ? feText('alertHandled') : state === 'processing' || state === 'acknowledged' ? feText('alertHandlingNow') : feText('alertUnhandled')
 export const alertSignal = (state: string, source?: string) => state === 'recovered' ? feText(source === 'saas' ? 'platformAlarmCleared' : 'alertRecovered') : feText('alertAbnormal')
 export const alertSummary = (row: FacilityAlert) => row.source === 'saas' ? row.sourceReason || row.sourceCondition || feText('platformDeviceAlarm') : alertValue(row.value, row.unit)
-export const alertSeverity = (row: FacilityAlert) => row.source === 'saas' ? `${feText('platformAlarmLevel')} ${row.sourceLevel ?? '—'}` : feText(row.level === 'critical' ? 'criticalThreshold' : 'alertThreshold')
+export interface PlatformAlarmLevel { level: number; title: string; i18nMessages?: Record<string, string> }
+export function alertSeverity(row: FacilityAlert, levels: PlatformAlarmLevel[] = []): string {
+  if (row.source !== 'saas') return feText(row.level === 'critical' ? 'criticalThreshold' : 'alertThreshold')
+  const config = levels.find(item => item.level === row.sourceLevel)
+  return config?.i18nMessages?.[feLocale()] || config?.title || `${feText('platformAlarmLevel')} ${row.sourceLevel ?? '—'}`
+}
+/** 与平台告警列表使用相同的等级配色；未配置等级不推断为本地严重。 */
+export function alertColor(row: FacilityAlert): string | undefined {
+  if (row.source !== 'saas') return row.level === 'critical' ? 'red' : 'orange'
+  return ({ 1: '#e50012', 2: '#ff9457', 3: '#fabd47', 4: '#999999', 5: '#bbbbbb' } as Record<number, string>)[row.sourceLevel ?? -1]
+}
 export const alertTypes = () => [
   ['saas', feText('platformDeviceAlarm')], ['overdue', feText('taskOverdueReminder')], ['dueSoon', feText('taskDueSoonReminder')],
   ['offline', feText('deviceOffline')], ['stale', feText('reportingInterrupted')], ['instant', feText('instantaneousMetric')],

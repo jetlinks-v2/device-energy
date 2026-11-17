@@ -3,7 +3,7 @@ import { useRoute } from 'vue-router'
 import { useBillingProject } from './useBillingProject'
 import { useOperationRoute } from './useOperationRoute'
 import { facility } from '../api'
-import type { FacilityAlert } from '../shared/alerts'
+import type { FacilityAlert, PlatformAlarmLevel } from '../shared/alerts'
 import { messageOf, type TaskProcess, type Term } from '../shared/types'
 
 export function useAlertCenter() {
@@ -12,6 +12,7 @@ export function useAlertCenter() {
   const scope = ref('device'), handling = ref(['alerts', 'pending'].includes(String(route.query.overview)) ? 'open' : 'all'), historyMode = ref(false), terms = ref<Term[]>([])
   const busy = ref(false), detailBusy = ref(false), actionBusy = ref(false), error = project.error, comment = ref(''), action = ref('')
   const syncing = ref(false)
+  const levels = ref<PlatformAlarmLevel[]>([])
   const total = ref(0), page = ref(1), history = ref<FacilityAlert[]>([]), processes = ref<TaskProcess[]>([]), historyTotal = ref(0), historyPage = ref(1)
   const processTotal = ref(0), processPage = ref(1)
   let generation = 0, detailGeneration = 0
@@ -24,15 +25,18 @@ export function useAlertCenter() {
     finally { syncing.value = false }
   }
   async function loadRequested(requested?: FacilityAlert) {
-    const ticket = ++generation; detailGeneration++; selected.value = undefined; detailBusy.value = false; rows.value = []; total.value = 0
+    const ticket = ++generation; detailGeneration++; selected.value = undefined; detailBusy.value = false; rows.value = []; total.value = 0; levels.value = []
     busy.value = true; error.value = ''
     try {
       const filters: Term[] = [...project.projectTerms(), ...terms.value]
       if (handling.value !== 'all') filters.push(handling.value === 'open' ? { terms: [{ column: 'processingState', value: 'open' }, { column: 'processingState', termType: 'isnull', type: 'or', value: true }] } : { column: 'processingState', value: handling.value })
       const path = historyMode.value ? 'alerts/history' : scope.value === 'plan' ? 'alerts/plans' : 'alerts'
-      const result = await facility.query<FacilityAlert>(path, { pageIndex: page.value - 1, pageSize: 12, terms: filters, sorts: [{ name: 'lastTime', order: 'desc' }, { name: 'id', order: 'desc' }] })
+      const [result, config] = await Promise.all([
+        facility.query<FacilityAlert>(path, { pageIndex: page.value - 1, pageSize: 12, terms: filters, sorts: [{ name: 'lastTime', order: 'desc' }, { name: 'id', order: 'desc' }] }),
+        facility.get<PlatformAlarmLevel[]>('alerts/levels')
+      ])
       if (ticket !== generation) return
-      rows.value = result.data; total.value = result.total
+      rows.value = result.data; total.value = result.total; levels.value = config
       if (requested) await select(requested)
       else if (result.data[0]) void select(result.data[0])
     } catch (cause) { if (ticket === generation) error.value = messageOf(cause) }
@@ -65,5 +69,5 @@ export function useAlertCenter() {
   watch(scope, value => { if (value === 'plan') historyMode.value = false })
   watch(page, () => { if (!routing.value) void load() })
   onBeforeUnmount(() => { generation++; detailGeneration++ })
-  return { ...project, rows, selected, scope, handling, historyMode, terms, busy, syncing, detailBusy, actionBusy, error, comment, action, total, page, history, processes, historyTotal, historyPage, processTotal, processPage, load, refresh, select, handle }
+  return { ...project, rows, selected, levels, scope, handling, historyMode, terms, busy, syncing, detailBusy, actionBusy, error, comment, action, total, page, history, processes, historyTotal, historyPage, processTotal, processPage, load, refresh, select, handle }
 }

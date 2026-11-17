@@ -33,7 +33,7 @@ test('余额严重值方向与用量严重值相反，状态异常必须指定�
 
 const displayModule = { exports: {} }
 const displayCode = transformSync(await readFile(new URL('../shared/alerts.ts', import.meta.url), 'utf8'), { loader: 'ts', format: 'cjs' }).code
-new Function('require', 'module', 'exports', displayCode)(() => ({ feText: key => ({ seconds: '秒', alertTriggered: '触发预警', alertEscalated: '预警升级', alertRecovered: '已恢复' }[key] || key) }), displayModule, displayModule.exports)
+new Function('require', 'module', 'exports', displayCode)(() => ({ feLocale: () => 'zh', feText: key => ({ seconds: '秒', alertTriggered: '触发预警', alertEscalated: '预警升级', alertRecovered: '已恢复' }[key] || key) }), displayModule, displayModule.exports)
 const { alertValue, alertProcess, alertMessage } = displayModule.exports
 
 test('预警消息中的协议时长单位本地化，物理单位和其他文案不变', () => {
@@ -58,6 +58,21 @@ test('自动触发和恢复日志展示事件含义与数值，人工处理说�
 })
 
 const { alertSignal, alertSummary, alertSeverity } = displayModule.exports
+const { alertColor } = displayModule.exports
+
+test('平台等级按配置名称展示，颜色沿用平台等级且不误用本地严重值', () => {
+  const levels = [{ level: 2, title: '紧急' }, { level: 3, title: '严重' }, { level: 8, title: '园区提醒' }]
+  const row = { source: 'saas', sourceLevel: 3, level: 'warning' }
+  assert.equal(alertSeverity(row, levels), '严重')
+  assert.equal(alertSeverity({ ...row, sourceLevel: 2 }, levels), '紧急')
+  assert.equal(alertSeverity({ ...row, sourceLevel: 8 }, levels), '园区提醒')
+  assert.equal(alertSeverity({ ...row, sourceLevel: 6 }, levels), 'platformAlarmLevel 6')
+  assert.equal(alertColor({ ...row, sourceLevel: 6, level: 'critical' }), undefined)
+  assert.deepEqual([1, 2, 3, 4, 5].map(sourceLevel => alertColor({ ...row, sourceLevel })),
+    ['#e50012', '#ff9457', '#fabd47', '#999999', '#bbbbbb'])
+  assert.equal(alertColor({ level: 'critical' }), 'red')
+  assert.equal(alertColor({ level: 'warning' }), 'orange')
+})
 
 test('平台告警展示来源原因与原始等级，解除与人工处理状态独立', () => {
   const row = { source: 'saas', sourceLevel: 4, sourceReason: '持续用水超过30分钟', value: 999, unit: 'kWh' }
