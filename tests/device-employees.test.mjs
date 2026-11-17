@@ -21,7 +21,7 @@ const bundled = await build({
 function setup(projectId, fail = false, flags = {}) {
   const calls = [], module = { exports: {} }
   const transport = {
-    read: async () => ({ id: 'device', projectId, version: 3, ...flags }),
+    read: async () => ({ id: 'device', projectId, version: 3, responsibleUserId: 'employee', ...flags }),
     updateDevice: async row => calls.push(row),
     options: async path => {
       calls.push(path)
@@ -84,4 +84,17 @@ test('项目人员查询失败时清空旧候选并展示错误，不扩大查�
   assert.deepEqual(vm.options.employees, [])
   assert.equal(vm.error.value, '无权查询项目人员')
   assert.equal(calls.includes('employees'), false)
+})
+
+
+test('详情负责人必填：空白不发送保存，选中负责人后保存成功', async () => {
+  const { vm, calls } = setup('project', false, { responsibleUserId: undefined })
+  await vm.refresh()
+  assert.equal(vm.fields.find(field => field.key === 'responsibleUserId').required, true)
+  await vm.save()
+  assert.equal(calls.some(call => typeof call === 'object'), false)
+  assert.match(vm.error.value, /负责人/)
+  vm.change('responsibleUserId', 'employee')
+  await vm.save()
+  assert.equal(calls.filter(call => typeof call === 'object').at(-1).responsibleUserId, 'employee')
 })

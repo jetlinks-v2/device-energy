@@ -398,7 +398,7 @@ export const deviceFields: Field[] = [
   f('startDate', feText('commissioningDate'), 'date'),
   f('warrantyDate', feText('warrantyEndDate'), 'date'),
   f('maintainer', feText('maintenanceProvider')),
-  f('responsibleUserId', feText('responsiblePerson'), 'select', 'employees'),
+  { ...f('responsibleUserId', feText('responsiblePerson'), 'select', 'employees'), required: true },
   f('spaceId', feText('installationSpace'), 'tree', 'spaces'),
   f('location', feText('installationLocation')),
   f('floor', feText('floor')),

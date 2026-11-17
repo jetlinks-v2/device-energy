@@ -1,4 +1,5 @@
 import { ref, reactive, computed, onMounted } from 'vue'
+import { feText } from '../shared/i18n'
 import { facility } from '../api'
 import { deviceFields } from '../shared/resources'
 import type { Device, Entity, FormValues, FormValue, Option } from '../shared/types'
@@ -39,8 +40,11 @@ export function useDevice(input: Device) {
     form[key] = value
   }
   const save = async () => {
+    if (busy.value) return
     busy.value = true
+    error.value = ''
     try {
+      if (typeof form.responsibleUserId !== 'string' || !form.responsibleUserId.trim()) throw Error(feText('profileResponsibleRequired'))
       const { workEnabled, ...values } = form
       // Both legacy columns now represent one switch; explicit false must clear both.
       await facility.updateDevice({ ...device.value, ...values,
