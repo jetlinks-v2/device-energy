@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { feText } from '../../shared/i18n'
 import { display, taskTime, type Pager, type Query } from '../../shared/types'
 import { faultState } from '../../shared/faults'
-import { alertHandling, alertSignal } from '../../shared/alerts'
+import { alertHandlingColor, alertHandling, alertSignal } from '../../shared/alerts'
 import type { ReportDetail, ReportDrill } from './reportModel'
 const props = defineProps<{ drill: ReportDrill; request: (query: Query) => Promise<{ success: boolean; result: Pager<ReportDetail> }> }>()
 const emit = defineEmits<{ close: []; original: [ReportDetail] }>()
@@ -26,8 +26,8 @@ const columns = computed(() => [
       :alert-show="false" :pagination="{ pageSize: 12 }" :scroll="{ x: 850 }">
       <template #name="record">{{ record.name || '—' }}</template>
       <template #deviceName="record">{{ record.deviceName || '—' }}</template>
-      <template #state="record">{{ drill.source === 'faults' ? faultState(record.state)?.label || display(record.state) : drill.source === 'alerts' ? alertSignal(record.state) : display(record.state) }}</template>
-      <template #processingState="record">{{ alertHandling(record.processingState) }}</template>
+      <template #state="record">{{ drill.source === 'faults' ? faultState(record.state)?.label || display(record.state) : drill.source === 'alerts' ? alertSignal(record.state, record.source === 'saas' ? 'saas' : undefined) : display(record.state) }}</template>
+      <template #processingState="record"><a-tag :color="alertHandlingColor(record.processingState)">{{ alertHandling(record.processingState) }}</a-tag></template>
       <template #time="record">{{ taskTime(record[drill.source === 'work' ? 'scheduledTime' : drill.source === 'alerts' ? 'firstTime' : 'createTime']) }}</template>
       <template #usage="record">{{ record.usage?.value ?? '—' }} <a-tag v-if="!record.usage?.complete" color="orange">{{ feText('incomplete') }}</a-tag></template>
       <template #unit="record">{{ record.unit }}</template>

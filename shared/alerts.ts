@@ -9,8 +9,32 @@ export interface FacilityAlert extends Entity {
   deviceName?: string; spaceName?: string; sourceRecordId?: string
 }
 export const alertHandling = (state?: string) => state === 'closed' ? feText('alertHandled') : state === 'processing' || state === 'acknowledged' ? feText('alertHandlingNow') : feText('alertUnhandled')
+export const alertHandlingColor = (state?: string) => state === 'closed' ? 'green' : state === 'processing' || state === 'acknowledged' ? 'blue' : 'orange'
+/** 仅转换展示文案，保留平台原始条件，不将状态码猜成具体故障类型。 */
+export function alertCondition(condition?: string): string {
+  if (!condition) return '—'
+  if (/^\s*故障状态\s*(?:is greater than|大于|>)\s*0\s*$/i.test(condition)) return feText('deviceFaultCondition')
+  const operators: [string, string][] = [
+    ['is greater than or equal to', feText('conditionGte')], ['is less than or equal to', feText('conditionLte')],
+    ['is not equal to', feText('conditionNe')], ['is equal to', feText('conditionEq')],
+    ['is greater than', feText('conditionGt')], ['is less than', feText('conditionLt')]
+  ]
+  return operators.reduce((text, [operator, label]) => text.replace(new RegExp(`\\b${operator}\\b`, 'gi'), label), condition)
+}
 export const alertSignal = (state: string, source?: string) => state === 'recovered' ? feText(source === 'saas' ? 'platformAlarmCleared' : 'alertRecovered') : feText('alertAbnormal')
-export const alertSummary = (row: FacilityAlert) => row.source === 'saas' ? row.sourceReason || row.sourceCondition || feText('platformDeviceAlarm') : alertValue(row.value, row.unit)
+/** 仅解释明确的故障上报；其他指标保留原值和比较方向。 */
+export function alertReason(reason?: string): string {
+  if (/^\s*故障状态\s*=\s*[1-9]\d*\s*$/.test(reason || '')) return feText('deviceFaultReported')
+  return alertCondition(reason)
+}
+export function alertSummary(row: FacilityAlert): string {
+  if (row.source !== 'saas') return alertValue(row.value, row.unit)
+  const reason = row.sourceReason || row.sourceCondition || feText('platformDeviceAlarm')
+  // 只解释明确的故障状态上报，不从数值猜测通信、传感器等具体故障类型。
+  if (/^\s*故障状态\s*=\s*[1-9]\d*\s*$/.test(reason))
+    return feText(row.state === 'recovered' ? 'deviceFaultReportedCleared' : 'deviceFaultReported')
+  return alertReason(reason)
+}
 export interface PlatformAlarmLevel { level: number; title: string; i18nMessages?: Record<string, string> }
 export function alertSeverity(row: FacilityAlert, levels: PlatformAlarmLevel[] = []): string {
   if (row.source !== 'saas') return feText(row.level === 'critical' ? 'criticalThreshold' : 'alertThreshold')
@@ -37,14 +61,15 @@ export function alertValue(value?: number, unit?: string): string {
   return `${Number(value.toFixed(2))}${suffix ? ' ' + suffix : ''}`
 }
 
-/** Older notifications contain the protocol unit in their saved message. */
+/** 历史消息只描述当时的故障上报，不推断设备当前状态，不改写存储内容。 */
 export function alertMessage(message?: string): string {
-  return (message || '').replace(/(\d)\s*seconds\b/g, (_, value: string) => `${value} ${feText('seconds')}`)
+  return (message || '').split(/([·\r\n]+)/).map(part => part.replace(/^(\s*)故障状态\s*=\s*[1-9]\d*(\s*)$/, (_, before: string, after: string) => before + feText('deviceFaultRecorded') + after))
+    .join('').replace(/(\d)\s*seconds\b/g, (_, value: string) => `${value} ${feText('seconds')}`)
 }
 
 export function alertProcess(log: TaskProcess, unit?: string): string {
   const key = log.action === 'trigger' ? 'alertTriggered' : log.action === 'escalate' ? 'alertEscalated' : log.action === 'recover' ? 'alertRecovered' : undefined
   if (!key) return log.comment || alertHandling(log.toState)
   const value = log.comment?.trim()
-  return feText(key) + (value && Number.isFinite(Number(value)) ? ` · ${alertValue(Number(value), unit)}` : value ? ` · ${value}` : '')
+  return feText(key) + (value && Number.isFinite(Number(value)) ? ` · ${alertValue(Number(value), unit)}` : value ? ` · ${alertMessage(value)}` : '')
 }

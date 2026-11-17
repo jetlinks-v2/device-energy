@@ -33,8 +33,22 @@ test('余额严重值方向与用量严重值相反，状态异常必须指定�
 
 const displayModule = { exports: {} }
 const displayCode = transformSync(await readFile(new URL('../shared/alerts.ts', import.meta.url), 'utf8'), { loader: 'ts', format: 'cjs' }).code
-new Function('require', 'module', 'exports', displayCode)(() => ({ feLocale: () => 'zh', feText: key => ({ seconds: '秒', alertTriggered: '触发预警', alertEscalated: '预警升级', alertRecovered: '已恢复' }[key] || key) }), displayModule, displayModule.exports)
+new Function('require', 'module', 'exports', displayCode)(() => ({ feLocale: () => 'zh', feText: key => ({ seconds: '秒', alertTriggered: '触发预警', alertEscalated: '预警升级', alertRecovered: '已恢复', deviceFaultReported: '设备上报故障状态，请检查设备', deviceFaultReportedCleared: '设备曾上报故障状态，平台告警已解除，请核实现场情况' }[key] || key) }), displayModule, displayModule.exports)
 const { alertValue, alertProcess, alertMessage } = displayModule.exports
+
+test('告警说明、历史消息与转故障摘要使用可读文案，不改写非告警值或人工说明', () => {
+  const { alertReason } = displayModule.exports
+  assert.equal(alertReason('故障状态 = 1'), '设备上报故障状态，请检查设备')
+  assert.equal(alertReason('故障状态 = 2'), '设备上报故障状态，请检查设备')
+  for (const reason of ['电压 = 1', '故障状态 = 0', '故障状态 = -1', '故障状态 = 1.5', '故障状态 = 1号设备', '传感器通信中断'])
+    assert.equal(alertReason(reason), reason)
+  assert.equal(alertMessage('5G园区 · 201 · 智能电表故障告警 · 故障状态 = 1'), '5G园区 · 201 · 智能电表故障告警 · deviceFaultRecorded')
+  assert.equal(alertMessage('故障状态 = 2\n请检查现场'), 'deviceFaultRecorded\n请检查现场')
+  assert.equal(alertMessage('故障状态 = 10.5'), '故障状态 = 10.5')
+  assert.equal(alertMessage('故障状态 = 10号设备'), '故障状态 = 10号设备')
+  assert.equal(alertProcess({ action: 'trigger', comment: '故障状态 = 1' }), '触发预警 · deviceFaultRecorded')
+  assert.equal(alertProcess({ action: 'handle', comment: '故障状态 = 1' }), '故障状态 = 1')
+})
 
 test('预警消息中的协议时长单位本地化，物理单位和其他文案不变', () => {
   assert.equal(alertMessage('设备离线，当前1810seconds'), '设备离线，当前1810 秒')
@@ -59,6 +73,37 @@ test('自动触发和恢复日志展示事件含义与数值，人工处理说�
 
 const { alertSignal, alertSummary, alertSeverity } = displayModule.exports
 const { alertColor } = displayModule.exports
+
+test('触发条件用业务中文展示，比较方向和值保持原意', () => {
+  const { alertCondition } = displayModule.exports
+  assert.equal(alertCondition('故障状态 is greater than 0'), 'deviceFaultCondition')
+  assert.equal(alertCondition('故障状态 IS GREATER THAN 0'), 'deviceFaultCondition')
+  for (const [operator, key] of [['greater than', 'Gt'], ['less than', 'Lt'], ['greater than or equal to', 'Gte'], ['less than or equal to', 'Lte'], ['equal to', 'Eq'], ['not equal to', 'Ne']])
+    assert.equal(alertCondition(`电压 is ${operator} 220`), `电压 condition${key} 220`)
+  assert.equal(alertCondition('故障状态 is greater than 10'), '故障状态 conditionGt 10')
+  assert.equal(alertCondition('持续用水超过30分钟'), '持续用水超过30分钟')
+  assert.equal(alertCondition(), '—')
+  assert.equal(alertSummary({ source: 'saas', sourceCondition: '故障状态 is greater than 0' }), 'deviceFaultCondition')
+})
+
+test('人工处理状态独立使用橙蓝绿标识，不受平台解除状态影响', () => {
+  const { alertHandlingColor } = displayModule.exports
+  assert.equal(alertHandlingColor('open'), 'orange')
+  assert.equal(alertHandlingColor(undefined), 'orange')
+  assert.equal(alertHandlingColor('processing'), 'blue')
+  assert.equal(alertHandlingColor('acknowledged'), 'blue')
+  assert.equal(alertHandlingColor('closed'), 'green')
+})
+
+test('故障状态提示面向员工，解除记录不冒充当前故障，原始证据不改写', () => {
+  const row = { source: 'saas', sourceReason: '故障状态 = 1', sourceCondition: '故障状态 is greater than 0', state: 'open' }
+  assert.equal(alertSummary(row), '设备上报故障状态，请检查设备')
+  assert.equal(alertSummary({ ...row, state: 'recovered' }), '设备曾上报故障状态，平台告警已解除，请核实现场情况')
+  assert.equal(row.sourceReason, '故障状态 = 1'); assert.equal(row.sourceCondition, '故障状态 is greater than 0')
+  for (const sourceReason of ['电压 = 1', '故障状态 = 0', '故障状态 = -1', '传感器通信中断'])
+    assert.equal(alertSummary({ ...row, sourceReason }), sourceReason)
+  assert.equal(alertSummary({ value: 1, unit: 'kWh' }), '1 kWh')
+})
 
 test('平台等级按配置名称展示，颜色沿用平台等级且不误用本地严重值', () => {
   const levels = [{ level: 2, title: '紧急' }, { level: 3, title: '严重' }, { level: 8, title: '园区提醒' }]
