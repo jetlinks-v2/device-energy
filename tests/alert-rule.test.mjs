@@ -56,3 +56,33 @@ test('自动触发和恢复日志展示事件含义与数值，人工处理说�
   assert.equal(alertProcess({ action: 'escalate', comment: '12' }, 'A'), '预警升级 · 12 A')
   assert.equal(alertProcess({ action: 'handle', comment: '已确认网络故障' }, 'seconds'), '已确认网络故障')
 })
+
+const { alertSignal, alertSummary, alertSeverity } = displayModule.exports
+
+test('平台告警展示来源原因与原始等级，解除与人工处理状态独立', () => {
+  const row = { source: 'saas', sourceLevel: 4, sourceReason: '持续用水超过30分钟', value: 999, unit: 'kWh' }
+  assert.equal(alertSummary(row), '持续用水超过30分钟')
+  assert.equal(alertSummary({ ...row, sourceReason: '', sourceCondition: '压力低于范围' }), '压力低于范围')
+  assert.equal(alertSeverity(row), 'platformAlarmLevel 4')
+  assert.equal(alertSignal('recovered', 'saas'), 'platformAlarmCleared')
+  assert.equal(alertSignal('recovered'), '已恢复')
+  assert.equal(alertSummary({ value: 0, unit: 'kWh' }), '0 kWh')
+})
+
+test('任务提醒按项目负责人分发无需另选员工，计划提醒仍需指定员工', () => {
+  const task = { ...rule(), ruleType: 'overdue', threshold: 1, notifyUserId: undefined }
+  assert.equal(validateAlertRule(task, 'project'), true)
+  assert.equal(validateAlertRule({ ...task, ruleType: 'dueSoon' }, 'project'), false)
+  assert.equal(validateAlertRule({ ...task, ruleType: 'dueSoon', staleAfterSeconds: 1800 }, 'project'), true)
+  assert.equal(validateAlertRule({ ...task, ruleType: 'plan' }, 'project'), false)
+  assert.equal(validateAlertRule({ ...task, ruleType: 'plan', notifyUserId: 'worker', threshold: 0 }, 'project'), false)
+})
+
+test('任务提醒无需累计任务数和重复间隔，支持类型筛选与旧时段保留', () => {
+  const row={ projectId: 'p', name: '巡检提醒', ruleType: 'dueSoon', taskKind: 'inspection', cycleId: 'cycle', staleAfterSeconds: 600 }
+  assert.equal(validateAlertRule(row,'project'),true)
+  assert.equal(validateAlertRule({...row,taskKind:'other'},'project'),false)
+  assert.equal(validateAlertRule({...row,staleAfterSeconds:0},'project'),false)
+  assert.equal(validateAlertRule({...row,staleAfterSeconds:undefined,legacySchedule:{weekly:{},dates:{}}},'project'),true)
+  assert.equal(validateAlertRule({...row,ruleType:'overdue',staleAfterSeconds:undefined},'project'),true)
+})

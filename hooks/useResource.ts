@@ -32,9 +32,14 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     templateId = ref<string>()
   const references = usePlanReferences(resource, form, opened, options, error)
   const formFields = computed(() => resource().fields.map(field =>
+    resource().path === 'energy/mappings' && field.key === 'deviceId' && form.deviceId &&
+      !(options.devices || []).some(row => row.value === form.deviceId)
+      ? { ...field, options: [...(options.devices || []), { value: String(form.deviceId), label: String(form.name || feText('historicalMeterDevice')), disabled: true }] } :
     ['standards', 'cycles', 'plans'].includes(resource().path) && field.key === 'kind' && kind
       ? { ...field, disabled: true } : field))
+  let optionGeneration = 0
   const loadOptions = async () => {
+    const ticket = ++optionGeneration
     try {
       if (resource().path === 'energy/replacements') currentUserId.value = (await facility.context()).userId
       const sources = new Set([
@@ -53,7 +58,9 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
           }
           const items = ['projects', 'employees'].includes(source)
             ? await facility.options(source)
-            : (await facility.query(source, { pageSize: 200 })).data
+            : (await facility.query(source, { pageSize: 200, ...(resource().path === 'energy/mappings' && source === 'devices'
+              ? { terms: [{ column: 'energyEnabled', value: true }, { column: 'syncState', value: 'active' }] } : {}) })).data
+          if (ticket !== optionGeneration) return
           options[source] = items.map((row) => ({ value: row.id, label: row.name || row.id }))
           if (source === 'projects' && resource().path === 'devices' && projectId.value && !options.projects.some(row => row.value === projectId.value)) projectId.value = undefined
         })
@@ -71,7 +78,8 @@ export function useResource(resource: () => Resource, kind?: string, managed = f
     if (!row && projectId.value) form.projectId = projectId.value
     previewRows.value = []
     opened.value = true
-    if (resource().path === 'energy/mappings') void loadTemplates()
+    // 每次打开重取候选，设备停用后不继续使用页面初始化时的旧列表；原设备仅回显。
+    if (resource().path === 'energy/mappings') { options.devices = []; void loadOptions(); void loadTemplates() }
   }
   const change = (key: string, value: FormValue) => {
     if (['standards', 'cycles', 'plans'].includes(resource().path) && key === 'kind' && kind) return

@@ -5,10 +5,15 @@ export interface FacilityAlert extends Entity {
   name: string; deviceId?: string; targetId?: string; ruleType: string; energyType?: string
   state: string; processingState?: string; level: string; value?: number; threshold?: number; unit?: string
   firstTime?: number; lastTime?: number; recoveredTime?: number; occurrences?: number; episodeId?: string; comment?: string
+  source?: string; sourceLevel?: number; sourceState?: string; sourceReason?: string; sourceCondition?: string
+  deviceName?: string; spaceName?: string; sourceRecordId?: string
 }
 export const alertHandling = (state?: string) => state === 'closed' ? feText('alertHandled') : state === 'processing' || state === 'acknowledged' ? feText('alertHandlingNow') : feText('alertUnhandled')
-export const alertSignal = (state: string) => state === 'recovered' ? feText('alertRecovered') : feText('alertAbnormal')
+export const alertSignal = (state: string, source?: string) => state === 'recovered' ? feText(source === 'saas' ? 'platformAlarmCleared' : 'alertRecovered') : feText('alertAbnormal')
+export const alertSummary = (row: FacilityAlert) => row.source === 'saas' ? row.sourceReason || row.sourceCondition || feText('platformDeviceAlarm') : alertValue(row.value, row.unit)
+export const alertSeverity = (row: FacilityAlert) => row.source === 'saas' ? `${feText('platformAlarmLevel')} ${row.sourceLevel ?? '—'}` : feText(row.level === 'critical' ? 'criticalThreshold' : 'alertThreshold')
 export const alertTypes = () => [
+  ['saas', feText('platformDeviceAlarm')], ['overdue', feText('taskOverdueReminder')], ['dueSoon', feText('taskDueSoonReminder')],
   ['offline', feText('deviceOffline')], ['stale', feText('reportingInterrupted')], ['instant', feText('instantaneousMetric')],
   ['balance', feText('actualBalanceRemainingQuantity')], ['usage', feText('usage')], ['reading-anomaly', feText('readingAnomaly')],
   ['state', feText('abnormalState')], ['plan', feText('monthlyEnergyPlanProgressPercent')]

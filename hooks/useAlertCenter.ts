@@ -11,10 +11,18 @@ export function useAlertCenter() {
   const project = useBillingProject(undefined, true), rows = ref<FacilityAlert[]>([]), selected = ref<FacilityAlert>()
   const scope = ref('device'), handling = ref(['alerts', 'pending'].includes(String(route.query.overview)) ? 'open' : 'all'), historyMode = ref(false), terms = ref<Term[]>([])
   const busy = ref(false), detailBusy = ref(false), actionBusy = ref(false), error = project.error, comment = ref(''), action = ref('')
+  const syncing = ref(false)
   const total = ref(0), page = ref(1), history = ref<FacilityAlert[]>([]), processes = ref<TaskProcess[]>([]), historyTotal = ref(0), historyPage = ref(1)
   const processTotal = ref(0), processPage = ref(1)
   let generation = 0, detailGeneration = 0
   async function load() { await loadRequested() }
+  async function refresh() {
+    if (syncing.value) return
+    syncing.value = true; error.value = ''
+    try { if (scope.value === 'device' && !historyMode.value) await facility.post('alerts/_sync'); await load() }
+    catch (cause) { error.value = messageOf(cause) }
+    finally { syncing.value = false }
+  }
   async function loadRequested(requested?: FacilityAlert) {
     const ticket = ++generation; detailGeneration++; selected.value = undefined; detailBusy.value = false; rows.value = []; total.value = 0
     busy.value = true; error.value = ''
@@ -54,7 +62,8 @@ export function useAlertCenter() {
     invalidate: () => { generation++; detailGeneration++; selected.value = undefined; rows.value = []; busy.value = false; detailBusy.value = false },
     prepare: row => { page.value = 1; scope.value = row.targetId ? 'plan' : 'device'; historyMode.value = false; handling.value = 'all'; terms.value = [] }, load: loadRequested })
   watch(() => [project.projectIds.value, scope.value, handling.value, terms.value, historyMode.value], () => { if (!routing.value) { page.value = 1; void load() } })
+  watch(scope, value => { if (value === 'plan') historyMode.value = false })
   watch(page, () => { if (!routing.value) void load() })
   onBeforeUnmount(() => { generation++; detailGeneration++ })
-  return { ...project, rows, selected, scope, handling, historyMode, terms, busy, detailBusy, actionBusy, error, comment, action, total, page, history, processes, historyTotal, historyPage, processTotal, processPage, load, select, handle }
+  return { ...project, rows, selected, scope, handling, historyMode, terms, busy, syncing, detailBusy, actionBusy, error, comment, action, total, page, history, processes, historyTotal, historyPage, processTotal, processPage, load, refresh, select, handle }
 }

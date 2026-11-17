@@ -1840,6 +1840,12 @@
             ]
           },
           {
+            "permission": "facility-cycle",
+            "actions": [
+              "query"
+            ]
+          },
+          {
             "permission": "facility-device",
             "actions": [
               "query"
@@ -1950,6 +1956,7 @@
         "assetTypes": [
           "facilityDevice",
           "facilityRule",
+          "facilityCycle",
           "facilityTarget",
           "facilityGroup"
         ],

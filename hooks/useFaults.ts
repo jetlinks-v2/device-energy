@@ -57,17 +57,22 @@ export function useFaults(followRoute = true) {
     if (actionBusy.value || value !== 'create' && !actions.value.includes(value)) return
     action.value = value; actionError.value = ''; people.value = []
     Object.assign(form, { deviceId: '', name: '', description: '', priority: 'normal', category: 'other', deadline: undefined, sourceType: 'manual', sourceId: undefined,
-      reviewerId: actor.value, assigneeId: undefined, comment: '', userId: undefined, attachments: [] })
+      reviewerId: '', assigneeId: undefined, comment: '', userId: undefined, attachments: [] })
+    if (value === 'create') devices.value = []
     if (source) Object.assign(form, source)
     const ticket = ++peopleGeneration
     if (!['create', 'dispatch', 'transfer', 'reviewer'].includes(value) || !(value === 'create' ? project.projectId.value : selected.value?.projectId)) return
     actionBusy.value = true
     try {
       const actionProject = value === 'create' ? project.projectId.value : selected.value?.projectId
-      const persons = await facility.options<Entity>('employees/' + encodeURIComponent(actionProject!))
+      const [persons] = await Promise.allSettled([
+        facility.options<Entity>('employees/' + encodeURIComponent(actionProject!)),
+        value === 'create' ? searchDevices() : Promise.resolve()
+      ])
       if (ticket !== peopleGeneration) return
-      people.value = persons.map(person => ({ value: person.id, label: String(person.name || person.id) }))
-      if (value === 'create') await searchDevices()
+      if (persons.status === 'rejected') throw persons.reason
+      people.value = persons.value.map(person => ({ value: person.id, label: String(person.name || person.id) }))
+      if (value === 'create' && people.value.some(person => person.value === actor.value)) form.reviewerId = actor.value
     } catch (cause) { if (ticket === peopleGeneration) actionError.value = messageOf(cause) }
     finally { if (ticket === peopleGeneration) actionBusy.value = false }
   }

@@ -12,7 +12,7 @@ const settle = async () => { for (let i = 0; i < 15; i++) { await vue.nextTick()
 const fault = (id, projectId) => ({ id, projectId, name: id, state: 'open', version: 0, attachments: [] })
 function setup(id, records = {}) {
   const route = vue.reactive({ query: { id, projectId: 'stale-route-project' } })
-  const directories = [], queries = [], reads = [], employees = []
+  const directories = [], queries = [], reads = [], employees = [], mounted = []
   const facility = {
     context: async () => ({ userId: 'admin' }),
     fault: async id => { reads.push(id); if (!records[id]) throw Error('not found'); return records[id] },
@@ -39,7 +39,7 @@ function setup(id, records = {}) {
     const module = { exports: {} }
     const code = transformSync(source, { loader: 'ts', format: 'cjs' }).code
     new Function('require', 'module', 'exports', code)(specifier => {
-      if (specifier === 'vue') return { ...vue, onMounted: () => {}, onBeforeUnmount: () => {} }
+      if (specifier === 'vue') return { ...vue, onMounted: callback => mounted.push(callback), onBeforeUnmount: () => {} }
       if (specifier === 'vue-router') return { useRoute: () => route }
       if (specifier === '@jetlinks-web-core/store') return { useAuthStore: () => ({ hasPermission: () => true }) }
       if (specifier.endsWith('/api')) return { facility }
@@ -66,6 +66,7 @@ function setup(id, records = {}) {
     await settle()
   }
   return { route, facility, directories, queries, reads, employees, scope, start, ready, records,
+    mount: async () => { for (const callback of mounted) await callback(); await settle() },
     alertsPage: () => scope.run(() => load('views/facility/Alerts/index.vue', true)) }
 }
 
@@ -180,5 +181,29 @@ test('待处理预警入口承接统计口径，包含旧数据未设置处理�
   const vm = ctx.start('useAlertCenter'); await ctx.ready()
   assert.equal(vm.handling.value, 'open')
   assert.deepEqual(ctx.queries.at(-1).terms.at(-1).terms.map(term => term.termType || term.value), ['open', 'isnull'])
+  ctx.scope.stop()
+})
+
+for (const member of [false, true]) test(`登记故障仅在当前账号属于候选员工时默认选为验收人：${member}`, async () => {
+  const ctx = setup(undefined), vm = ctx.start('useFaults')
+  await ctx.ready(); await ctx.mount()
+  ctx.facility.options = async () => [{ id: member ? 'admin' : 'staff', name: '项目员工' }]
+  await vm.open('create')
+  assert.equal(vm.form.reviewerId, member ? 'admin' : '')
+  assert.deepEqual(vm.people.value, [{ value: member ? 'admin' : 'staff', label: '项目员工' }])
+  ctx.scope.stop()
+})
+
+test('人员查询失败不会留下默认用户 ID，也不阻止登记设备加载', async () => {
+  const ctx = setup(undefined), vm = ctx.start('useFaults')
+  await ctx.ready(); await ctx.mount()
+  ctx.facility.options = async () => { throw Error('人员查询无权限') }
+  ctx.facility.devices = async () => ({ data: [{ id: 'device', name: '智能水表' }] })
+  await vm.open('create')
+  assert.equal(vm.form.reviewerId, '')
+  assert.deepEqual(vm.people.value, [])
+  assert.deepEqual(vm.devices.value, [{ value: 'device', label: '智能水表' }])
+  assert.equal(vm.actionError.value, '人员查询无权限')
+  assert.equal(vm.actionBusy.value, false)
   ctx.scope.stop()
 })

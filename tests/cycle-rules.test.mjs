@@ -56,14 +56,13 @@ test('历史英文时间单位归一化后可预览及保存，保留分钟数�
     const period = value.weekRules[0].periods[0]
     assert.equal(period.frequencyUnit, unit)
     assert.equal(period.intervalUnit, unit)
-    assert.equal(period.warningUnit, unit)
     assert.equal(period.frequency, 1)
     assert.equal(period.interval, 1)
-    assert.equal(period.warning, 0.5)
     assert.equal(periodCount(period), 1440 / minutes)
     assert.equal(ruleDraftIssue(value), undefined)
     assert.deepEqual(serializeRule(value).weekly[1][0], {
-      ...window, frequencyUnit: unit, cooldownUnit: unit, warningUnit: unit,
+      startMinute: 0, endMinute: 0, intervalMinutes: minutes, requiredCount: 1,
+      cooldownMinutes: minutes, frequencyUnit: unit, cooldownUnit: unit,
     })
   }
 })
@@ -77,20 +76,19 @@ test('未保存单位的旧周期按分钟数推断，零间隔回显仍保持�
   assert.equal(period.frequencyUnit, '2')
   assert.equal(period.interval, 0)
   assert.equal(period.intervalUnit, '1')
-  assert.equal(period.warning, 1)
-  assert.equal(period.warningUnit, '2')
   assert.equal(periodCount(period), 5)
   assert.equal(serializeRule(value).weekly[2][0].cooldownMinutes, 0)
 })
 
 
-test('预警按开始后经过时长，至少一半且严格早于结束；多次执行按单次时长', () => {
-  assert.equal(ruleDraftIssue(draft([period({ warning: null })])).key, 'FacilityEnergy.ruleEditor.errors.warningRequired')
-  assert.equal(ruleDraftIssue(draft([period({ warning: 29 })])).key, 'FacilityEnergy.ruleEditor.errors.warningRange')
-  assert.equal(ruleDraftIssue(draft([period({ warning: 60 })])).key, 'FacilityEnergy.ruleEditor.errors.warningRange')
-  assert.equal(ruleDraftIssue(draft([period({ warning: 40 })])), undefined)
-  const two = period({ times: 2, interval: 30, intervalUnit: '1', warning: 15 })
-  assert.equal(ruleDraftIssue(draft([two])), undefined)
-  assert.equal(serializeRule(draft([two])).weekly['1'][0].warningMinutes, 15)
-  assert.equal(ruleDraft(serializeRule(draft([two]))).weekRules[0].periods[0].warning, 15)
+test('周期编辑只保存排程，旧预警不会重新写入周期，新周期无预警也能保存', () => {
+  for (const warning of [null, 29, 60, 40]) {
+    const value=draft([period({ warning })])
+    assert.equal(ruleDraftIssue(value), undefined)
+    assert.equal('warningMinutes' in serializeRule(value).weekly['1'][0], false)
+    assert.equal('warningUnit' in serializeRule(value).weekly['1'][0], false)
+  }
+  const legacy={ weekly: { 1: [{ startMinute: 480, endMinute: 720, intervalMinutes: 60, requiredCount: 1, cooldownMinutes: 60, warningMinutes: 30 }] }, dates: {} }
+  assert.equal('warning' in ruleDraft(legacy).weekRules[0].periods[0],false)
+  assert.equal(ruleDraftIssue(ruleDraft(defaultRule())), undefined)
 })
