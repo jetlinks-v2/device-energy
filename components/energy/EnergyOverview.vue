@@ -41,7 +41,6 @@ const openTodo = (key: 'readings' | 'billing' | 'alerts' | 'collection') => {
     </div>
     <a-alert v-if="vm.projectError" type="error" show-icon :message="vm.projectError"><template #action><a-button @click="vm.initialize">{{ feText('retry') }}</a-button></template></a-alert>
     <a-alert v-if="vm.states.energy.error" type="error" show-icon :message="vm.states.energy.error"><template #action><a-button @click="vm.refreshEnergy">{{ feText('retry') }}</a-button></template></a-alert>
-    <a-alert type="info" show-icon :message="feText('overviewBindingScope')" />
     <EnergyUsageScene :cards="vm.cards" :selected="vm.energyType" :loading="vm.states.energy.loading" @select="vm.energyType = $event" />
     <slot name="operations" />
     <a-alert v-if="vm.states.meters.error" type="error" show-icon :message="vm.states.meters.error"><template #action><a-button @click="vm.refreshMeters">{{ feText('retry') }}</a-button></template></a-alert>
