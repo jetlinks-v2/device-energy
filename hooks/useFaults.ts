@@ -48,7 +48,7 @@ export function useFaults(followRoute = true) {
     const ticket = ++deviceGeneration
     if (!project.projectId.value) return
     try {
-      const result = await facility.devices({ pageSize: 50, terms: [{ column: 'projectId', value: project.projectId.value }, ...(search ? [{ column: 'name', termType: 'like', value: search }] : [])] })
+      const result = await facility.devices({ pageSize: 50, terms: [{ column: 'projectId', value: project.projectId.value }, ...(search.trim() ? [{ column: 'name', termType: 'like', value: `%${search.trim()}%` }] : [])] })
       if (ticket === deviceGeneration) devices.value = result.data.map(row => ({ value: row.id, label: String(row.name || row.sourceName) }))
     } catch (cause) { if (ticket === deviceGeneration) actionError.value = messageOf(cause) }
   }

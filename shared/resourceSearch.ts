@@ -34,11 +34,11 @@ export function resourceSearchFields(resource: Resource, options: Record<string,
     if (resource.path === 'devices' && key === 'syncState') choices = optionsFor(['active', 'inactive', 'pending-project', 'source-unavailable'])
     if (key === 'meterLevel') choices = resources['energy/mappings'].fields.find(item => item.key === key)?.options
     if (key === 'kind') choices = optionsFor(['inspection', 'maintenance'])
-    if (key === 'channel') choices = optionsFor(['sms', 'h5', 'inside'])
+    if (key === 'channel') choices = optionsFor(['employee', 'sms', 'h5', 'inside'])
     if (key === 'level') choices = optionsFor(['near', 'warning', 'critical'])
     if (key === 'sourceType') choices = optionsFor(['manual', 'task', 'alert'])
     if (key === 'state' || key === 'status') choices = optionsFor(statusValues[resource.path] || [
-      'pending', 'sending', 'submitted', 'delivered', 'sent', 'failed', 'uncertain', 'cancelled'
+      'generated', 'pending', 'sending', 'submitted', 'delivered', 'sent', 'failed', 'uncertain', 'cancelled'
     ])
     if (key === 'enabled') choices = [{ value: 'true', label: feText('enabled') }, { value: 'false', label: feText('disabled') }]
     if (key === 'ruleType' && !choices) choices = resources.rules.fields.find(item => item.key === 'ruleType')?.options

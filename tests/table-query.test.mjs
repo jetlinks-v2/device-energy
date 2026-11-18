@@ -18,6 +18,15 @@ const { reportFilterValues } = load('shared/reportSearch.ts')
 const { resourceSearchFields } = load('shared/resourceSearch.ts')
 const { resources, resourceCellText } = load('shared/resources.ts')
 
+test('告警通知的员工渠道与已生成状态支持中文展示和筛选', () => {
+  for (const resource of [resources.notifications, resources.planNotifications]) {
+    assert.equal(resourceCellText(resource, 'channel', { id: 'n', channel: 'employee' }), '员工消息')
+    const fields = resourceSearchFields(resource, {})
+    assert.ok(fields.find(field => field.dataIndex === 'channel').search.options.some(option => option.value === 'employee' && option.label === '员工消息'))
+    assert.ok(fields.find(field => field.dataIndex === 'state').search.options.some(option => option.value === 'generated' && option.label === '已生成'))
+  }
+})
+
 test('历史设备组缺项目名称时按当前授权项目目录展示，不泄露不可见项目ID', () => {
   const projects = [{ value: 'p1', label: '5G园区' }]
   assert.equal(resourceCellText(resources.groups, 'projectName', { id: 'g', projectId: 'p1' }, projects), '5G园区')

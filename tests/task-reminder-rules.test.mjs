@@ -32,6 +32,15 @@ function setup(queryOverride, overrides={}) {
 }
 const legacy={weekly:{1:[{startMinute:480,endMinute:720,intervalMinutes:60,requiredCount:1,cooldownMinutes:60,warningMinutes:30}]},dates:{}}
 const old=()=>({id:'r',version:1,projectId:'p',name:'巡检提醒',ruleType:'dueSoon',taskKind:'inspection',cycleId:'c',legacySchedule:legacy,enabled:true})
+
+test('提醒规则设备搜索按名称片段匹配，并始终限定当前项目',async()=>{
+  const requests=[]
+  const {vm}=setup(undefined,{devices:async q=>{requests.push(q);return {data:[]}}})
+  await vm.edit(old());await vm.searchDevices(' 水表 ')
+  assert.deepEqual(requests.at(-1).terms,[{column:'projectId',value:'p'},{column:'name',termType:'like',value:'%水表%'}])
+  await vm.searchDevices('   ')
+  assert.deepEqual(requests.at(-1).terms,[{column:'projectId',value:'p'}])
+})
 test('编辑迁移提醒保留原时段，主动切换后仅提交统一提前量',async()=>{
   const {vm,saves}=setup()
   await vm.edit(old()); await settle()

@@ -280,6 +280,7 @@ export const states: Record<string, string> = {
   sms: feText('sms'),
   h5: feText('ownerMessage'),
   inside: feText('staffInbox'),
+  employee: feText('employeeMessageRecords'),
   manual: feText('manualRegistration'),
   task: feText('inspectionMaintenanceTask'),
   alert: feText('energyAlert')

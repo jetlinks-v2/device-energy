@@ -27,7 +27,7 @@ export function useAlertRules() {
     if (!currentProject || !opened.value) return
     devicesBusy.value = true
     try {
-      const result = await facility.devices({ pageSize: 50, terms: [{ column: 'projectId', value: currentProject }, ...(search ? [{ column: 'name', termType: 'like', value: search }] : [])] })
+      const result = await facility.devices({ pageSize: 50, terms: [{ column: 'projectId', value: currentProject }, ...(search.trim() ? [{ column: 'name', termType: 'like', value: `%${search.trim()}%` }] : [])] })
       if (ticket === optionGeneration && currentProject === form.projectId && opened.value) devices.value = result.data.map(row => ({ value: row.id, label: row.name || row.sourceName }))
     } catch (cause) { if (ticket === optionGeneration) formError.value = messageOf(cause) }
     finally { if (ticket === optionGeneration) devicesBusy.value = false }
