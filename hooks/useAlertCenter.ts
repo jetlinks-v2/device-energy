@@ -1,10 +1,12 @@
 import { ref, watch, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
+import { message } from 'ant-design-vue'
 import { useBillingProject } from './useBillingProject'
 import { useOperationRoute } from './useOperationRoute'
 import { facility } from '../api'
 import type { FacilityAlert, PlatformAlarmLevel } from '../shared/alerts'
 import { messageOf, type TaskProcess, type Term } from '../shared/types'
+import { feText } from '../shared/i18n'
 
 export function useAlertCenter() {
   const route = useRoute()
@@ -54,12 +56,19 @@ export function useAlertCenter() {
   }
   async function handle() {
     const row = selected.value, value = action.value
-    if (!row || !value || actionBusy.value || value === 'closed' && !comment.value.trim()) return
+    if (!row || !value || actionBusy.value || ['closed', 'relieve'].includes(value) && !comment.value.trim()) return
     actionBusy.value = true; error.value = ''
+    // 切换项目、告警或离开页面后，旧操作的响应不能恢复原详情或弹出成功提示。
+    const ticket = generation, detailTicket = detailGeneration
+    const current = () => ticket === generation && detailTicket === detailGeneration && selected.value?.id === row.id
     try {
-      await facility.post('alerts/' + row.id + '/handle', { version: row.version, state: value, comment: comment.value.trim() })
-      action.value = ''; comment.value = ''; await load()
-    } catch (cause) { error.value = messageOf(cause) }
+      const updated = await facility.post<FacilityAlert>('alerts/' + encodeURIComponent(row.id) + (value === 'relieve' ? '/relieve' : '/handle'),
+        value === 'relieve' ? { version: row.version, comment: comment.value.trim() } : { version: row.version, state: value, comment: comment.value.trim() })
+      if (!current()) return
+      action.value = ''; comment.value = ''
+      message.success(feText(value === 'relieve' ? 'platformAlarmRelieved' : 'alertActionSaved'))
+      await loadRequested(updated)
+    } catch (cause) { if (current()) error.value = messageOf(cause) }
     finally { actionBusy.value = false }
   }
   const routing = useOperationRoute<FacilityAlert>({ ...project, read: id => facility.read<FacilityAlert>('alerts', id),

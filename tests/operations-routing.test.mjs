@@ -41,6 +41,7 @@ function setup(id, records = {}) {
     new Function('require', 'module', 'exports', code)(specifier => {
       if (specifier === 'vue') return { ...vue, onMounted: callback => mounted.push(callback), onBeforeUnmount: () => {} }
       if (specifier === 'vue-router') return { useRoute: () => route }
+      if (specifier === 'ant-design-vue') return { message: { success: () => {} } }
       if (specifier === '@jetlinks-web-core/store') return { useAuthStore: () => ({ hasPermission: () => true }) }
       if (specifier.endsWith('/api')) return { facility }
       if (specifier.endsWith('/i18n')) return { feText: key => key }

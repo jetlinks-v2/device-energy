@@ -1,6 +1,11 @@
 {
   "FacilityEnergy": {
     "text": {
+      "relievePlatformAlarm": "解除平台告警",
+      "platformAlarmReliefReason": "解除说明",
+      "platformAlarmReliefConfirm": "确认设备异常已排除后解除平台告警。本地处理记录将保留；若异常持续，设备可能再次触发告警。",
+      "platformAlarmRelieved": "平台告警已解除",
+      "alertActionSaved": "告警处理已保存",
       "profileSaved": "设备档案保存成功",
       "profileSavedRefreshFailed": "设备档案已保存，但刷新失败，请重新打开详情。原因：",
       "profileImportHint": "下载当前筛选范围的模板，填写负责人账号。选填项留空保留原资料，开关填写“是”或“否”。",
