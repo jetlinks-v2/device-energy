@@ -5,11 +5,12 @@ import { createRequire } from 'node:module'
 const require = createRequire(new URL('../../../package.json', import.meta.url))
 const vue = require('vue'), { transformSync } = require('esbuild')
 const settle = async () => { for (let i=0;i<12;i++) { await vue.nextTick(); await Promise.resolve() } }
-function setup(queryOverride) {
+function setup(queryOverride, overrides={}) {
   const saves=[], queries=[], projectId=vue.ref('p')
   const facility={
     query: async (path,q) => { queries.push({path,q}); return queryOverride?.(path,q) ?? {data:[],total:0} },
     options: async () => [], devices: async () => ({data:[]}), save: async (path,row) => {saves.push(JSON.parse(JSON.stringify(row)));return row},
+    ...overrides,
   }
   function compile(path, dependencies) {
     const module={exports:{}}
@@ -40,6 +41,43 @@ test('编辑迁移提醒保留原时段，主动切换后仅提交统一提前�
   await vm.edit(old()); await settle(); vm.timingMode.value='uniform';vm.minutes.value=12.5
   await vm.save()
   assert.equal(saves[1].legacySchedule,null);assert.equal(saves[1].staleAfterSeconds,750)
+})
+
+test('弹窗项目与列表筛选独立，切换清空旧引用并按新项目加载及保存',async()=>{
+  const calls=[]
+  const {vm,projectId,queries,saves}=setup((path,q)=>({data:path==='groups'?[{id:q.terms[0].value+'-group',name:'设备组'}]:[],total:path==='groups'?1:0}),{
+    options:async path=>{calls.push(path);return [{id:path+'-person',name:'员工'}]},
+    devices:async q=>{calls.push(q);return {data:[{id:q.terms[0].value+'-device',name:'设备'}]}},
+  })
+  await vm.edit({...old(),id:undefined});vm.form.groupId='old-group';vm.form.deviceId='old-device';vm.form.notifyUserId='old-person'
+  vm.form.projectId='new';await vm.changeProject();await settle()
+  assert.equal(projectId.value,'p');assert.equal(vm.opened.value,true)
+  for(const key of ['groupId','deviceId','cycleId','notifyUserId','legacySchedule'])assert.equal(vm.form[key],undefined)
+  assert.ok(calls.includes('employees/new'));assert.equal(vm.devices.value[0].value,'new-device')
+  assert.equal(vm.groups.value[0].value,'new-group')
+  assert.equal(queries.filter(q=>q.path==='cycles').at(-1).q.terms[0].value,'new')
+  await vm.save();assert.equal(saves[0].projectId,'new');assert.equal(projectId.value,'new')
+})
+
+test('员工接口失败不阻断设备组和设备，错误可见且不伪装成全部无数据',async()=>{
+  const {vm}=setup(path=>path==='groups'?{data:[{id:'group',name:'设备组'}],total:1}:undefined,{
+    options:async()=>{throw Error('员工查询被拒绝')},
+    devices:async()=>({data:[{id:'device',name:'设备'}]}),
+  })
+  await vm.edit()
+  assert.equal(vm.formError.value,'员工查询被拒绝')
+  assert.equal(vm.groups.value[0].value,'group');assert.equal(vm.devices.value[0].value,'device')
+  assert.equal(vm.optionsBusy.value,false)
+})
+
+test('弹窗切换项目后迟到候选不能串入，清空项目不发送无范围请求',async()=>{
+  let finish
+  const {vm}=setup(undefined,{options:path=>path==='employees/p'?new Promise(resolve=>{finish=resolve}):Promise.resolve([{id:'new-person',name:'新员工'}])})
+  const oldLoad=vm.edit();vm.form.projectId='new';await vm.changeProject()
+  finish([{id:'old-person',name:'旧员工'}]);await oldLoad
+  assert.equal(vm.people.value[0].value,'new-person')
+  vm.form.projectId=undefined;await vm.changeProject()
+  assert.deepEqual(vm.people.value,[]);assert.deepEqual(vm.groups.value,[]);assert.deepEqual(vm.devices.value,[])
 })
 test('切换巡检维保清除旧周期和迁移时间，异步旧候选返回不能覆盖新候选',async()=>{
   const pending=[]
