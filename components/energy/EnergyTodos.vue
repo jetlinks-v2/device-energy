@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { feText } from '../../shared/i18n'
 interface Count { data?: number; loading: boolean; error: string }
-const props = defineProps<{ state: { readings: Count; billing: Count; alerts: Count; canReadings: boolean; canBilling: boolean; canAlerts: boolean; canCollection?: boolean; projectId?: string } }>()
+const props = defineProps<{ state: { readings: Count; billing: Count; alerts: Count; canReadings: boolean; canBilling: boolean; canAlerts: boolean; canCollection?: boolean; projectId?: string }; embedded?: boolean }>()
 const emit = defineEmits<{ open: [key: 'readings' | 'billing' | 'alerts' | 'collection']; retry: [] }>()
 const entries = computed(() => [
   { key: 'readings' as const, label: feText('manualReadingReview'), icon: 'FormOutlined', enabled: props.state.canReadings, count: props.state.readings, requiresProject: false, tone: 'blue' },
@@ -11,7 +11,7 @@ const entries = computed(() => [
 ].filter(entry => entry.enabled))
 </script>
 <template>
-  <section class="eo-panel eo-todos">
+  <section :class="['eo-todos', { 'eo-panel': !embedded }]">
     <header class="eo-section-head"><h3>{{ feText('overviewPending') }}</h3><a-tooltip :title="feText('eoTodoBasis')"><AIcon type="InfoCircleOutlined" /></a-tooltip></header>
     <div class="eo-todo-list">
       <div v-for="entry in entries" :key="entry.key" class="eo-todo-row">
@@ -22,8 +22,7 @@ const entries = computed(() => [
         </a-tooltip>
         <a-button v-if="entry.count.error" type="text" size="small" :aria-label="feText('retry')" @click="emit('retry')"><AIcon type="ReloadOutlined" /></a-button>
       </div>
-      <CloudEmpty v-if="!entries.length && state.canCollection === false" :description="feText('noData')" />
+      <CloudEmpty v-if="!entries.length" :description="feText('noData')" />
     </div>
-    <footer v-if="state.canCollection !== false"><a-button type="link" size="small" @click="emit('open', 'collection')">{{ feText('collectionStatus') }}<AIcon type="ArrowRightOutlined" /></a-button></footer>
   </section>
 </template>

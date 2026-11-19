@@ -1,7 +1,7 @@
 .energy-overview.facility-overview { --overview-blue:#1683ff; --overview-muted:#536e96; --overview-line:#e2ecfc; --overview-warning:#a95712; }
 .overview-operations { margin:10px 0; }
 .overview-operations > .ant-alert { margin-bottom:10px; }
-.overview-operations .overview-grid { grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr); gap:10px; }
+.overview-operations .overview-grid { grid-template-columns:minmax(0,1.15fr) minmax(320px,1fr); gap:10px; }
 .overview-operations .overview-panel { border:0; border-radius:9px; padding:12px 14px; background:linear-gradient(145deg,#fff 65%,#f8fbff); box-shadow:0 2px 5px #2d5fa013,inset 0 0 0 1px #e2ecfc; }
 .overview-operations .overview-section-head { margin-bottom:8px; min-height:24px; }
 .overview-operations .overview-section-head h2 { font-size:14px; color:#19365f; }
@@ -58,3 +58,21 @@
 @media (max-width: 1100px) { .overview-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 650px) { .overview-queue { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 24px; } .overview-queue-row:nth-child(3) { padding-left: 0; border-left: 0; } .overview-queue-row:nth-child(2) { padding-right: 0; } }
 @media (max-width:650px) { .overview-section-head { flex-wrap:wrap; } }
+
+.overview-health-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:10px; margin-top:10px; }
+.overview-health-grid .eo-health-grid { margin:0; height:100%; }
+.overview-health-grid > .ant-spin-nested-loading > .ant-spin-container { height:100%; }
+.overview-health-grid .overview-assets { height:100%; }
+.overview-health-grid .overview-section-head { margin-bottom:8px; }
+.overview-health-grid .overview-section-head h2 { font-size:14px; }
+.overview-health-grid .overview-section-head .ant-btn { font-size:11px; height:24px; }
+.overview-health-grid .overview-asset-line { margin:12px 0; }
+.overview-action-panel .eo-todo-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.overview-action-panel .eo-todo-row { display:grid; grid-template-columns:24px minmax(0,1fr); gap:3px 6px; }
+.overview-action-panel .eo-todo-label { font-size:12px; }
+.overview-action-panel .eo-todo-row > .ant-btn { grid-column:2; justify-self:start; }
+.overview-action-panel .overview-faults { margin-top:10px; }
+.overview-action-panel .overview-reminders { justify-content:flex-end; }
+.overview-queue-row.warning { background:#fff5e8; border-radius:6px; }
+@container(max-width:1100px) { .overview-health-grid { grid-template-columns:minmax(0,1fr); }.overview-health-grid .overview-assets { height:auto; } }
+@container(max-width:650px) { .overview-operations .overview-grid { grid-template-columns:minmax(0,1fr); }.overview-queue { grid-template-columns:repeat(2,minmax(0,1fr)); row-gap:18px; }.overview-queue-row:nth-child(3) { border-left:0; }.overview-action-panel .eo-todo-list { grid-template-columns:1fr; }.overview-action-panel .eo-todo-row { grid-template-columns:24px minmax(0,1fr) auto; }.overview-action-panel .eo-todo-row > .ant-btn { grid-column:3; }.overview-action-panel .eo-todo-row > .ant-btn-text { grid-column:3; } }

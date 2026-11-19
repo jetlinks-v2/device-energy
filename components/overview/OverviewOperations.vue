@@ -20,7 +20,23 @@ const faultItems = computed(() => [
     <a-spin :spinning="vm.states.overview.loading">
       <div class="overview-grid">
         <OverviewTasks :state="vm.taskState" @navigate="vm.go" @changed="vm.refreshOperations" />
-        <section class="overview-panel overview-assets">
+        <section class="overview-panel overview-action-panel">
+          <slot name="todos" />
+          <div v-if="vm.can('faults')" class="overview-faults">
+            <header class="overview-section-head"><h2><AIcon type="ToolOutlined" />{{ feText('overviewFaultRecords') }}</h2>
+              <a-button type="link" @click="vm.go('faults')">{{ feText('details') }}<AIcon type="RightOutlined" /></a-button>
+            </header>
+            <div class="overview-asset-line"><span v-for="item in faultItems" :key="item.label">{{ item.label }}<strong>{{ number(item.count) }}</strong></span></div>
+          </div>
+          <div v-if="vm.can('notifications')" class="overview-reminders">
+            <a-button type="link" :class="{ warning: !!vm.taskState.counts.notificationFailures }" @click="vm.go('notifications', 'failed')"><AIcon type="BellOutlined" />{{ vm.taskState.counts.notificationFailures === 0 ? feText('overviewNotificationsNormal') : feText('failedNotifications') }}<strong v-if="vm.taskState.counts.notificationFailures !== 0">{{ number(vm.taskState.counts.notificationFailures) }}</strong></a-button>
+          </div>
+        </section>
+      </div>
+    </a-spin>
+    <div class="overview-health-grid">
+      <a-spin :spinning="vm.states.overview.loading">
+        <section class="eo-panel overview-assets">
           <header class="overview-section-head"><h2><AIcon type="HddOutlined" /><a-tooltip :title="feText('overviewBindingScope')">{{ feText('overviewDevices') }}<AIcon type="InfoCircleOutlined" /></a-tooltip></h2>
             <a-button v-if="vm.can('devices')" type="link" @click="vm.go('devices')">{{ feText('deviceRegister') }}<AIcon type="RightOutlined" /></a-button>
           </header>
@@ -30,15 +46,10 @@ const faultItems = computed(() => [
             <span>{{ feText('overviewNonOnline') }}<strong>{{ number(vm.nonOnline) }}</strong></span>
             <span>{{ feText('overviewOnlineRate') }}<strong>{{ vm.onlineRate === undefined ? '—' : vm.onlineRate.toFixed(1) + '%' }}</strong></span>
           </div>
-          <a-progress :percent="vm.onlineRate || 0" :show-info="false" :stroke-width="6" stroke-color="#1683ff" />
-          <div v-if="vm.can('faults')" class="overview-faults">
-            <header class="overview-section-head"><h2><AIcon type="ToolOutlined" />{{ feText('overviewFaultRecords') }}</h2>
-              <a-button type="link" @click="vm.go('faults')">{{ feText('details') }}<AIcon type="RightOutlined" /></a-button>
-            </header>
-            <div class="overview-asset-line"><span v-for="item in faultItems" :key="item.label">{{ item.label }}<strong>{{ number(item.count) }}</strong></span></div>
-          </div>
+          <p class="eo-health-note">{{ feText('overviewCurrentDevices') }}</p>
         </section>
-      </div>
-    </a-spin>
+      </a-spin>
+      <slot name="health" />
+    </div>
   </div>
 </template>

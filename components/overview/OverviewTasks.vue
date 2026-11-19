@@ -26,7 +26,7 @@ const open = (kind: 'inspection' | 'maintenance', focus: string) => {
     <header class="overview-section-head"><h2><AIcon type="CheckSquareOutlined" />{{ feText('overviewTaskQueue') }}</h2></header>
     <div class="overview-queue">
       <div v-for="item in tasks" :key="item.key" :class="['overview-queue-row', item.tone]">
-        <span class="overview-queue-label"><AIcon :type="item.icon" />{{ feText(item.label) }}</span>
+        <span class="overview-queue-label"><AIcon :type="item.icon" />{{ feText(item.label) }}<a-tooltip v-if="item.key === 'overdue'" :title="feText('overviewOverdueBasis')"><AIcon type="InfoCircleOutlined" /></a-tooltip></span>
         <strong class="overview-count">{{ number(item.key) }}</strong>
         <a-dropdown v-if="allowed('inspection', item.focus) || allowed('maintenance', item.focus)" :trigger="['click']">
           <a-button type="link" :aria-label="feText(item.label)"><AIcon type="RightOutlined" /></a-button>
@@ -41,10 +41,6 @@ const open = (kind: 'inspection' | 'maintenance', focus: string) => {
       <a-button type="text" :disabled="!state.access.inspection" @click="emit('navigate', 'inspection', 'today')"><AIcon type="CheckSquareOutlined" />{{ feText('inspection') }}<strong>{{ number('todayinspection') }}</strong></a-button>
       <a-button type="text" :disabled="!state.access.maintenance" @click="emit('navigate', 'maintenance', 'today')"><AIcon type="ToolOutlined" />{{ feText('maintenance') }}<strong>{{ number('todaymaintenance') }}</strong></a-button>
     </div></div>
-    <div class="overview-reminders">
-      <span class="overview-caption">{{ feText('overviewReminders') }}</span>
-      <a-button v-if="state.access.notifications" type="link" @click="emit('navigate', 'notifications', 'failed')"><AIcon type="BellOutlined" />{{ feText('failedNotifications') }}<strong>{{ number('notificationFailures') }}</strong></a-button>
-    </div>
     <TaskReview v-if="reviewKind" :kind="reviewKind" :project-id="state.projectId" :project-ids="state.projectIds" :options="{ projects: state.projects }" @close="reviewKind = undefined" @changed="emit('changed')" />
   </section>
 </template>

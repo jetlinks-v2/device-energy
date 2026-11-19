@@ -42,11 +42,11 @@ const openTodo = (key: 'readings' | 'billing' | 'alerts' | 'collection') => {
     <a-alert v-if="vm.projectError" type="error" show-icon :message="vm.projectError"><template #action><a-button @click="vm.initialize">{{ feText('retry') }}</a-button></template></a-alert>
     <a-alert v-if="vm.states.energy.error" type="error" show-icon :message="vm.states.energy.error"><template #action><a-button @click="vm.refreshEnergy">{{ feText('retry') }}</a-button></template></a-alert>
     <EnergyUsageScene :cards="vm.cards" :selected="vm.energyType" :loading="vm.states.energy.loading" @select="vm.energyType = $event" />
-    <slot name="operations" />
     <a-alert v-if="vm.states.meters.error" type="error" show-icon :message="vm.states.meters.error"><template #action><a-button @click="vm.refreshMeters">{{ feText('retry') }}</a-button></template></a-alert>
-    <EnergyHealthPanels :health="vm.health" :loading="vm.states.meters.loading">
+    <slot name="operations" :todo-state="todoState" :open-todo="openTodo">
       <EnergyTodos :state="todoState" @open="openTodo" @retry="vm.refreshTodos" />
-    </EnergyHealthPanels>
+      <EnergyHealthPanels :health="vm.health" :loading="vm.states.meters.loading" :can-collection="vm.canCollection" @collection="openTodo('collection')" />
+    </slot>
     <div class="eo-chart-grid">
       <EnergyTrend :state="vm.states.trend" :type="vm.energyType" @retry="vm.refreshEnergy" />
       <EnergyRanking :rows="vm.ranking" :type="vm.energyType" :loading="vm.states.energy.loading || vm.states.meters.loading" />
