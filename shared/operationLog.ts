@@ -36,6 +36,7 @@ export const operationActions: Option[] = [
   { value: 'bind', label: feText('logBind') },
   { value: 'trigger', label: feText('logTrigger') },
   { value: 'recover', label: feText('recovered') },
+  { value: 'relieve', label: feText('relievePlatformAlarm') },
   { value: 'handle', label: feText('process') },
   { value: 'end', label: feText('logEndBinding') },
 ]

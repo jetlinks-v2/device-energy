@@ -22,6 +22,7 @@ test('日志业务对象及操作显示中文，筛选提交原始编码', () =>
     ['replacement', 'approve', '换表与归零', '审核通过'],
     ['fault', 'start', '设备故障', '开始处理'],
     ['meterBill', 'recalculate', '计费出账', '重新核算'],
+    ['alert', 'relieve', '能源预警', '解除平台告警'],
   ]) {
     const row = { id: 'log-1', version: 0, targetType, action }
     assert.equal(resourceCellText(config, 'targetType', row), objectText)
