@@ -203,8 +203,7 @@
         },
         "showPage": [
           "facility-device",
-          "facility-group",
-          "device-instance"
+          "facility-group"
         ]
       },
       {
@@ -1815,8 +1814,7 @@
         "showPage": [
           "facility-report",
           "facility-mapping",
-          "facility-device",
-          "device-instance"
+          "facility-device"
         ]
       },
       {
