@@ -6,7 +6,7 @@ import { messageOf, type Entity, type Option } from '../shared/types'
 import { feText } from '../shared/i18n'
 
 export function useAlertRules() {
-  const project = useBillingProject(), rows = ref<AlertRule[]>([]), total = ref(0), page = ref(1), busy = ref(false), saving = ref(false), error = project.error, formError = ref(''), opened = ref(false)
+  const project = useBillingProject(), rows = ref<AlertRule[]>([]), total = ref(0), page = ref(1), pageSize = ref(12), busy = ref(false), saving = ref(false), error = project.error, formError = ref(''), opened = ref(false)
   const people = ref<Option[]>([]), devices = ref<Option[]>([]), groups = ref<Option[]>([]), range = ref('project'), minutes = ref<number>(30), optionsBusy = ref(false), devicesBusy = ref(false)
   const cycles = ref<Option[]>([]), cyclesBusy = ref(false), cycleError = ref(false), timingMode = ref('uniform')
   const form = reactive<Partial<AlertRule>>({})
@@ -16,7 +16,7 @@ export function useAlertRules() {
     if (!project.projectId.value) { busy.value = false; return }
     busy.value = true; error.value = ''
     try {
-      const result = await facility.query<AlertRule>('rules', { pageIndex: page.value - 1, pageSize: 12, terms: [{ column: 'projectId', value: project.projectId.value }, { column: 'ruleType', termType: 'in', value: ['plan', 'overdue', 'dueSoon'] }], sorts: [{ name: 'createTime', order: 'desc' }] })
+      const result = await facility.query<AlertRule>('rules', { pageIndex: page.value - 1, pageSize: pageSize.value, terms: [{ column: 'projectId', value: project.projectId.value }, { column: 'ruleType', termType: 'in', value: ['plan', 'overdue', 'dueSoon'] }], sorts: [{ name: 'createTime', order: 'desc' }] })
       if (ticket === generation) { rows.value = result.data; total.value = result.total }
     } catch (cause) { if (ticket === generation) error.value = messageOf(cause) }
     finally { if (ticket === generation) busy.value = false }
@@ -118,7 +118,7 @@ export function useAlertRules() {
     try { await facility.save('rules', { ...row, enabled: !row.enabled, smsEnabled: false }); await load() }
     catch (cause) { error.value = messageOf(cause) } finally { saving.value = false }
   }
-  watch(project.projectId, () => { cycleGeneration++; editGeneration++; optionGeneration++; cyclesBusy.value = false; page.value = 1; opened.value = false; void load() }); watch(page, () => void load())
+  watch(project.projectId, () => { cycleGeneration++; editGeneration++; optionGeneration++; cyclesBusy.value = false; page.value = 1; opened.value = false; void load() }); watch([page, pageSize], () => void load())
   onBeforeUnmount(() => { generation++; optionGeneration++; cycleGeneration++; editGeneration++ })
-  return { ...project, rows, total, page, busy, saving, error, opened, formError, people, devices, groups, range, minutes, cycles, cyclesBusy, optionsBusy, devicesBusy, timingMode, changeKind, changeCycle, changeProject, form, load, edit, changeType, searchDevices, save, toggle }
+  return { ...project, rows, total, page, pageSize, busy, saving, error, opened, formError, people, devices, groups, range, minutes, cycles, cyclesBusy, optionsBusy, devicesBusy, timingMode, changeKind, changeCycle, changeProject, form, load, edit, changeType, searchDevices, save, toggle }
 }

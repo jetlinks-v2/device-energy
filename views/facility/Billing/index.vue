@@ -43,7 +43,7 @@ const columns = [
       </div>
       <j-pro-table v-if="project.projectId" :key="project.projectId" :ref="setTable" mode="TABLE" type="PAGE" row-key="id"
         :columns="columns" :params="vm.params" :request="vm.request" :alert-show="false" :body-style="{ padding: 0 }"
-        :pagination="{ pageSize: 20, showSizeChanger: false }" :no-pagination="false" :scroll="{ x: 1620 }">
+        :scroll="{ x: 1620 }">
         <template #energy="row"><a-tag :color="meterChargeColor(row.result?.energyType)">{{ meterChargeName(row.result?.energyType) }}</a-tag></template>
         <template #device="row">{{ row.result?.deviceName || '—' }}</template>
         <template #quantity="row">{{ meterMoney(row.result?.quantity) }} {{ meterUnit(row.result?.energyType) }}</template>

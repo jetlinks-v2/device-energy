@@ -22,6 +22,6 @@ const emit = defineEmits<{ page: [page: number] }>()
     </a-timeline>
     <CloudEmpty v-else-if="!busy" :description="feText('noTaskHistory')" :image-style="{ height: '48px' }" />
     <a-pagination v-if="total > 20" :current="page" :total="total" :page-size="20"
-      :show-size-changer="false" size="small" @change="emit('page', $event)" />
+      :show-size-changer="false" size="default" @change="emit('page', $event)" />
   </a-spin>
 </template>

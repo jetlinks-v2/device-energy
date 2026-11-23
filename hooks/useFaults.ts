@@ -9,7 +9,7 @@ import { feText } from '../shared/i18n'
 
 export function useFaults(followRoute = true) {
   const project = useBillingProject(undefined, true), auth = useAuthStore()
-  const rows = ref<Fault[]>([]), total = ref(0), page = ref(1), busy = ref(false), error = project.error
+  const rows = ref<Fault[]>([]), total = ref(0), page = ref(1), pageSize = ref(12), busy = ref(false), error = project.error
   const status = ref('all'), mine = ref(false), overdue = ref(false), terms = ref<Term[]>([]), actor = ref('')
   const selected = ref<Fault>(), history = ref<TaskProcess[]>([]), historyTotal = ref(0), historyPage = ref(1), detailBusy = ref(false)
   const action = ref(''), actionBusy = ref(false), actionError = ref(''), people = ref<Option[]>([]), devices = ref<Option[]>([])
@@ -27,7 +27,7 @@ export function useFaults(followRoute = true) {
       const filters: Term[] = [...project.projectTerms(), ...terms.value]
       if (status.value !== 'all') filters.push({ column: 'state', value: status.value })
       if (overdue.value) filters.push({ column: 'deadline', termType: 'lt', value: Date.now() }, { column: 'state', termType: 'nin', value: ['closed', 'cancelled'] })
-      const result = await facility.query<Fault>('faults', { pageIndex: page.value - 1, pageSize: 12, terms: filters, sorts: [{ name: 'createTime', order: 'desc' }] }, '?mine=' + mine.value)
+      const result = await facility.query<Fault>('faults', { pageIndex: page.value - 1, pageSize: pageSize.value, terms: filters, sorts: [{ name: 'createTime', order: 'desc' }] }, '?mine=' + mine.value)
       if (ticket !== generation) return
       rows.value = result.data; total.value = result.total
       if (requested) await select(requested)
@@ -96,9 +96,9 @@ export function useFaults(followRoute = true) {
     prepare: () => { page.value = 1; status.value = 'all'; mine.value = false; overdue.value = false; terms.value = [] }, load: loadRequested })
   watch(() => [project.projectIds.value, status.value, mine.value, overdue.value, terms.value], () => { if (!routing.value) { page.value = 1; void load() } })
   watch(project.projectIds, () => { action.value = ''; peopleGeneration++; deviceGeneration++; people.value = []; devices.value = []; actionBusy.value = false })
-  watch(page, () => { if (!routing.value) void load() })
+  watch([page, pageSize], () => { if (!routing.value) void load() })
   onMounted(async () => { try { actor.value = (await facility.context()).userId } catch (cause) { error.value = messageOf(cause) } })
   onBeforeUnmount(() => { generation++; detailGeneration++; peopleGeneration++; deviceGeneration++ })
-  return { ...project, rows, total, page, busy, error, status, mine, overdue, terms, selected, history, historyTotal, historyPage,
+  return { ...project, rows, total, page, pageSize, busy, error, status, mine, overdue, terms, selected, history, historyTotal, historyPage,
     detailBusy, actions, canDispatch, action, actionBusy, actionError, people, devices, form, permission, open, confirm, load, select, searchDevices }
 }

@@ -38,7 +38,7 @@ const columns = [
       <a-alert :type="vm.checkPassed ? 'success' : 'error'" show-icon
         :message="feText(vm.checkPassed ? 'profileCheckOk' : 'profileCheckFailed')" />
       <a-table class="profile-import-results" :columns="columns" :data-source="vm.checks" row-key="rowNumber"
-        size="small" :pagination="{ pageSize: 8, showSizeChanger: false }" :scroll="{ y: 280 }">
+        size="small" :pagination="{ size: 'default', pageSize: 8, showSizeChanger: false }" :scroll="{ y: 280 }">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'result'">
             <a-tag v-if="record.valid" color="success">{{ feText('profileValid') }}</a-tag>

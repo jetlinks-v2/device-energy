@@ -15,7 +15,7 @@ export function useAlertCenter() {
   const busy = ref(false), detailBusy = ref(false), actionBusy = ref(false), error = project.error, comment = ref(''), action = ref('')
   const syncing = ref(false)
   const levels = ref<PlatformAlarmLevel[]>([])
-  const total = ref(0), page = ref(1), history = ref<FacilityAlert[]>([]), processes = ref<TaskProcess[]>([]), historyTotal = ref(0), historyPage = ref(1)
+  const total = ref(0), page = ref(1), pageSize = ref(12), history = ref<FacilityAlert[]>([]), processes = ref<TaskProcess[]>([]), historyTotal = ref(0), historyPage = ref(1)
   const processTotal = ref(0), processPage = ref(1)
   let generation = 0, detailGeneration = 0
   async function load() { await loadRequested() }
@@ -34,7 +34,7 @@ export function useAlertCenter() {
       if (handling.value !== 'all') filters.push(handling.value === 'open' ? { terms: [{ column: 'processingState', value: 'open' }, { column: 'processingState', termType: 'isnull', type: 'or', value: true }] } : { column: 'processingState', value: handling.value })
       const path = historyMode.value ? 'alerts/history' : scope.value === 'plan' ? 'alerts/plans' : 'alerts'
       const [result, config] = await Promise.all([
-        facility.query<FacilityAlert>(path, { pageIndex: page.value - 1, pageSize: 12, terms: filters, sorts: [{ name: 'lastTime', order: 'desc' }, { name: 'id', order: 'desc' }] }),
+        facility.query<FacilityAlert>(path, { pageIndex: page.value - 1, pageSize: pageSize.value, terms: filters, sorts: [{ name: 'lastTime', order: 'desc' }, { name: 'id', order: 'desc' }] }),
         facility.get<PlatformAlarmLevel[]>('alerts/levels')
       ])
       if (ticket !== generation) return
@@ -76,7 +76,7 @@ export function useAlertCenter() {
     prepare: row => { page.value = 1; scope.value = row.targetId ? 'plan' : 'device'; historyMode.value = false; handling.value = 'all'; terms.value = [] }, load: loadRequested })
   watch(() => [project.projectIds.value, scope.value, handling.value, terms.value, historyMode.value], () => { if (!routing.value) { page.value = 1; void load() } })
   watch(scope, value => { if (value === 'plan') historyMode.value = false })
-  watch(page, () => { if (!routing.value) void load() })
+  watch([page, pageSize], () => { if (!routing.value) void load() })
   onBeforeUnmount(() => { generation++; detailGeneration++ })
-  return { ...project, rows, selected, levels, scope, handling, historyMode, terms, busy, syncing, detailBusy, actionBusy, error, comment, action, total, page, history, processes, historyTotal, historyPage, processTotal, processPage, load, refresh, select, handle }
+  return { ...project, rows, selected, levels, scope, handling, historyMode, terms, busy, syncing, detailBusy, actionBusy, error, comment, action, total, page, pageSize, history, processes, historyTotal, historyPage, processTotal, processPage, load, refresh, select, handle }
 }

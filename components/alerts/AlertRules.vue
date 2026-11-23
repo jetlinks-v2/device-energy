@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CorePagination from '@jetlinks-web-core/components/CorePagination'
 import { reactive } from 'vue'
 import { useAlertRules } from '../../hooks/useAlertRules'
 import FacilityDataTable from '../FacilityDataTable.vue'
@@ -12,7 +13,7 @@ const vm = reactive(useAlertRules())
   <a-alert v-if="vm.error" type="error" :message="vm.error" show-icon />
   <FacilityDataTable :data-source="vm.rows" :pagination="false" :loading="vm.busy" :columns="[{ title: feText('ruleName'), dataIndex: 'name' }, { title: feText('ruleType'), dataIndex: 'ruleType' }, { title: feText('ruleCondition'), dataIndex: 'threshold' }, { title: feText('status'), key: 'enabled' }, { title: feText('actions'), key: 'actions', width: 200 }]">
     <template #bodyCell="{ column, record }"><template v-if="column.key === 'ruleType'">{{ alertType(record.ruleType) }}</template><template v-else-if="column.key === 'threshold'">{{ record.ruleType === 'dueSoon' ? (record.legacySchedule ? feText('reminderLegacyTiming') : `${feText('reminderLeadMinutes')} ${record.staleAfterSeconds / 60}`) : record.ruleType === 'overdue' ? feText('reminderAtDeadline') : `${record.threshold} %` }}</template><template v-else-if="column.key === 'enabled'"><a-tag :color="record.enabled ? 'green' : 'default'">{{ feText(record.enabled ? 'ruleEnabled' : 'ruleDisabled') }}</a-tag></template><template v-else-if="column.key === 'actions'"><a-space><j-permission-button hasPermission="facility/Alerts:rules" type="link" @click="vm.edit(record)">{{ feText('edit') }}</j-permission-button><j-permission-button :hasPermission="'facility/Alerts:toggle'" type="link" :loading="vm.saving" @click="vm.toggle(record)">{{ feText(record.enabled ? 'disable' : 'enable') }}</j-permission-button></a-space></template></template>
-  </FacilityDataTable><a-pagination v-if="vm.total > 12" v-model:current="vm.page" :page-size="12" :total="vm.total" :show-size-changer="false" size="small" />
+  </FacilityDataTable><CorePagination v-model:current="vm.page" v-model:page-size="vm.pageSize" :total="vm.total" />
   <a-drawer :open="vm.opened" :title="feText('businessReminderRules')" width="min(680px, 100vw)" :closable="!vm.saving" :mask-closable="!vm.saving" @close="vm.opened = false"><a-alert v-if="vm.formError" type="error" :message="vm.formError" show-icon style="margin-bottom:16px" /><a-form layout="vertical">
     <a-form-item :label="feText('businessProject')" required><a-select v-model:value="vm.form.projectId" :options="vm.projects" :loading="vm.loading" :disabled="!!vm.form.id || vm.saving" show-search option-filter-prop="label" :placeholder="feText('businessProject')" @change="vm.changeProject" /></a-form-item>
     <a-form-item :label="feText('ruleName')" required><a-input v-model:value="vm.form.name" :maxlength="256" /></a-form-item>

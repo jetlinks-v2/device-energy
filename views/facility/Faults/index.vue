@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CorePagination from '@jetlinks-web-core/components/CorePagination'
 import { reactive, ref, watch } from 'vue'
 import ConditionFilter, { type ConditionFilterTerm } from '@jetlinks-web-core/components/ConditionFilter'
 import FacilityWorkspace from '../../../components/FacilityWorkspace.vue'
@@ -29,7 +30,7 @@ const fields = [
     <div class="operations-split"><a-spin :spinning="vm.busy" wrapper-class-name="operations-master"><div ref="listPane" class="operations-list" role="list">
       <button v-for="row in vm.rows" :key="row.id" class="operations-row" :class="{ selected: vm.selected?.id === row.id }" @click="vm.select(row)">
         <div class="operations-row-head"><strong>{{ row.name }}</strong><a-tag :color="faultState(row.state)?.color">{{ faultState(row.state)?.label }}</a-tag></div><p>{{ row.deviceName }}</p><div class="operations-meta"><a-tag v-if="row.priority === 'urgent'" color="red">{{ feText('faultUrgent') }}</a-tag><a-tag v-if="faultOverdue(row)" color="orange">{{ feText('faultOverdue') }}</a-tag><span>{{ row.assigneeName || feText('faultUnassigned') }}</span><span>{{ taskTime(row.deadline) }}</span></div>
-      </button><CloudEmpty v-if="!vm.rows.length && !vm.busy" :description="feText('faultEmpty')" /></div><a-pagination v-if="vm.total > 12" v-model:current="vm.page" :total="vm.total" :page-size="12" :show-size-changer="false" size="small" /></a-spin>
+      </button><CloudEmpty v-if="!vm.rows.length && !vm.busy" :description="feText('faultEmpty')" /></div><CorePagination v-model:current="vm.page" v-model:page-size="vm.pageSize" :total="vm.total" /></a-spin>
       <div ref="detailPane" class="operations-detail operations-fault-detail"><FaultDetail v-if="vm.selected" :row="vm.selected" :actions="vm.actions" :history="vm.history" :total="vm.historyTotal" :page="vm.historyPage" :busy="vm.detailBusy" @action="vm.open" @page="vm.selected && vm.select(vm.selected, $event)" /><CloudEmpty v-else :description="feText('faultSelectDetail')" /></div>
     </div><FaultAction :vm="vm" />
   </section></FacilityWorkspace>

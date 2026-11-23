@@ -13,7 +13,7 @@ export function useMeterBillLedger(project: Ref<string | undefined>) {
   watch(project, () => { sequence++; terms.value = []; error.value = ''; detail.value = undefined; reviewing.value = false })
   const request = async (query: Query) => {
     const current = sequence, id = project.value
-    if (!id) return { success: true, result: { data: [], total: 0, pageSize: 20, pageIndex: 0 } }
+    if (!id) return { success: true, result: { data: [], total: 0, pageSize: query.pageSize ?? 12, pageIndex: 0 } }
     error.value = ''
     try {
       const result = await meterApi.ledger(id, meterBillQuery(query, energy.value, 'energyType'))
