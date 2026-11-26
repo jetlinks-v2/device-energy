@@ -2,15 +2,15 @@
   {
     "id": "facility-management",
     "code": "facility-management",
-    "name": "设施设备",
+    "name": "设施综合运营",
     "url": "/facility",
     "owner": "app",
     "sortIndex": 73,
     "icon": "ToolOutlined",
     "i18nMessages": {
       "name": {
-        "zh_CN": "设施设备",
-        "zh": "设施设备",
+        "zh_CN": "设施综合运营",
+        "zh": "设施综合运营",
         "en_US": "Facilities management",
         "en": "Facilities management"
       }
