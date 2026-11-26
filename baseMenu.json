@@ -45,7 +45,38 @@
             ]
           }
         ],
-        "buttons": [],
+        "buttons": [
+          {
+            "id": "view",
+            "name": "查看",
+            "i18nMessages": {
+              "zh_CN": "查看",
+              "zh": "查看",
+              "en_US": "View",
+              "en": "View"
+            },
+            "permissions": [
+              {
+                "permission": "facility-report",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-mapping",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              }
+            ]
+          }
+        ],
         "assetTypes": [
           "facilityDevice",
           "facilityTask",
@@ -112,6 +143,42 @@
           }
         ],
         "buttons": [
+          {
+            "id": "view",
+            "name": "查看",
+            "i18nMessages": {
+              "zh_CN": "查看",
+              "zh": "查看",
+              "en_US": "View",
+              "en": "View"
+            },
+            "permissions": [
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-group",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "device-instance",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "file",
+                "actions": [
+                  "query"
+                ]
+              }
+            ]
+          },
           {
             "id": "save",
             "name": "同步与维护档案",
@@ -269,6 +336,42 @@
             ],
             "buttons": [
               {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-task",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "file",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-message",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "execute",
                 "name": "接单与执行",
                 "permissions": [
@@ -400,6 +503,30 @@
             ],
             "buttons": [
               {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-standard",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "save",
                 "name": "新增／编辑作业标准",
                 "permissions": [
@@ -510,6 +637,30 @@
               }
             ],
             "buttons": [
+              {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-cycle",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
               {
                 "id": "save",
                 "name": "新增／编辑周期计划",
@@ -640,6 +791,48 @@
             ],
             "buttons": [
               {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-plan",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-cycle",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-standard",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-group",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "save",
                 "name": "新增／编辑任务配置",
                 "permissions": [
@@ -757,6 +950,30 @@
               }
             ],
             "buttons": [
+              {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-group",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
               {
                 "id": "save",
                 "name": "新增／编辑设备组",
@@ -912,6 +1129,42 @@
             ],
             "buttons": [
               {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-task",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "file",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-message",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "execute",
                 "name": "接单与执行",
                 "permissions": [
@@ -1043,6 +1296,30 @@
             ],
             "buttons": [
               {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-standard",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "save",
                 "name": "新增／编辑作业标准",
                 "permissions": [
@@ -1153,6 +1430,30 @@
               }
             ],
             "buttons": [
+              {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-cycle",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
               {
                 "id": "save",
                 "name": "新增／编辑周期计划",
@@ -1283,6 +1584,48 @@
             ],
             "buttons": [
               {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-plan",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-cycle",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-standard",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-group",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "save",
                 "name": "新增／编辑任务配置",
                 "permissions": [
@@ -1400,6 +1743,30 @@
               }
             ],
             "buttons": [
+              {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-group",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
               {
                 "id": "save",
                 "name": "新增／编辑设备组",
@@ -1520,6 +1887,36 @@
           }
         ],
         "buttons": [
+          {
+            "id": "view",
+            "name": "查看",
+            "i18nMessages": {
+              "zh_CN": "查看",
+              "zh": "查看",
+              "en_US": "View",
+              "en": "View"
+            },
+            "permissions": [
+              {
+                "permission": "facility-fault",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "file",
+                "actions": [
+                  "query"
+                ]
+              }
+            ]
+          },
           {
             "id": "save",
             "name": "登记与维修",
@@ -1671,6 +2068,42 @@
           }
         ],
         "buttons": [
+          {
+            "id": "view",
+            "name": "查看",
+            "i18nMessages": {
+              "zh_CN": "查看",
+              "zh": "查看",
+              "en_US": "View",
+              "en": "View"
+            },
+            "permissions": [
+              {
+                "permission": "facility-report",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-mapping",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "device-instance",
+                "actions": [
+                  "query"
+                ]
+              }
+            ]
+          },
           {
             "id": "save",
             "name": "配置计量与审核",
@@ -1870,6 +2303,60 @@
         ],
         "buttons": [
           {
+            "id": "view",
+            "name": "查看",
+            "i18nMessages": {
+              "zh_CN": "查看",
+              "zh": "查看",
+              "en_US": "View",
+              "en": "View"
+            },
+            "permissions": [
+              {
+                "permission": "facility-alert",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-rule",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-cycle",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-group",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-fault",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-mapping",
+                "actions": [
+                  "query"
+                ]
+              }
+            ]
+          },
+          {
             "id": "handle",
             "name": "处理预警",
             "permissions": [
@@ -2009,6 +2496,30 @@
         ],
         "buttons": [
           {
+            "id": "view",
+            "name": "查看",
+            "i18nMessages": {
+              "zh_CN": "查看",
+              "zh": "查看",
+              "en_US": "View",
+              "en": "View"
+            },
+            "permissions": [
+              {
+                "permission": "facility-message",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              }
+            ]
+          },
+          {
             "id": "settings",
             "name": "通知设置",
             "permissions": [
@@ -2082,6 +2593,30 @@
           }
         ],
         "buttons": [
+          {
+            "id": "view",
+            "name": "查看",
+            "i18nMessages": {
+              "zh_CN": "查看",
+              "zh": "查看",
+              "en_US": "View",
+              "en": "View"
+            },
+            "permissions": [
+              {
+                "permission": "facility-report",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              }
+            ]
+          },
           {
             "id": "save",
             "name": "维护能耗计划",
@@ -2165,7 +2700,26 @@
             ]
           }
         ],
-        "buttons": [],
+        "buttons": [
+          {
+            "id": "view",
+            "name": "查看",
+            "i18nMessages": {
+              "zh_CN": "查看",
+              "zh": "查看",
+              "en_US": "View",
+              "en": "View"
+            },
+            "permissions": [
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              }
+            ]
+          }
+        ],
         "assetTypes": [
           "organization"
         ],
@@ -2208,7 +2762,26 @@
             ]
           }
         ],
-        "buttons": [],
+        "buttons": [
+          {
+            "id": "view",
+            "name": "查看",
+            "i18nMessages": {
+              "zh_CN": "查看",
+              "zh": "查看",
+              "en_US": "View",
+              "en": "View"
+            },
+            "permissions": [
+              {
+                "permission": "facility-operation",
+                "actions": [
+                  "query"
+                ]
+              }
+            ]
+          }
+        ],
         "assetTypes": [
           "organization"
         ],
@@ -2288,6 +2861,60 @@
           }
         ],
         "buttons": [
+          {
+            "id": "view",
+            "name": "查看",
+            "i18nMessages": {
+              "zh_CN": "查看",
+              "zh": "查看",
+              "en_US": "View",
+              "en": "View"
+            },
+            "permissions": [
+              {
+                "permission": "facility-task",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-group",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "file",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-fault",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-alert",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-message",
+                "actions": [
+                  "query"
+                ]
+              }
+            ]
+          },
           {
             "id": "execute",
             "name": "接单与执行",
@@ -2493,6 +3120,24 @@
             ],
             "buttons": [
               {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "save",
                 "name": "配置设备归属",
                 "permissions": [
@@ -2580,6 +3225,30 @@
             ],
             "buttons": [
               {
+                "id": "view",
+                "name": "查看",
+                "i18nMessages": {
+                  "zh_CN": "查看",
+                  "zh": "查看",
+                  "en_US": "View",
+                  "en": "View"
+                },
+                "permissions": [
+                  {
+                    "permission": "facility-meter-billing",
+                    "actions": [
+                      "query"
+                    ]
+                  },
+                  {
+                    "permission": "facility-device",
+                    "actions": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
+              {
                 "id": "save",
                 "name": "保存收费关联",
                 "permissions": [
@@ -2657,6 +3326,36 @@
           }
         ],
         "buttons": [
+          {
+            "id": "view",
+            "name": "查看",
+            "i18nMessages": {
+              "zh_CN": "查看",
+              "zh": "查看",
+              "en_US": "View",
+              "en": "View"
+            },
+            "permissions": [
+              {
+                "permission": "facility-meter-billing",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-device",
+                "actions": [
+                  "query"
+                ]
+              },
+              {
+                "permission": "facility-mapping",
+                "actions": [
+                  "query"
+                ]
+              }
+            ]
+          },
           {
             "id": "detail",
             "name": "详情",

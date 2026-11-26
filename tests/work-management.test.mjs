@@ -44,7 +44,7 @@ test('巡检维保各五个真实菜单可单独初始化、授权且具有对�
       assert.equal(child.buttons.some(button => button.id === 'delete' && button.permissions.some(entry => entry.actions.includes('save'))), false)
     }
     const plans = parent.children[3]
-    assert.deepEqual(plans.buttons.map(button => button.id), ['save', 'delete', 'toggle'])
+    assert.deepEqual(plans.buttons.map(button => button.id), ['view', 'save', 'delete', 'toggle'])
     assert.ok(parent.children[4].buttons.some(button => button.id === 'qr'))
     assert.equal(existsSync(resolve(root, 'views/' + parent.code + '/index.vue')), false)
   }

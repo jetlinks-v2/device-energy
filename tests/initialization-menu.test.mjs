@@ -81,7 +81,21 @@ test('综合工作台可查询能源映射，汇总菜单不附带审核或修�
   const permission = grants(overview)
   for (const resource of ['facility-report', 'facility-device', 'facility-mapping']) assert.ok(permission(resource, 'query'))
   assert.ok(overview.permissions.every(item => item.actions.every(action => action === 'query')))
-  assert.deepEqual(overview.buttons, [])
+  assert.deepEqual(overview.buttons.map(button => button.id), ['view'])
+})
+
+test('页面查看按钮只授予页面已有的查询权限，分组菜单不生成查看按钮', () => {
+  for (const menu of all) {
+    const view = (menu.buttons || []).filter(button => button.id === 'view')
+    if (menu.children?.length) {
+      assert.equal(view.length, 0, menu.code)
+      continue
+    }
+    assert.equal(view.length, 1, menu.code)
+    assert.deepEqual(view[0].permissions, menu.permissions
+      .filter(permission => permission.actions.includes('query'))
+      .map(permission => ({ permission: permission.permission, actions: ['query'] })), menu.code)
+  }
 })
 
 test('计费出账作为独立一级业务菜单初始化，配置保存不捆绑生成应收权限', () => {
@@ -90,8 +104,8 @@ test('计费出账作为独立一级业务菜单初始化，配置保存不捆�
   assert.ok(billing)
   assert.equal(billing.parentId, menus[0].id)
   assert.equal(billing.options.meta.componentCode, 'facility/Billing')
-  assert.deepEqual(configuration.buttons.map(b => b.id), ['save'])
-  assert.deepEqual(billing.buttons.map(b => b.id), ['detail', 'review', 'reject', 'recalculate', 'recover'])
+  assert.deepEqual(configuration.buttons.map(b => b.id), ['view', 'save'])
+  assert.deepEqual(billing.buttons.map(b => b.id), ['view', 'detail', 'review', 'reject', 'recalculate', 'recover'])
   assert.equal(grants(configuration, ['save'])('facility-meter-billing', 'generate'), false)
   assert.equal(grants(billing, ['detail'])('facility-meter-billing', 'save'), false)
   assert.ok(grants(billing, ['review'])('facility-meter-billing', 'review'))
