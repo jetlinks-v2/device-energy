@@ -1,11 +1,12 @@
 import { facility } from './index'
 import type { Pager, Query } from '../shared/types'
-import type { AllocatedDevice, Allocation, MeterAssociation, MeterRule, MeterStandard } from '../shared/meterBilling'
+import type { AllocatedDevice, Allocation, DeviceCatalogCursor, DeviceCatalogSlice, MeterAssociation, MeterRule, MeterStandard } from '../shared/meterBilling'
 import type { MeterLedgerRow, MeterMonthlyBill, MeterReviewAction, MeterReviewDecision, MeterReviewOutcome, MeterReviewLog } from '../shared/meterBilling'
 const billing = 'configuration/meter-billing'
 /** Only device identity and period cross the confirmation boundary; finance owns quantities and amounts. */
 export const meterApi = {
-  devices: (query: Query) => facility.query<AllocatedDevice>('configuration/devices', query),
+  deviceSlice: (query: Query, after?: DeviceCatalogCursor) =>
+    facility.post<DeviceCatalogSlice>('configuration/devices/_slice', { query, after }),
   refreshDevices: () => facility.post<number>('configuration/devices/_refresh'),
   allocate: (rows: Allocation[]) => facility.post<AllocatedDevice[]>('configuration/devices', rows),
   standards: (project: string) => facility.get<MeterStandard[]>(`${billing}/${encodeURIComponent(project)}/standards`),

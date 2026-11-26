@@ -53,12 +53,24 @@ test('混合表计批量分配不会统一覆盖设备类型和安装空间', as
 
 test('项目分配完成状态只按项目确认判断，不要求重复配置类型', async () => {
   const requests = []
-  const { useDeviceConfiguration } = load('useDeviceConfiguration', { devices: async query => { requests.push(query); return { data: [], total: 0 } } })
+  const { useDeviceConfiguration } = load('useDeviceConfiguration', { deviceSlice: async (query, after) => {
+    requests.push({ query, after })
+    return { data: [{ id: after ? 'second' : 'first' }], nextCursor: after ? null : { createTime: 1000, id: 'first' } }
+  } })
   const scope = vue.effectScope(), vm = scope.run(() => useDeviceConfiguration())
-  vm.state.value = 'ready'; await vm.request({})
-  assert.deepEqual(requests[0].terms[0].terms, [{ column: 'projectConfirmed', value: true }])
-  vm.state.value = 'pending'; await vm.request({})
-  assert.deepEqual(requests[1].terms[0].terms, [{ column: 'projectConfirmed', value: false }])
+  vm.state.value = 'ready'; await tick()
+  assert.deepEqual(requests[0].query.terms[0].terms, [{ column: 'projectConfirmed', value: true }])
+  await vm.next()
+  assert.deepEqual(requests[1].after, { createTime: 1000, id: 'first' })
+  assert.equal(vm.pageIndex.value, 1)
+  assert.equal(vm.rows.value[0].id, 'second')
+  await vm.previous()
+  assert.equal(requests[2].after, undefined)
+  await vm.next()
+  vm.state.value = 'pending'; await tick()
+  assert.deepEqual(requests[4].query.terms[0].terms, [{ column: 'projectConfirmed', value: false }])
+  assert.equal(requests[4].after, undefined)
+  assert.equal(vm.pageIndex.value, 0)
   scope.stop()
 })
 

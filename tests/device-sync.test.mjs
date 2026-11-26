@@ -26,12 +26,18 @@ function load(name, ports) {
 test('刷新来源列表无需选项目，重复点击不会重复请求且保留当前筛选', async () => {
   let finish, calls = 0, reloads = 0
   const notices = []
-  const { useDeviceConfiguration } = load('useDeviceConfiguration', { notices, api: { refreshDevices: () => { calls++; return new Promise(resolve => { finish = resolve }) } } })
-  const vm = useDeviceConfiguration(); vm.table.value = { reload: () => reloads++ }
+  const { useDeviceConfiguration } = load('useDeviceConfiguration', { notices, api: {
+    refreshDevices: () => { calls++; return new Promise(resolve => { finish = resolve }) },
+    deviceSlice: async () => { reloads++; return { data: [] } }
+  } })
+  const scope = vue.effectScope(), vm = scope.run(useDeviceConfiguration)
+  vm.projectId.value = 'filter-project'; await vue.nextTick()
+  reloads = 0
   const running = vm.sync(); await vm.sync(); assert.equal(calls, 1)
-  vm.projectId.value = 'filter-project'; finish(8); await running
+  finish(8); await running
   assert.equal(vm.projectId.value, 'filter-project'); assert.equal(reloads, 1); assert.equal(vm.syncing.value, false)
   assert.match(notices[0], /8/)
+  scope.stop()
 })
 test('已有资产改项目先确认，确认后只保存分配配置不直接同步资产', async () => {
   const dialogs = [], saved = []

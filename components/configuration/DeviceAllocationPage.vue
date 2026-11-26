@@ -4,7 +4,6 @@ import ConditionFilter, { type ConditionFilterTerm, type ConditionFilterField } 
 import { useDeviceConfiguration } from '../../hooks/useDeviceConfiguration'
 import { feText } from '../../shared/i18n'
 import { time } from '../../shared/types'
-import type { TableHandle } from '../../shared/tableQuery'
 import type { AllocatedDevice } from '../../shared/meterBilling'
 const vm = reactive(useDeviceConfiguration()), filters = ref<ConditionFilterTerm[]>([])
 const fields: ConditionFilterField[] = [
@@ -21,12 +20,14 @@ const columns = computed(() => [
   { title: feText('allocationSince'), dataIndex: 'allocationSince', key: 'effective', scopedSlots: true, width: 180 },
   { title: feText('actions'), key: 'actions', scopedSlots: true, width: 90, fixed: 'right' }
 ])
-const setTable = (value: unknown) => { vm.table = value as TableHandle | undefined }
 const select = (keys: string[], rows: AllocatedDevice[]) => { vm.selected = keys; vm.selectedRows = rows }
 </script>
 <template>
   <section class="facility-page facility-resource-page">
     <a-alert v-if="vm.error" :message="vm.error" type="error" show-icon closable @close="vm.error = ''" />
+    <a-alert v-if="vm.listError" :message="vm.listError" type="error" show-icon>
+      <template #action><a-button size="small" @click="vm.retry()">{{ feText('retry') }}</a-button></template>
+    </a-alert>
     <div class="facility-resource-controls--inline">
       <a-select v-model:value="vm.projectId" :options="vm.projects" :placeholder="feText('allBusinessProjects')"
         show-search option-filter-prop="label" allow-clear class="facility-toolbar__project" />
@@ -45,16 +46,24 @@ const select = (keys: string[], rows: AllocatedDevice[]) => { vm.selected = keys
       </a-radio-group>
       <span v-if="vm.selected.length">{{ feText('selectedCount') }} {{ vm.selected.length }} {{ feText('itemsUnit') }}</span>
       <j-permission-button hasPermission="facility/Configuration/Devices:save" type="primary"
-        :disabled="!vm.selected.length" @click="vm.edit()">{{ feText('batchAllocate') }}</j-permission-button>
+        :disabled="vm.loading || !vm.selected.length" @click="vm.edit()">{{ feText('batchAllocate') }}</j-permission-button>
     </div>
-    <j-pro-table :ref="setTable" row-key="id" mode="TABLE" type="PAGE" :columns="columns"
-      :params="vm.params" :request="vm.request" :pagination="{ pageSize: 20 }" :body-style="{ padding: 0 }"
+    <j-pro-table row-key="id" mode="TABLE" type="PAGE" :columns="columns"
+      :data-source="vm.rows" :loading="vm.loading" no-pagination :body-style="{ padding: 0 }"
       :row-selection="{ selectedRowKeys: vm.selected, onChange: select }"
       :alert-show="false" :scroll="{ x: 950 }">
       <template #effective="row">{{ time(row.allocationSince) }}</template>
       <template #configuration="row"><a-tag :color="!row.projectConfirmed ? 'default' : row.assetProjectId === row.projectId ? 'success' : 'processing'">{{ feText(!row.projectConfirmed ? 'allocationPending' : row.assetProjectId === row.projectId ? 'synchronized' : 'pendingSynchronization') }}</a-tag></template>
-      <template #actions="row"><j-permission-button hasPermission="facility/Configuration/Devices:save" type="link" @click="vm.edit([row])">{{ feText('allocate') }}</j-permission-button></template>
+      <template #actions="row"><j-permission-button hasPermission="facility/Configuration/Devices:save" type="link" :disabled="vm.loading" @click="vm.edit([row])">{{ feText('allocate') }}</j-permission-button></template>
     </j-pro-table>
+    <div class="allocation-pagination">
+      <span aria-live="polite">{{ feText('catalogPageSize').replace('{count}', String(vm.rows.length)) }}</span>
+      <a-space>
+        <a-button :disabled="vm.loading || vm.pageIndex === 0" @click="vm.previous()">{{ feText('catalogPreviousPage') }}</a-button>
+        <span>{{ feText('catalogPageNumber').replace('{page}', String(vm.pageIndex + 1)) }}</span>
+        <a-button :disabled="vm.loading || !vm.nextCursor" @click="vm.next()">{{ feText('catalogNextPage') }}</a-button>
+      </a-space>
+    </div>
     <a-drawer :open="vm.opened" :title="vm.editing.length === 1 ? vm.editing[0].name : feText('batchAllocate')" :width="480" @close="vm.opened = false">
       <a-alert v-if="vm.error" :message="vm.error" type="error" show-icon class="meter-form-error" />
       <a-form layout="vertical">
@@ -64,3 +73,14 @@ const select = (keys: string[], rows: AllocatedDevice[]) => { vm.selected = keys
     </a-drawer>
   </section>
 </template>
+
+<style scoped>
+.allocation-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+}
+</style>
