@@ -35,10 +35,10 @@ test('后端未注册对应权限时，初始化不展示业务菜单', () => {
   assert.deepEqual(filterMenuByPermission([], structuredClone(menus), true), [])
 })
 
-test('设施业务归入设施设备，公共基础独立初始化且没有重复菜单', () => {
+test('设施业务归入设施综合运营，公共基础独立初始化且没有重复菜单', () => {
   const actual = filterMenuByPermission(permissions, structuredClone(menus), true)
   assert.equal(actual.length, 1)
-  assert.equal(actual[0].name, '设施设备')
+  assert.equal(actual[0].name, '设施综合运营')
   assert.ok(actual[0].children.some(node => node.code === 'facility/Devices'))
   assert.ok(actual[0].children.some(node => node.code === 'system-management/Sync'))
   assert.deepEqual(actual[0].children.filter(node => node.options?.show === false).map(node => node.code), ['facility/Employee'])
